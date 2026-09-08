@@ -1,0 +1,19 @@
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 240' role='img'>
+  <defs>
+    <linearGradient id='g' x1='0' y1='0' x2='1' y2='1'>
+      <stop offset='0' stop-color='#f3e2b6'/><stop offset='1' stop-color='#dcb85f'/>
+    </linearGradient>
+    <linearGradient id='s' x1='0' y1='0' x2='1' y2='0'>
+      <stop offset='0' stop-color='#ffffff' stop-opacity='.45'/>
+      <stop offset='.35' stop-color='#ffffff' stop-opacity='0'/>
+    </linearGradient>
+  </defs>
+  <rect x='84' y='16' width='32' height='22' rx='7' fill='#4a3d20'/>
+  <path d='M62 38h76l10 170a8 8 0 0 1-8 9H60a8 8 0 0 1-8-9z' fill='url(#g)'/>
+  <path d='M62 38h76l10 170a8 8 0 0 1-8 9H60a8 8 0 0 1-8-9z' fill='url(#s)'/>
+  <rect x='70' y='110' width='60' height='58' rx='6' fill='#fff' opacity='.86'/>
+  <rect x='82' y='126' width='36' height='5' rx='2.5' fill='#4a3d20' opacity='.7'/>
+  <rect x='84' y='140' width='32' height='3' rx='1.5' fill='#2b2320' opacity='.2'/>
+  <rect x='52' y='214' width='96' height='10' rx='4' fill='#4a3d20' opacity='.85'/>
+  <title>Protetor solar facial</title>
+</svg>

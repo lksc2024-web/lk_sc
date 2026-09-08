@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Produto · Joyce Beauty (prévia)</title>
+<meta name="description" content="Página de produto demonstrativa da loja virtual Joyce Beauty.">
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="assets/img/p06.svg">
+<link rel="stylesheet" href="assets/css/styles.css">
+</head>
+<body>
+
+<div class="preview-bar">Prévia comercial · <strong>Joyce Beauty</strong> — catálogo demonstrativo, sem vendas reais</div>
+
+<header class="header">
+  <div class="wrap header__inner">
+    <a class="brand" href="index.html">
+      <span class="brand__mark" aria-hidden="true">J</span>
+      <span>
+        <span class="brand__name">Joyce Beauty</span>
+        <span class="brand__tag">Salão &amp; Loja</span>
+      </span>
+    </a>
+
+    <nav class="nav" id="nav-principal" aria-label="Navegação principal">
+      <a href="index.html">Início</a>
+      <a href="loja.html">Loja</a>
+      <a href="loja.html?cat=cabelos">Cabelos</a>
+      <a href="loja.html?cat=skincare">Skincare</a>
+      <a href="loja.html?cat=maquiagem">Maquiagem</a>
+      <a href="loja.html?cat=unhas">Unhas</a>
+    </nav>
+
+    <div class="header__actions">
+      <button class="icon-btn menu-toggle" data-menu-toggle aria-expanded="false" aria-controls="nav-principal" aria-label="Abrir menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      </button>
+      <a class="icon-btn" href="carrinho.html" aria-label="Abrir sacola de compras">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M6 7h12l-1.2 12.2a2 2 0 0 1-2 1.8H9.2a2 2 0 0 1-2-1.8z"/><path d="M9 7a3 3 0 0 1 6 0"/></svg>
+        <span class="cart-count" data-cart-count hidden>0</span>
+      </a>
+    </div>
+  </div>
+</header>
+<main>
+  <div class="wrap">
+    <nav class="breadcrumb" aria-label="Você está em">
+      <a href="index.html">Início</a><span>/</span><a href="loja.html">Loja</a><span>/</span><span data-crumb>Produto</span>
+    </nav>
+
+    <section class="pdp" data-pdp></section>
+
+    <section class="tabs" data-tabs>
+      <div class="tabs__nav" role="tablist" aria-label="Informações do produto">
+        <button role="tab" data-tab="descricao" aria-selected="true" aria-controls="tab-descricao">Descrição</button>
+        <button role="tab" data-tab="uso" aria-selected="false" aria-controls="tab-uso">Como usar</button>
+        <button role="tab" data-tab="specs" aria-selected="false" aria-controls="tab-specs">Especificações</button>
+      </div>
+      <div class="tabs__panel" id="tab-descricao" role="tabpanel"></div>
+      <div class="tabs__panel" id="tab-uso" role="tabpanel" hidden></div>
+      <div class="tabs__panel" id="tab-specs" role="tabpanel" hidden></div>
+    </section>
+  </div>
+
+  <section class="section">
+    <div class="wrap">
+      <div class="section__head"><div><h2>Combina com</h2></div><a class="link-more" href="loja.html">Ver a loja</a></div>
+      <div class="grid-products grid-products--3" data-related></div>
+    </div>
+  </section>
+</main>
+<footer class="footer">
+  <div class="wrap">
+    <div class="footer__grid">
+      <div>
+        <a class="brand" href="index.html">
+          <span class="brand__mark" aria-hidden="true">J</span>
+          <span><span class="brand__name">Joyce Beauty</span>
+          <span class="brand__tag">Salão &amp; Loja</span></span>
+        </a>
+        <p style="color:var(--ink-soft);font-size:14px;max-width:34ch;margin-top:14px">
+          O cuidado do nosso salão em produtos selecionados para a sua rotina em casa.
+        </p>
+      </div>
+      <div>
+        <h4>Loja</h4>
+        <ul>
+          <li><a href="loja.html">Todos os produtos</a></li>
+          <li><a href="loja.html?cat=cabelos">Cabelos</a></li>
+          <li><a href="loja.html?cat=skincare">Skincare</a></li>
+          <li><a href="loja.html?cat=maquiagem">Maquiagem</a></li>
+          <li><a href="loja.html?cat=unhas">Unhas</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Atendimento</h4>
+        <ul>
+          <li>Seg a sex · 9h às 19h</li>
+          <li>Sábado · 9h às 16h</li>
+          <li>Retirada no salão</li>
+          <li>Trocas em até 7 dias</li>
+        </ul>
+      </div>
+      <div>
+        <h4>Salão</h4>
+        <ul>
+          <li>Cabelo &amp; coloração</li>
+          <li>Manicure &amp; pedicure</li>
+          <li>Maquiagem &amp; noivas</li>
+          <li>Estética facial</li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer__note">
+      <span>© <span data-year>2026</span> Joyce Beauty — prévia comercial para aprovação.</span>
+      <span>Conteúdo, preços e imagens meramente demonstrativos.</span>
+    </div>
+  </div>
+</footer>
+
+<script src="assets/js/produtos.js"></script>
+<script src="assets/js/app.js"></script>
+</body>
+</html>

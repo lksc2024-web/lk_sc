@@ -1,0 +1,19 @@
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 240' role='img'>
+  <defs>
+    <linearGradient id='g' x1='0' y1='0' x2='1' y2='1'>
+      <stop offset='0' stop-color='#e6b7c4'/><stop offset='1' stop-color='#c98096'/>
+    </linearGradient>
+    <linearGradient id='s' x1='0' y1='0' x2='1' y2='0'>
+      <stop offset='0' stop-color='#ffffff' stop-opacity='.45'/>
+      <stop offset='.35' stop-color='#ffffff' stop-opacity='0'/>
+    </linearGradient>
+  </defs>
+  <ellipse cx='100' cy='96' rx='66' ry='14' fill='#6d3b48'/>
+  <rect x='34' y='96' width='132' height='30' rx='8' fill='#6d3b48'/>
+  <rect x='40' y='124' width='120' height='92' rx='18' fill='url(#g)'/>
+  <rect x='40' y='124' width='120' height='92' rx='18' fill='url(#s)'/>
+  <rect x='64' y='150' width='72' height='42' rx='8' fill='#fff' opacity='.88'/>
+  <rect x='78' y='164' width='44' height='4' rx='2' fill='#6d3b48' opacity='.7'/>
+  <rect x='82' y='176' width='36' height='3' rx='1.5' fill='#2b2320' opacity='.2'/>
+  <title>Máscara de hidratação</title>
+</svg>
