@@ -1,6 +1,10 @@
 /* ==========================================================================
    Joyce Beauty — Lógica da prévia (front-end apenas)
    Carrinho persistido em localStorage. Nenhuma integração de pagamento.
+
+   Funciona em dois modos:
+   - multipágina  : index.html / loja.html / produto.html / carrinho.html
+   - pacote único : dist/joyce-beauty-previa.html (rotas por hash, window.JB_BUNDLE)
    ========================================================================== */
 
 (function () {
@@ -14,13 +18,21 @@
   /* ------------------------------ utilitários ---------------------------- */
 
   const brl = v => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-  const $  = (sel, ctx = document) => ctx.querySelector(sel);
-  const $$ = (sel, ctx = document) => Array.from(ctx.querySelectorAll(sel));
+  const $  = (sel, ctx) => (ctx || document).querySelector(sel);
+  const $$ = (sel, ctx) => Array.from((ctx || document).querySelectorAll(sel));
   const byId = id => PRODUTOS.find(p => p.id === id);
   const catNome = id => (CATEGORIAS.find(c => c.id === id) || {}).nome || id;
   const escape = s => String(s).replace(/[&<>"']/g, c => (
     { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
   ));
+
+  /* Parâmetros da rota: no pacote único vêm do hash (#/produto?id=…),
+     nas páginas separadas vêm da query string normal. */
+  function parametros() {
+    const hash = location.hash || '';
+    const corte = hash.indexOf('?');
+    return new URLSearchParams(corte >= 0 ? hash.slice(corte) : location.search);
+  }
 
   function estrelas(nota) {
     const cheias = Math.round(nota);
@@ -56,7 +68,7 @@
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(itens));
     } catch (e) {
-      /* modo privativo: a prévia segue funcionando na sessão atual */
+      /* modo privativo ou arquivo local: a sacola segue válida na sessão atual */
     }
     Cart.itens = itens;
     atualizarContador();
@@ -142,17 +154,21 @@
       </article>`;
   }
 
+  function iconeCheck() {
+    return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+      <path d="M20 6 9 17l-5-5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  }
+
   /* ---------------------------- vitrine / catálogo ----------------------- */
 
-  function initVitrine() {
-    const grade = $('[data-grid]');
+  function initVitrine(escopo) {
+    const raiz = escopo || document;
+    const grade = $('[data-grid]', raiz);
     if (!grade) return;
 
-    const estado = {
-      categoria: new URLSearchParams(location.search).get('cat') || 'todos',
-      ordem: 'destaque',
-      limite: parseInt(grade.dataset.limit || '0', 10)
-    };
+    const estado = grade._estado || (grade._estado = { ordem: 'destaque' });
+    estado.categoria = parametros().get('cat') || 'todos';
+    estado.limite = parseInt(grade.dataset.limit || '0', 10);
 
     function ordenar(lista) {
       const copia = lista.slice();
@@ -173,27 +189,35 @@
         ? lista.map(cardProduto).join('')
         : '<p class="empty">Nenhum produto nesta categoria na prévia.</p>';
 
-      const contador = $('[data-count]');
+      $$('[data-filter]', raiz).forEach(c => {
+        c.setAttribute('aria-pressed', String(c.dataset.filter === estado.categoria));
+      });
+
+      const contador = $('[data-count]', raiz);
       if (contador) {
         contador.textContent = `${lista.length} ${lista.length === 1 ? 'produto' : 'produtos'}`;
       }
     }
 
-    $$('[data-filter]').forEach(chip => {
-      chip.setAttribute('aria-pressed', String(chip.dataset.filter === estado.categoria));
-      chip.addEventListener('click', () => {
-        estado.categoria = chip.dataset.filter;
-        $$('[data-filter]').forEach(c => c.setAttribute('aria-pressed', String(c === chip)));
-        render();
-      });
-    });
+    grade._render = render;
 
-    const ordenacao = $('[data-sort]');
-    if (ordenacao) {
-      ordenacao.addEventListener('change', () => {
-        estado.ordem = ordenacao.value;
-        render();
+    if (!grade.dataset.bound) {
+      grade.dataset.bound = '1';
+
+      $$('[data-filter]', raiz).forEach(chip => {
+        chip.addEventListener('click', () => {
+          estado.categoria = chip.dataset.filter;
+          grade._render();
+        });
       });
+
+      const ordenacao = $('[data-sort]', raiz);
+      if (ordenacao) {
+        ordenacao.addEventListener('change', () => {
+          estado.ordem = ordenacao.value;
+          grade._render();
+        });
+      }
     }
 
     render();
@@ -201,13 +225,15 @@
 
   /* ---------------------------- página de produto ------------------------ */
 
-  function initProduto() {
-    const raiz = $('[data-pdp]');
+  function initProduto(escopo) {
+    const contexto = escopo || document;
+    const raiz = $('[data-pdp]', contexto);
     if (!raiz) return;
 
-    const id = new URLSearchParams(location.search).get('id');
-    const p = byId(id) || PRODUTOS[0];
-    let variacao = p.variacoes ? p.variacoes.opcoes[0] : null;
+    const p = byId(parametros().get('id')) || PRODUTOS[0];
+    const estado = raiz._estado || (raiz._estado = {});
+    estado.produto = p;
+    estado.variacao = p.variacoes ? p.variacoes.opcoes[0] : null;
 
     document.title = `${p.nome} · Joyce Beauty`;
 
@@ -263,52 +289,61 @@
       </div>`;
 
     /* abas */
-    const abas = $('[data-tabs]');
+    const abas = $('[data-tabs]', contexto);
     if (abas) {
-      $('#tab-descricao').innerHTML = `<p>${escape(p.descricao)}</p>`;
-      $('#tab-uso').innerHTML = `<ul>${p.comoUsar.map(t => `<li>${escape(t)}</li>`).join('')}</ul>`;
-      $('#tab-specs').innerHTML = `<dl class="spec">${Object.entries(p.specs)
+      $('#tab-descricao', abas).innerHTML = `<p>${escape(p.descricao)}</p>`;
+      $('#tab-uso', abas).innerHTML = `<ul>${p.comoUsar.map(t => `<li>${escape(t)}</li>`).join('')}</ul>`;
+      $('#tab-specs', abas).innerHTML = `<dl class="spec">${Object.entries(p.specs)
         .map(([k, v]) => `<div><dt>${escape(k)}</dt><dd>${escape(v)}</dd></div>`).join('')}</dl>`;
 
-      $$('[data-tab]', abas).forEach(btn => {
-        btn.addEventListener('click', () => {
-          $$('[data-tab]', abas).forEach(b => b.setAttribute('aria-selected', String(b === btn)));
-          $$('.tabs__panel', abas).forEach(pan => { pan.hidden = pan.id !== 'tab-' + btn.dataset.tab; });
-        });
+      $$('[data-tab]', abas).forEach((btn, i) => {
+        btn.setAttribute('aria-selected', String(i === 0));
+        if (!btn.dataset.bound) {
+          btn.dataset.bound = '1';
+          btn.addEventListener('click', () => {
+            $$('[data-tab]', abas).forEach(b => b.setAttribute('aria-selected', String(b === btn)));
+            $$('.tabs__panel', abas).forEach(pan => { pan.hidden = pan.id !== 'tab-' + btn.dataset.tab; });
+          });
+        }
       });
+      $$('.tabs__panel', abas).forEach(pan => { pan.hidden = pan.id !== 'tab-descricao'; });
     }
 
     /* migalhas */
-    const migalha = $('[data-crumb]');
+    const migalha = $('[data-crumb]', contexto);
     if (migalha) migalha.textContent = p.nome;
 
     /* interações */
-    const campoQtd = $('#pdp-qtd', raiz);
+    if (!raiz.dataset.bound) {
+      raiz.dataset.bound = '1';
 
-    raiz.addEventListener('click', ev => {
-      const passo = ev.target.closest('[data-step]');
-      if (passo) {
-        campoQtd.value = Math.max(1, Math.min(99, (parseInt(campoQtd.value, 10) || 1) + Number(passo.dataset.step)));
-        return;
-      }
-      const opcao = ev.target.closest('[data-option]');
-      if (opcao) {
-        variacao = opcao.dataset.option;
-        $$('[data-option]', raiz).forEach(o => o.setAttribute('aria-pressed', String(o === opcao)));
-        return;
-      }
-      const thumb = ev.target.closest('[data-thumb]');
-      if (thumb) {
-        $$('[data-thumb]', raiz).forEach(t => t.setAttribute('aria-pressed', String(t === thumb)));
-        return;
-      }
-      if (ev.target.closest('[data-pdp-add]')) {
-        Cart.adicionar(p.id, parseInt(campoQtd.value, 10) || 1, variacao);
-      }
-    });
+      raiz.addEventListener('click', ev => {
+        const campoQtd = $('#pdp-qtd', raiz);
+
+        const passo = ev.target.closest('[data-step]');
+        if (passo && campoQtd) {
+          campoQtd.value = Math.max(1, Math.min(99, (parseInt(campoQtd.value, 10) || 1) + Number(passo.dataset.step)));
+          return;
+        }
+        const opcao = ev.target.closest('[data-option]');
+        if (opcao) {
+          raiz._estado.variacao = opcao.dataset.option;
+          $$('[data-option]', raiz).forEach(o => o.setAttribute('aria-pressed', String(o === opcao)));
+          return;
+        }
+        const thumb = ev.target.closest('[data-thumb]');
+        if (thumb) {
+          $$('[data-thumb]', raiz).forEach(t => t.setAttribute('aria-pressed', String(t === thumb)));
+          return;
+        }
+        if (ev.target.closest('[data-pdp-add]')) {
+          Cart.adicionar(raiz._estado.produto.id, parseInt(campoQtd.value, 10) || 1, raiz._estado.variacao);
+        }
+      });
+    }
 
     /* relacionados */
-    const relacionados = $('[data-related]');
+    const relacionados = $('[data-related]', contexto);
     if (relacionados) {
       const lista = PRODUTOS.filter(x => x.categoria === p.categoria && x.id !== p.id).slice(0, 3);
       const complemento = PRODUTOS.filter(x => x.id !== p.id && !lista.includes(x)).slice(0, 3 - lista.length);
@@ -316,19 +351,13 @@
     }
   }
 
-  function iconeCheck() {
-    return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-      <path d="M20 6 9 17l-5-5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
-  }
-
   /* ------------------------------ página carrinho ------------------------ */
 
-  function initCarrinho() {
-    const raiz = $('[data-cart-page]');
+  function initCarrinho(escopo) {
+    const raiz = $('[data-cart-page]', escopo || document);
     if (!raiz) return;
 
-    let desconto = 0;
-    let cupomAplicado = '';
+    const estado = raiz._estado || (raiz._estado = { desconto: 0, cupom: '' });
 
     function render() {
       if (!Cart.itens.length) {
@@ -342,7 +371,7 @@
       }
 
       const subtotal = Cart.subtotal();
-      const valorDesconto = subtotal * desconto;
+      const valorDesconto = subtotal * estado.desconto;
       const base = subtotal - valorDesconto;
       const frete = base >= FRETE_GRATIS_A_PARTIR_DE ? 0 : FRETE_PADRAO;
       const total = base + frete;
@@ -389,11 +418,11 @@
               : '<span class="hint--ok">Você garantiu o frete grátis!</span>'}</p>
 
             <div class="coupon">
-              <input type="text" id="cupom" placeholder="Cupom (JOYCE10)" aria-label="Cupom de desconto" value="${escape(cupomAplicado)}">
+              <input type="text" id="cupom" placeholder="Cupom (JOYCE10)" aria-label="Cupom de desconto" value="${escape(estado.cupom)}">
               <button class="btn btn--light" data-coupon>Aplicar</button>
             </div>
-            <p class="hint" data-coupon-msg>${cupomAplicado
-              ? `<span class="hint--ok">Cupom ${escape(cupomAplicado)} aplicado.</span>`
+            <p class="hint" data-coupon-msg>${estado.cupom
+              ? `<span class="hint--ok">Cupom ${escape(estado.cupom)} aplicado.</span>`
               : 'Cupons de demonstração: JOYCE10 e BEAUTY15.'}</p>
 
             <div class="summary__row"><span>Subtotal</span><span>${brl(subtotal)}</span></div>
@@ -408,36 +437,42 @@
         </div>`;
     }
 
-    raiz.addEventListener('click', ev => {
-      const passo = ev.target.closest('[data-cart-step]');
-      if (passo) {
-        const campo = $(`[data-cart-qty="${CSS.escape(passo.dataset.key)}"]`, raiz);
-        Cart.definirQtd(passo.dataset.key, (parseInt(campo.value, 10) || 1) + Number(passo.dataset.cartStep));
-        render();
-        return;
-      }
-      const remover = ev.target.closest('[data-cart-remove]');
-      if (remover) { Cart.remover(remover.dataset.cartRemove); toast('Produto removido da sacola'); render(); return; }
+    raiz._render = render;
 
-      if (ev.target.closest('[data-cart-clear]')) { Cart.limpar(); render(); return; }
+    if (!raiz.dataset.bound) {
+      raiz.dataset.bound = '1';
 
-      if (ev.target.closest('[data-coupon]')) {
-        const codigo = ($('#cupom', raiz).value || '').trim().toUpperCase();
-        if (CUPONS[codigo]) { desconto = CUPONS[codigo]; cupomAplicado = codigo; toast(`Cupom ${codigo} aplicado`); }
-        else { desconto = 0; cupomAplicado = ''; toast('Cupom inválido nesta prévia'); }
-        render();
-        return;
-      }
+      raiz.addEventListener('click', ev => {
+        const passo = ev.target.closest('[data-cart-step]');
+        if (passo) {
+          const campo = $(`[data-cart-qty="${CSS.escape(passo.dataset.key)}"]`, raiz);
+          Cart.definirQtd(passo.dataset.key, (parseInt(campo.value, 10) || 1) + Number(passo.dataset.cartStep));
+          raiz._render();
+          return;
+        }
+        const remover = ev.target.closest('[data-cart-remove]');
+        if (remover) { Cart.remover(remover.dataset.cartRemove); toast('Produto removido da sacola'); raiz._render(); return; }
 
-      if (ev.target.closest('[data-checkout]')) {
-        toast('Checkout indisponível: esta é uma prévia comercial.');
-      }
-    });
+        if (ev.target.closest('[data-cart-clear]')) { Cart.limpar(); raiz._render(); return; }
 
-    raiz.addEventListener('change', ev => {
-      const campo = ev.target.closest('[data-cart-qty]');
-      if (campo) { Cart.definirQtd(campo.dataset.cartQty, parseInt(campo.value, 10) || 1); render(); }
-    });
+        if (ev.target.closest('[data-coupon]')) {
+          const codigo = ($('#cupom', raiz).value || '').trim().toUpperCase();
+          if (CUPONS[codigo]) { raiz._estado.desconto = CUPONS[codigo]; raiz._estado.cupom = codigo; toast(`Cupom ${codigo} aplicado`); }
+          else { raiz._estado.desconto = 0; raiz._estado.cupom = ''; toast('Cupom inválido nesta prévia'); }
+          raiz._render();
+          return;
+        }
+
+        if (ev.target.closest('[data-checkout]')) {
+          toast('Checkout indisponível: esta é uma prévia comercial.');
+        }
+      });
+
+      raiz.addEventListener('change', ev => {
+        const campo = ev.target.closest('[data-cart-qty]');
+        if (campo) { Cart.definirQtd(campo.dataset.cartQty, parseInt(campo.value, 10) || 1); raiz._render(); }
+      });
+    }
 
     render();
   }
@@ -473,8 +508,12 @@
     if (ano) ano.textContent = new Date().getFullYear();
   }
 
+  /* Exposto para o roteador do pacote único. */
+  window.JoyceBeauty = { initGlobal, initVitrine, initProduto, initCarrinho, atualizarContador, toast };
+
   document.addEventListener('DOMContentLoaded', () => {
     initGlobal();
+    if (window.JB_BUNDLE) return;   /* no pacote único quem chama é o roteador */
     initVitrine();
     initProduto();
     initCarrinho();

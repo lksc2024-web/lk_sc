@@ -16,15 +16,35 @@ integração com ERP/estoque e SEO/analytics de produção.
 
 ## Como abrir
 
-Basta abrir `index.html` no navegador — não há build nem dependências externas.
-Para navegar entre as páginas com o carrinho funcionando plenamente, prefira um
-servidor local:
+**Jeito mais simples (recomendado para apresentar):** abra
+`dist/joyce-beauty-previa.html` com duplo clique. É um arquivo único e
+autocontido — CSS, JavaScript e imagens embutidos, navegação entre as páginas
+por hash. Funciona sem servidor, sem internet e pode ser enviado por e-mail ou
+WhatsApp como um anexo só.
+
+**Versão multipágina (para desenvolvimento):** abra `index.html` no navegador.
+Para o carrinho persistir entre as páginas, use um servidor local:
 
 ```bash
 cd joyce-beauty-preview
 python3 -m http.server 8080
 # acesse http://localhost:8080
 ```
+
+## Como gerar o pacote
+
+```bash
+cd joyce-beauty-preview
+python3 build.py
+```
+
+Gera em `dist/`:
+
+- `joyce-beauty-previa.html` — arquivo único autocontido (~91 KB)
+- `joyce-beauty-previa.zip` — pacote completo: site multipágina + arquivo único
+  + este README, pronto para entregar ou hospedar
+
+Rode o script sempre que alterar páginas, estilos, catálogo ou imagens.
 
 ## Estrutura
 
@@ -34,12 +54,18 @@ joyce-beauty-preview/
 ├── loja.html           # catálogo com filtro por categoria e ordenação
 ├── produto.html        # página de produto (?id=slug-do-produto)
 ├── carrinho.html       # sacola, cupom, frete e resumo do pedido
-└── assets/
-    ├── css/styles.css  # estilos e breakpoints
-    ├── js/produtos.js  # catálogo demonstrativo (dados fictícios)
-    ├── js/app.js       # vitrine, filtros, página de produto e carrinho
-    └── img/*.svg       # ilustrações dos produtos (SVG local, sem rede)
+├── build.py            # empacotador: gera o arquivo único e o .zip
+├── assets/
+│   ├── css/styles.css  # estilos e breakpoints
+│   ├── js/produtos.js  # catálogo demonstrativo (dados fictícios)
+│   ├── js/app.js       # vitrine, filtros, página de produto e carrinho
+│   └── img/*.svg       # ilustrações dos produtos (SVG local, sem rede)
+└── dist/
+    └── joyce-beauty-previa.html   # pacote de entrega (arquivo único)
 ```
+
+O mesmo `app.js` roda nos dois modos: nas páginas separadas ele lê a query
+string; no arquivo único, um roteador por hash mostra uma seção por vez.
 
 ## Dados de demonstração
 

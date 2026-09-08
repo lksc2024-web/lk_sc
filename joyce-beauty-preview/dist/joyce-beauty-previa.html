@@ -1,0 +1,1703 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Joyce Beauty · Loja virtual (prévia)</title>
+<meta name="description" content="Prévia comercial da loja virtual do salão Joyce Beauty — arquivo único, sem servidor.">
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAyMDAgMjQwJyByb2xlPSdpbWcnPgogIDxkZWZzPgogICAgPGxpbmVhckdyYWRpZW50IGlkPSdnJyB4MT0nMCcgeTE9JzAnIHgyPScxJyB5Mj0nMSc+CiAgICAgIDxzdG9wIG9mZnNldD0nMCcgc3RvcC1jb2xvcj0nI2M5NTU2YicvPjxzdG9wIG9mZnNldD0nMScgc3RvcC1jb2xvcj0nIzljMmY0NScvPgogICAgPC9saW5lYXJHcmFkaWVudD4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0ncycgeDE9JzAnIHkxPScwJyB4Mj0nMScgeTI9JzAnPgogICAgICA8c3RvcCBvZmZzZXQ9JzAnIHN0b3AtY29sb3I9JyNmZmZmZmYnIHN0b3Atb3BhY2l0eT0nLjQ1Jy8+CiAgICAgIDxzdG9wIG9mZnNldD0nLjM1JyBzdG9wLWNvbG9yPScjZmZmZmZmJyBzdG9wLW9wYWNpdHk9JzAnLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgPC9kZWZzPgogIDxwYXRoIGQ9J003OCA3NGg0NHYtMjZhMTAgMTAgMCAwIDAtNi05bC0zMi0xOHY1M3onIGZpbGw9J3VybCgjZyknLz4KICA8cmVjdCB4PSc3MicgeT0nNzQnIHdpZHRoPSc1NicgaGVpZ2h0PScyNicgcng9JzUnIGZpbGw9JyMyYjIzMjAnLz4KICA8cmVjdCB4PSc2OCcgeT0nMTAwJyB3aWR0aD0nNjQnIGhlaWdodD0nMTIwJyByeD0nMTAnIGZpbGw9J3VybCgjZyknLz4KICA8cmVjdCB4PSc2OCcgeT0nMTAwJyB3aWR0aD0nNjQnIGhlaWdodD0nMTIwJyByeD0nMTAnIGZpbGw9J3VybCgjcyknLz4KICA8cmVjdCB4PSc2OCcgeT0nMTUwJyB3aWR0aD0nNjQnIGhlaWdodD0nMTYnIGZpbGw9JyMyYjIzMjAnIG9wYWNpdHk9Jy45Jy8+CiAgPGNpcmNsZSBjeD0nMTAwJyBjeT0nMTkwJyByPScxMycgZmlsbD0nI2ZmZicgb3BhY2l0eT0nLjg1Jy8+CiAgPHRpdGxlPkJhdG9tIG1hdHRlPC90aXRsZT4KPC9zdmc+Cg==">
+<style>
+/* ==========================================================================
+   Joyce Beauty — Prévia comercial da loja virtual
+   Front-end demonstrativo. Sem back-end, sem pagamento real.
+   ========================================================================== */
+
+:root {
+  --ink: #2b2320;
+  --ink-soft: #6b5d57;
+  --rose: #b76e79;
+  --rose-dark: #98545f;
+  --gold: #bfa06a;
+  --cream: #fbf7f4;
+  --sand: #f2e8e2;
+  --line: #e8dcd5;
+  --white: #ffffff;
+  --ok: #2f7d54;
+  --radius: 14px;
+  --radius-sm: 9px;
+  --shadow: 0 10px 30px rgba(43, 35, 32, .08);
+  --shadow-sm: 0 4px 14px rgba(43, 35, 32, .06);
+  --serif: "Cormorant Garamond", Georgia, "Times New Roman", serif;
+  --sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --wrap: 1180px;
+}
+
+* { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  margin: 0;
+  font-family: var(--sans);
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--ink);
+  background: var(--cream);
+  -webkit-font-smoothing: antialiased;
+}
+
+img { max-width: 100%; height: auto; display: block; }
+a { color: inherit; text-decoration: none; }
+button { font: inherit; cursor: pointer; }
+
+h1, h2, h3, .serif {
+  font-family: var(--serif);
+  font-weight: 600;
+  letter-spacing: .2px;
+  line-height: 1.15;
+  margin: 0;
+}
+
+.wrap {
+  width: 100%;
+  max-width: var(--wrap);
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.sr-only {
+  position: absolute; width: 1px; height: 1px;
+  padding: 0; margin: -1px; overflow: hidden;
+  clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+/* ------------------------------- Faixa prévia ---------------------------- */
+.preview-bar {
+  background: var(--ink);
+  color: #f6ece6;
+  font-size: 12px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  text-align: center;
+  padding: 8px 16px;
+}
+.preview-bar strong { color: var(--gold); font-weight: 600; }
+
+/* --------------------------------- Header -------------------------------- */
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  background: rgba(251, 247, 244, .92);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--line);
+}
+.header__inner {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  min-height: 72px;
+}
+.brand { display: flex; align-items: center; gap: 10px; margin-right: auto; }
+.brand__mark {
+  width: 38px; height: 38px; flex: none;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--rose), var(--gold));
+  display: grid; place-items: center;
+  color: #fff; font-family: var(--serif); font-size: 20px; line-height: 1;
+}
+.brand__name { font-family: var(--serif); font-size: 23px; line-height: 1; }
+.brand__tag {
+  display: block;
+  font-family: var(--sans);
+  font-size: 10px;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  margin-top: 3px;
+}
+
+.nav { display: flex; gap: 26px; }
+.nav a {
+  font-size: 14px;
+  padding: 6px 0;
+  border-bottom: 2px solid transparent;
+  transition: border-color .18s, color .18s;
+}
+.nav a:hover, .nav a[aria-current="page"] { border-color: var(--rose); color: var(--rose-dark); }
+
+.header__actions { display: flex; align-items: center; gap: 8px; }
+
+.icon-btn {
+  width: 42px; height: 42px;
+  display: grid; place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--white);
+  color: var(--ink);
+  position: relative;
+  transition: border-color .18s, transform .18s;
+}
+.icon-btn:hover { border-color: var(--rose); transform: translateY(-1px); }
+.icon-btn svg { width: 19px; height: 19px; }
+
+.cart-count {
+  position: absolute; top: -4px; right: -4px;
+  min-width: 20px; height: 20px; padding: 0 5px;
+  border-radius: 10px;
+  background: var(--rose);
+  color: #fff;
+  font-size: 11px; font-weight: 600;
+  display: grid; place-items: center;
+}
+.cart-count[hidden] { display: none !important; }
+
+.menu-toggle { display: none; }
+
+/* --------------------------------- Botões -------------------------------- */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 13px 24px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  font-size: 14px; font-weight: 500;
+  letter-spacing: .02em;
+  transition: background .18s, color .18s, border-color .18s, transform .18s;
+}
+.btn--primary { background: var(--rose); color: #fff; }
+.btn--primary:hover { background: var(--rose-dark); transform: translateY(-1px); }
+.btn--ghost { border-color: var(--ink); color: var(--ink); background: transparent; }
+.btn--ghost:hover { background: var(--ink); color: var(--cream); }
+.btn--light { background: var(--white); border-color: var(--line); }
+.btn--light:hover { border-color: var(--rose); color: var(--rose-dark); }
+.btn--block { width: 100%; }
+.btn[disabled] { opacity: .5; pointer-events: none; }
+
+/* ---------------------------------- Hero --------------------------------- */
+.hero {
+  background: linear-gradient(160deg, var(--sand) 0%, var(--cream) 62%);
+  padding: 72px 0 76px;
+  overflow: hidden;
+}
+.hero__grid {
+  display: grid;
+  grid-template-columns: 1.05fr .95fr;
+  gap: 48px;
+  align-items: center;
+}
+.eyebrow {
+  font-size: 11px; letter-spacing: .26em; text-transform: uppercase;
+  color: var(--rose-dark); margin: 0 0 16px;
+}
+.hero h1 { font-size: clamp(38px, 5.4vw, 62px); }
+.hero h1 em { font-style: italic; color: var(--rose-dark); }
+.hero p.lead {
+  font-size: 17px; color: var(--ink-soft);
+  max-width: 46ch; margin: 20px 0 30px;
+}
+.hero__cta { display: flex; flex-wrap: wrap; gap: 12px; }
+.hero__stats {
+  display: flex; gap: 34px; margin-top: 42px;
+  padding-top: 26px; border-top: 1px solid var(--line);
+}
+.hero__stats b { font-family: var(--serif); font-size: 26px; display: block; }
+.hero__stats span { font-size: 12px; color: var(--ink-soft); letter-spacing: .06em; }
+
+.hero__art {
+  position: relative;
+  aspect-ratio: 4 / 4.4;
+  border-radius: 200px 200px var(--radius) var(--radius);
+  background: linear-gradient(150deg, #e7c8c8, #f5e4d8 55%, #ead7c4);
+  box-shadow: var(--shadow);
+  display: grid; place-items: center;
+}
+.hero__art figure { margin: 0; width: 62%; }
+.hero__badge {
+  position: absolute; left: -18px; bottom: 34px;
+  background: var(--white);
+  border-radius: var(--radius);
+  padding: 14px 18px;
+  box-shadow: var(--shadow);
+  font-size: 13px;
+  max-width: 210px;
+}
+.hero__badge b { display: block; font-family: var(--serif); font-size: 17px; }
+
+/* -------------------------------- Selos ---------------------------------- */
+.perks { background: var(--white); border-block: 1px solid var(--line); }
+.perks__grid {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 20px; padding: 26px 0;
+}
+.perk { display: flex; gap: 12px; align-items: flex-start; font-size: 13.5px; }
+.perk svg { width: 22px; height: 22px; color: var(--rose); flex: none; margin-top: 2px; }
+.perk b { display: block; font-weight: 600; }
+.perk span { color: var(--ink-soft); }
+
+/* ------------------------------- Seções ---------------------------------- */
+.section { padding: 68px 0; }
+.section--tight { padding: 48px 0; }
+.section__head {
+  display: flex; align-items: flex-end; justify-content: space-between;
+  gap: 24px; margin-bottom: 30px; flex-wrap: wrap;
+}
+.section__head h2 { font-size: clamp(28px, 3.4vw, 40px); }
+.section__head p { margin: 8px 0 0; color: var(--ink-soft); max-width: 52ch; }
+.link-more { font-size: 14px; color: var(--rose-dark); border-bottom: 1px solid currentColor; padding-bottom: 2px; }
+
+/* ------------------------------ Categorias ------------------------------- */
+.cats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; }
+.cat {
+  position: relative;
+  border-radius: var(--radius);
+  padding: 26px 22px 22px;
+  background: var(--white);
+  border: 1px solid var(--line);
+  transition: transform .2s, box-shadow .2s, border-color .2s;
+  display: block;
+}
+.cat:hover { transform: translateY(-4px); box-shadow: var(--shadow); border-color: transparent; }
+.cat__icon {
+  width: 52px; height: 52px; border-radius: 50%;
+  display: grid; place-items: center; margin-bottom: 16px;
+  background: var(--sand); color: var(--rose-dark);
+}
+.cat__icon svg { width: 24px; height: 24px; }
+.cat h3 { font-size: 20px; }
+.cat p { margin: 6px 0 0; font-size: 13px; color: var(--ink-soft); }
+
+/* -------------------------------- Filtros -------------------------------- */
+.toolbar {
+  display: flex; flex-wrap: wrap; gap: 12px;
+  align-items: center; justify-content: space-between;
+  margin-bottom: 26px;
+}
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip {
+  padding: 8px 16px; border-radius: 999px;
+  border: 1px solid var(--line); background: var(--white);
+  font-size: 13px; color: var(--ink-soft);
+  transition: all .18s;
+}
+.chip:hover { border-color: var(--rose); color: var(--rose-dark); }
+.chip[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--cream); }
+.select {
+  padding: 9px 14px; border-radius: 999px;
+  border: 1px solid var(--line); background: var(--white);
+  font-size: 13px; color: var(--ink); font-family: inherit;
+}
+
+/* -------------------------------- Produtos ------------------------------- */
+.grid-products {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 22px;
+}
+.grid-products--3 { grid-template-columns: repeat(3, 1fr); }
+
+.card {
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+  display: flex; flex-direction: column;
+  transition: transform .2s, box-shadow .2s;
+}
+.card:hover { transform: translateY(-5px); box-shadow: var(--shadow); }
+.card__media {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  background: var(--sand);
+  display: grid; place-items: center;
+  padding: 16px;
+}
+.card__media img { width: 78%; }
+.card__flags { position: absolute; top: 12px; left: 12px; display: flex; flex-direction: column; gap: 6px; }
+.flag {
+  font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase;
+  padding: 5px 10px; border-radius: 999px; background: var(--ink); color: var(--cream);
+}
+.flag--sale { background: var(--rose); }
+.flag--new { background: var(--gold); color: #3a2f18; }
+
+.card__body { padding: 18px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
+.card__cat { font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-soft); }
+.card__title { font-family: var(--serif); font-size: 20px; line-height: 1.2; }
+.rating { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--ink-soft); }
+.rating__stars { color: var(--gold); letter-spacing: 1px; }
+.price { display: flex; align-items: baseline; gap: 9px; margin-top: auto; padding-top: 6px; }
+.price__now { font-size: 20px; font-weight: 600; }
+.price__old { font-size: 13.5px; color: var(--ink-soft); text-decoration: line-through; }
+.price__note { font-size: 12px; color: var(--ink-soft); }
+.card__actions { display: flex; gap: 8px; padding: 0 18px 18px; }
+.card__actions .btn { padding: 11px 16px; font-size: 13.5px; flex: 1; }
+
+.empty {
+  grid-column: 1 / -1;
+  text-align: center; padding: 60px 20px;
+  color: var(--ink-soft); background: var(--white);
+  border: 1px dashed var(--line); border-radius: var(--radius);
+}
+
+/* -------------------------------- Destaque ------------------------------- */
+.split {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 0; border-radius: var(--radius); overflow: hidden;
+  background: var(--white); border: 1px solid var(--line);
+}
+.split__art {
+  background: linear-gradient(150deg, #efdcd2, #e3cbc9);
+  display: grid; place-items: center; padding: 40px; min-height: 340px;
+}
+.split__art img { width: 55%; }
+.split__body { padding: 44px 42px; align-self: center; }
+.split__body h2 { font-size: clamp(26px, 3vw, 36px); }
+.split__body p { color: var(--ink-soft); }
+.split__list { list-style: none; padding: 0; margin: 18px 0 26px; display: grid; gap: 10px; }
+.split__list li { display: flex; gap: 10px; font-size: 14.5px; }
+.split__list svg { width: 18px; height: 18px; color: var(--rose); flex: none; margin-top: 3px; }
+
+/* ------------------------------ Depoimentos ------------------------------ */
+.quotes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+.quote {
+  background: var(--white); border: 1px solid var(--line);
+  border-radius: var(--radius); padding: 26px;
+}
+.quote p { font-family: var(--serif); font-size: 19px; line-height: 1.45; margin: 12px 0 18px; }
+.quote footer { font-size: 13px; color: var(--ink-soft); }
+.quote footer b { color: var(--ink); display: block; font-weight: 600; }
+
+/* -------------------------------- Newsletter ----------------------------- */
+.news {
+  background: var(--ink); color: #f4eae4;
+  border-radius: var(--radius); padding: 46px 40px;
+  display: grid; grid-template-columns: 1.1fr .9fr; gap: 30px; align-items: center;
+}
+.news h2 { color: #fff; font-size: clamp(26px, 3vw, 34px); }
+.news p { color: #cbbcb4; margin: 10px 0 0; }
+.news form { display: flex; gap: 10px; flex-wrap: wrap; }
+.news input {
+  flex: 1; min-width: 200px;
+  padding: 13px 18px; border-radius: 999px;
+  border: 1px solid #4a3f3a; background: #372e2a; color: #fff;
+  font-family: inherit; font-size: 14px;
+}
+.news input::placeholder { color: #9b8d86; }
+
+/* --------------------------------- Footer -------------------------------- */
+.footer { background: var(--white); border-top: 1px solid var(--line); padding: 54px 0 26px; margin-top: 20px; }
+.footer__grid { display: grid; grid-template-columns: 1.4fr 1fr 1fr 1fr; gap: 32px; }
+.footer h4 { font-size: 13px; letter-spacing: .14em; text-transform: uppercase; margin: 0 0 14px; }
+.footer ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 9px; }
+.footer a, .footer li { font-size: 14px; color: var(--ink-soft); }
+.footer a:hover { color: var(--rose-dark); }
+.footer__note {
+  margin-top: 36px; padding-top: 20px; border-top: 1px solid var(--line);
+  display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+  font-size: 12.5px; color: var(--ink-soft);
+}
+
+/* ----------------------------- Página produto ---------------------------- */
+.breadcrumb { font-size: 13px; color: var(--ink-soft); padding: 22px 0; }
+.breadcrumb a:hover { color: var(--rose-dark); }
+.breadcrumb span { margin: 0 6px; }
+
+.pdp { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: start; }
+.gallery__main {
+  background: var(--sand); border-radius: var(--radius);
+  aspect-ratio: 1 / 1; display: grid; place-items: center; padding: 40px;
+}
+.gallery__main img { width: 70%; }
+.gallery__thumbs { display: flex; gap: 12px; margin-top: 14px; }
+.thumb {
+  width: 84px; height: 84px; border-radius: var(--radius-sm);
+  background: var(--sand); border: 2px solid transparent;
+  display: grid; place-items: center; padding: 10px;
+  transition: border-color .18s;
+}
+.thumb[aria-pressed="true"] { border-color: var(--rose); }
+.thumb img { width: 80%; }
+
+.pdp__info h1 { font-size: clamp(30px, 3.8vw, 42px); margin: 10px 0 12px; }
+.pdp__price { display: flex; align-items: baseline; gap: 12px; margin: 20px 0 6px; }
+.pdp__price .price__now { font-size: 32px; }
+.pdp__desc { color: var(--ink-soft); margin: 18px 0 24px; }
+.field { margin-bottom: 22px; }
+.field > label { display: block; font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-soft); margin-bottom: 10px; }
+.options { display: flex; flex-wrap: wrap; gap: 8px; }
+.option {
+  padding: 9px 16px; border-radius: 999px; font-size: 13.5px;
+  border: 1px solid var(--line); background: var(--white); color: var(--ink-soft);
+}
+.option[aria-pressed="true"] { border-color: var(--ink); background: var(--ink); color: var(--cream); }
+
+.qty { display: inline-flex; align-items: center; border: 1px solid var(--line); border-radius: 999px; background: var(--white); }
+.qty button { width: 40px; height: 44px; background: none; border: 0; font-size: 18px; color: var(--ink-soft); }
+.qty button:hover { color: var(--rose-dark); }
+.qty input {
+  width: 46px; text-align: center; border: 0; background: none;
+  font: inherit; font-weight: 600; color: var(--ink); -moz-appearance: textfield;
+}
+.qty input::-webkit-outer-spin-button, .qty input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
+.pdp__buy { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-bottom: 26px; }
+.pdp__buy .btn--primary { flex: 1; min-width: 200px; }
+
+.tabs { margin-top: 56px; border-top: 1px solid var(--line); padding-top: 28px; }
+.tabs__nav { display: flex; gap: 26px; flex-wrap: wrap; margin-bottom: 20px; }
+.tabs__nav button {
+  background: none; border: 0; padding: 6px 0;
+  font-size: 14px; color: var(--ink-soft);
+  border-bottom: 2px solid transparent;
+}
+.tabs__nav button[aria-selected="true"] { color: var(--ink); border-color: var(--rose); }
+.tabs__panel { max-width: 72ch; color: var(--ink-soft); }
+.tabs__panel[hidden] { display: none; }
+.tabs__panel ul { padding-left: 18px; }
+.spec { display: grid; gap: 0; max-width: 560px; }
+.spec div { display: flex; justify-content: space-between; gap: 20px; padding: 11px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
+.spec dt { color: var(--ink-soft); }
+.spec dd { margin: 0; font-weight: 500; color: var(--ink); }
+
+/* ------------------------------- Carrinho -------------------------------- */
+.cart-layout { display: grid; grid-template-columns: 1.6fr .9fr; gap: 32px; align-items: start; }
+.cart-list { display: grid; gap: 14px; }
+.cart-item {
+  display: grid; grid-template-columns: 96px 1fr auto; gap: 18px;
+  background: var(--white); border: 1px solid var(--line);
+  border-radius: var(--radius); padding: 16px; align-items: center;
+}
+.cart-item__media { background: var(--sand); border-radius: var(--radius-sm); aspect-ratio: 1/1; display: grid; place-items: center; padding: 10px; }
+.cart-item__media img { width: 82%; }
+.cart-item h3 { font-size: 19px; }
+.cart-item__meta { font-size: 12.5px; color: var(--ink-soft); margin: 4px 0 10px; }
+.cart-item__right { text-align: right; display: grid; gap: 10px; justify-items: end; }
+.link-del { background: none; border: 0; font-size: 12.5px; color: var(--ink-soft); text-decoration: underline; padding: 0; }
+.link-del:hover { color: var(--rose-dark); }
+
+.summary {
+  position: sticky; top: 96px;
+  background: var(--white); border: 1px solid var(--line);
+  border-radius: var(--radius); padding: 26px;
+}
+.summary h2 { font-size: 24px; margin-bottom: 18px; }
+.summary__row { display: flex; justify-content: space-between; gap: 12px; font-size: 14.5px; padding: 9px 0; }
+.summary__row--total {
+  border-top: 1px solid var(--line); margin-top: 10px; padding-top: 16px;
+  font-family: var(--serif); font-size: 24px;
+}
+.summary__row .free { color: var(--ok); font-weight: 600; }
+.coupon { display: flex; gap: 8px; margin: 16px 0 6px; }
+.coupon input {
+  flex: 1; min-width: 0; padding: 11px 16px; border-radius: 999px;
+  border: 1px solid var(--line); background: var(--cream); font: inherit; font-size: 13.5px;
+}
+.coupon .btn { padding: 11px 18px; font-size: 13.5px; }
+.hint { font-size: 12.5px; color: var(--ink-soft); margin: 6px 0 0; }
+.summary [data-coupon-msg] { margin-bottom: 16px; }
+.hint--ok { color: var(--ok); }
+.progress { height: 6px; border-radius: 999px; background: var(--sand); overflow: hidden; margin: 6px 0 14px; }
+.progress i { display: block; height: 100%; background: linear-gradient(90deg, var(--rose), var(--gold)); border-radius: 999px; transition: width .3s; }
+
+.cart-empty { text-align: center; padding: 70px 24px; background: var(--white); border: 1px dashed var(--line); border-radius: var(--radius); }
+.cart-empty h2 { font-size: 27px; margin-bottom: 10px; }
+.cart-empty p { color: var(--ink-soft); margin: 0 0 22px; }
+
+/* --------------------------------- Toast --------------------------------- */
+.toast {
+  position: fixed; left: 50%; bottom: 26px; transform: translate(-50%, 20px);
+  background: var(--ink); color: var(--cream);
+  padding: 13px 22px; border-radius: 999px; font-size: 14px;
+  box-shadow: var(--shadow); z-index: 90;
+  opacity: 0; pointer-events: none; transition: opacity .22s, transform .22s;
+}
+.toast.is-visible { opacity: 1; transform: translate(-50%, 0); }
+
+/* ------------------------------ Responsivo ------------------------------- */
+@media (max-width: 1000px) {
+  .grid-products, .cats { grid-template-columns: repeat(3, 1fr); }
+  .footer__grid { grid-template-columns: 1fr 1fr; }
+  .cart-layout { grid-template-columns: 1fr; }
+  .summary { position: static; }
+}
+
+@media (max-width: 860px) {
+  .menu-toggle { display: grid; }
+  .nav {
+    position: absolute; top: 100%; left: 0; right: 0;
+    flex-direction: column; gap: 0;
+    background: var(--cream); border-bottom: 1px solid var(--line);
+    padding: 8px 20px 18px;
+  }
+  .nav:not(.is-open) { display: none; }
+  .nav a { padding: 12px 0; border-bottom: 1px solid var(--line); }
+  .hero { padding: 48px 0 56px; }
+  .hero__grid { grid-template-columns: 1fr; gap: 36px; }
+  .hero__art { max-width: 420px; margin: 0 auto; }
+  .hero__badge { left: 0; }
+  .perks__grid { grid-template-columns: 1fr 1fr; }
+  .pdp { grid-template-columns: 1fr; gap: 32px; }
+  .split { grid-template-columns: 1fr; }
+  .split__body { padding: 32px 26px; }
+  .quotes { grid-template-columns: 1fr; }
+  .news { grid-template-columns: 1fr; padding: 34px 26px; }
+}
+
+@media (max-width: 620px) {
+  .grid-products, .grid-products--3, .cats { grid-template-columns: repeat(2, 1fr); gap: 14px; }
+  .section { padding: 46px 0; }
+  .card__body { padding: 14px; gap: 6px; }
+  .card__title { font-size: 17px; }
+  .card__actions { padding: 0 14px 14px; }
+  .footer__grid { grid-template-columns: 1fr; gap: 26px; }
+  .cart-item { grid-template-columns: 76px 1fr; }
+  .cart-item__right { grid-column: 1 / -1; justify-items: stretch; text-align: left; }
+  .hero__stats { gap: 22px; }
+  .brand__name { font-size: 20px; }
+}
+
+</style>
+</head>
+<body>
+
+<div class="preview-bar">Prévia comercial · <strong>Joyce Beauty</strong> — catálogo demonstrativo, sem vendas reais</div>
+
+<header class="header">
+  <div class="wrap header__inner">
+    <a class="brand" href="index.html">
+      <span class="brand__mark" aria-hidden="true">J</span>
+      <span>
+        <span class="brand__name">Joyce Beauty</span>
+        <span class="brand__tag">Salão &amp; Loja</span>
+      </span>
+    </a>
+
+    <nav class="nav" id="nav-principal" aria-label="Navegação principal">
+      <a href="index.html" aria-current="page">Início</a>
+      <a href="loja.html">Loja</a>
+      <a href="loja.html?cat=cabelos">Cabelos</a>
+      <a href="loja.html?cat=skincare">Skincare</a>
+      <a href="loja.html?cat=maquiagem">Maquiagem</a>
+      <a href="loja.html?cat=unhas">Unhas</a>
+    </nav>
+
+    <div class="header__actions">
+      <button class="icon-btn menu-toggle" data-menu-toggle aria-expanded="false" aria-controls="nav-principal" aria-label="Abrir menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      </button>
+      <a class="icon-btn" href="carrinho.html" aria-label="Abrir sacola de compras">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M6 7h12l-1.2 12.2a2 2 0 0 1-2 1.8H9.2a2 2 0 0 1-2-1.8z"/><path d="M9 7a3 3 0 0 1 6 0"/></svg>
+        <span class="cart-count" data-cart-count hidden>0</span>
+      </a>
+    </div>
+  </div>
+</header>
+
+<section class="route" data-route="home" hidden>
+<main>
+  <section class="hero">
+    <div class="wrap hero__grid">
+      <div>
+        <p class="eyebrow">Salão Joyce Beauty · Loja virtual</p>
+        <h1>A rotina do salão,<br>agora <em>na sua casa</em>.</h1>
+        <p class="lead">
+          Selecionamos os produtos que usamos no atendimento — cabelo, pele, unhas e maquiagem —
+          para você manter o resultado do salão todos os dias.
+        </p>
+        <div class="hero__cta">
+          <a class="btn btn--primary" href="loja.html">Ver a loja</a>
+          <a class="btn btn--ghost" href="#destaques">Produtos em destaque</a>
+        </div>
+        <div class="hero__stats">
+          <div><b>12</b><span>PRODUTOS NA PRÉVIA</span></div>
+          <div><b>4</b><span>CATEGORIAS</span></div>
+          <div><b>4,8</b><span>NOTA MÉDIA</span></div>
+        </div>
+      </div>
+      <div class="hero__art">
+        <figure><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAyMDAgMjQwJyByb2xlPSdpbWcnPgogIDxkZWZzPgogICAgPGxpbmVhckdyYWRpZW50IGlkPSdnJyB4MT0nMCcgeTE9JzAnIHgyPScxJyB5Mj0nMSc+CiAgICAgIDxzdG9wIG9mZnNldD0nMCcgc3RvcC1jb2xvcj0nI2YwZDljZCcvPjxzdG9wIG9mZnNldD0nMScgc3RvcC1jb2xvcj0nI2RmYjhhOCcvPgogICAgPC9saW5lYXJHcmFkaWVudD4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0ncycgeDE9JzAnIHkxPScwJyB4Mj0nMScgeTI9JzAnPgogICAgICA8c3RvcCBvZmZzZXQ9JzAnIHN0b3AtY29sb3I9JyNmZmZmZmYnIHN0b3Atb3BhY2l0eT0nLjQ1Jy8+CiAgICAgIDxzdG9wIG9mZnNldD0nLjM1JyBzdG9wLWNvbG9yPScjZmZmZmZmJyBzdG9wLW9wYWNpdHk9JzAnLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgPC9kZWZzPgogIDxlbGxpcHNlIGN4PScxMDAnIGN5PSc5Nicgcng9JzY2JyByeT0nMTQnIGZpbGw9JyNhNTc2NmEnLz4KICA8cmVjdCB4PSczNCcgeT0nOTYnIHdpZHRoPScxMzInIGhlaWdodD0nMzAnIHJ4PSc4JyBmaWxsPScjYTU3NjZhJy8+CiAgPHJlY3QgeD0nNDAnIHk9JzEyNCcgd2lkdGg9JzEyMCcgaGVpZ2h0PSc5Micgcng9JzE4JyBmaWxsPSd1cmwoI2cpJy8+CiAgPHJlY3QgeD0nNDAnIHk9JzEyNCcgd2lkdGg9JzEyMCcgaGVpZ2h0PSc5Micgcng9JzE4JyBmaWxsPSd1cmwoI3MpJy8+CiAgPHJlY3QgeD0nNjQnIHk9JzE1MCcgd2lkdGg9JzcyJyBoZWlnaHQ9JzQyJyByeD0nOCcgZmlsbD0nI2ZmZicgb3BhY2l0eT0nLjg4Jy8+CiAgPHJlY3QgeD0nNzgnIHk9JzE2NCcgd2lkdGg9JzQ0JyBoZWlnaHQ9JzQnIHJ4PScyJyBmaWxsPScjYTU3NjZhJyBvcGFjaXR5PScuNycvPgogIDxyZWN0IHg9JzgyJyB5PScxNzYnIHdpZHRoPSczNicgaGVpZ2h0PSczJyByeD0nMS41JyBmaWxsPScjMmIyMzIwJyBvcGFjaXR5PScuMicvPgogIDx0aXRsZT5SaXR1YWwgZGUgYmVsZXphPC90aXRsZT4KPC9zdmc+Cg==" alt="Ilustração de produto de beleza" width="200" height="240"></figure>
+        <div class="hero__badge">
+          <b>Retire no salão</b>
+          Compre online e retire sem custo no mesmo dia.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="perks">
+    <div class="wrap perks__grid">
+      <div class="perk">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 7h11v9H3zM14 10h4l3 3v3h-7z"/><circle cx="7" cy="18" r="1.8"/><circle cx="17" cy="18" r="1.8"/></svg>
+        <span><b>Frete grátis</b>acima de R$ 249</span>
+      </div>
+      <div class="perk">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 3l7 3v6c0 4-3 7-7 9-4-2-7-5-7-9V6z"/><path d="M9 12l2 2 4-4"/></svg>
+        <span><b>Produtos profissionais</b>os mesmos usados no salão</span>
+      </div>
+      <div class="perk">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18M7 15h4"/></svg>
+        <span><b>Até 3x sem juros</b>no cartão de crédito</span>
+      </div>
+      <div class="perk">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M20 12a8 8 0 1 1-3-6.2"/><path d="M20 4v5h-5"/></svg>
+        <span><b>Troca fácil</b>em até 7 dias</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="wrap">
+      <div class="section__head">
+        <div>
+          <h2>Compre por categoria</h2>
+          <p>Quatro frentes de cuidado, com curadoria feita pela equipe do salão.</p>
+        </div>
+        <a class="link-more" href="loja.html">Ver tudo</a>
+      </div>
+      <div class="cats">
+        <a class="cat" href="loja.html?cat=cabelos">
+          <span class="cat__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M6 20c-1-6 0-13 6-17 6 4 7 11 6 17"/><path d="M9 20c0-5 .8-9 3-12"/></svg></span>
+          <h3>Cabelos</h3><p>Tratamento, brilho e nutrição</p>
+        </a>
+        <a class="cat" href="loja.html?cat=skincare">
+          <span class="cat__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="8"/><path d="M9 10.5c1.5-1.5 4.5-1.5 6 0"/><path d="M9 15c1.8 1.5 4.2 1.5 6 0"/></svg></span>
+          <h3>Skincare</h3><p>Rotina facial dia e noite</p>
+        </a>
+        <a class="cat" href="loja.html?cat=maquiagem">
+          <span class="cat__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M10 3h4v6h-4z"/><rect x="8" y="9" width="8" height="12" rx="2"/><path d="M8 14h8"/></svg></span>
+          <h3>Maquiagem</h3><p>Pele, olhos e lábios</p>
+        </a>
+        <a class="cat" href="loja.html?cat=unhas">
+          <span class="cat__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="9" y="3" width="6" height="5" rx="1.5"/><path d="M8 8h8v11a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2z"/><circle cx="12" cy="15" r="2"/></svg></span>
+          <h3>Unhas</h3><p>Esmaltes e cuidados</p>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <section class="section section--tight" id="destaques">
+    <div class="wrap">
+      <div class="section__head">
+        <div>
+          <h2>Queridinhos do salão</h2>
+          <p>Os produtos mais pedidos pelas clientes após o atendimento.</p>
+        </div>
+        <a class="link-more" href="loja.html">Ver os 12 produtos</a>
+      </div>
+      <div class="grid-products" data-grid data-limit="4"></div>
+    </div>
+  </section>
+
+  <section class="section section--tight">
+    <div class="wrap">
+      <div class="split">
+        <div class="split__art"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAyMDAgMjQwJyByb2xlPSdpbWcnPgogIDxkZWZzPgogICAgPGxpbmVhckdyYWRpZW50IGlkPSdnJyB4MT0nMCcgeTE9JzAnIHgyPScxJyB5Mj0nMSc+CiAgICAgIDxzdG9wIG9mZnNldD0nMCcgc3RvcC1jb2xvcj0nI2U3YzliMicvPjxzdG9wIG9mZnNldD0nMScgc3RvcC1jb2xvcj0nI2M5OWI3OCcvPgogICAgPC9saW5lYXJHcmFkaWVudD4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0ncycgeDE9JzAnIHkxPScwJyB4Mj0nMScgeTI9JzAnPgogICAgICA8c3RvcCBvZmZzZXQ9JzAnIHN0b3AtY29sb3I9JyNmZmZmZmYnIHN0b3Atb3BhY2l0eT0nLjQ1Jy8+CiAgICAgIDxzdG9wIG9mZnNldD0nLjM1JyBzdG9wLWNvbG9yPScjZmZmZmZmJyBzdG9wLW9wYWNpdHk9JzAnLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgPC9kZWZzPgogIDxyZWN0IHg9Jzg0JyB5PScxOCcgd2lkdGg9JzMyJyBoZWlnaHQ9JzM0JyByeD0nNicgZmlsbD0nIzdhNWE0NCcvPgogIDxyZWN0IHg9JzkyJyB5PSc0OCcgd2lkdGg9JzE2JyBoZWlnaHQ9JzE2JyBmaWxsPScjN2E1YTQ0JyBvcGFjaXR5PScuOCcvPgogIDxyZWN0IHg9JzU4JyB5PSc2Micgd2lkdGg9Jzg0JyBoZWlnaHQ9JzE1OCcgcng9JzE2JyBmaWxsPSd1cmwoI2cpJy8+CiAgPHJlY3QgeD0nNTgnIHk9JzYyJyB3aWR0aD0nODQnIGhlaWdodD0nMTU4JyByeD0nMTYnIGZpbGw9J3VybCgjcyknLz4KICA8cmVjdCB4PSc3MicgeT0nMTA4JyB3aWR0aD0nNTYnIGhlaWdodD0nNjQnIHJ4PSc2JyBmaWxsPScjZmZmJyBvcGFjaXR5PScuODUnLz4KICA8cmVjdCB4PSc4MicgeT0nMTI0JyB3aWR0aD0nMzYnIGhlaWdodD0nNCcgcng9JzInIGZpbGw9JyM3YTVhNDQnIG9wYWNpdHk9Jy42NScvPgogIDxyZWN0IHg9JzgyJyB5PScxMzYnIHdpZHRoPScyNicgaGVpZ2h0PSczJyByeD0nMS41JyBmaWxsPScjMmIyMzIwJyBvcGFjaXR5PScuMjUnLz4KICA8cmVjdCB4PSc4MicgeT0nMTQ2JyB3aWR0aD0nMzAnIGhlaWdodD0nMycgcng9JzEuNScgZmlsbD0nIzJiMjMyMCcgb3BhY2l0eT0nLjE4Jy8+CiAgPHRpdGxlPlJpdHVhbCBjYXBpbGFyPC90aXRsZT4KPC9zdmc+Cg==" alt="Kit de tratamento capilar" width="200" height="240"></div>
+        <div class="split__body">
+          <p class="eyebrow">Ritual da semana</p>
+          <h2>Cronograma capilar em 3 passos</h2>
+          <p>Monte em casa o mesmo protocolo que fazemos no salão para cabelos coloridos e ressecados.</p>
+          <ul class="split__list">
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg><span>Limpeza suave com shampoo sem sulfato</span></li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg><span>Reposição de massa com máscara intensiva</span></li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg><span>Selagem das pontas com óleo de argan</span></li>
+          </ul>
+          <a class="btn btn--primary" href="loja.html?cat=cabelos">Montar meu ritual</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="wrap">
+      <div class="section__head"><div><h2>Quem já usa, indica</h2></div></div>
+      <div class="quotes">
+        <div class="quote">
+          <span class="rating__stars" aria-hidden="true">★★★★★</span>
+          <p>“Comprei online e retirei no salão no mesmo dia. O óleo salvou minhas pontas.”</p>
+          <footer><b>Marina R.</b>cliente desde 2022</footer>
+        </div>
+        <div class="quote">
+          <span class="rating__stars" aria-hidden="true">★★★★★</span>
+          <p>“A máscara é a mesma que usam em mim no salão. Meu cabelo ficou macio de verdade.”</p>
+          <footer><b>Camila F.</b>cliente desde 2023</footer>
+        </div>
+        <div class="quote">
+          <span class="rating__stars" aria-hidden="true">★★★★☆</span>
+          <p>“O batom rosé virou meu preferido. Dura o dia inteiro sem ressecar.”</p>
+          <footer><b>Aline S.</b>cliente desde 2021</footer>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section section--tight">
+    <div class="wrap">
+      <div class="news">
+        <div>
+          <h2>Receba nossas novidades</h2>
+          <p>Lançamentos, dicas da equipe e condições especiais para clientes do salão.</p>
+        </div>
+        <form data-demo-form>
+          <input type="email" placeholder="Seu melhor e-mail" aria-label="Seu e-mail" required>
+          <button class="btn btn--primary" type="submit">Quero receber</button>
+        </form>
+      </div>
+    </div>
+  </section>
+</main>
+</section>
+<section class="route" data-route="loja" hidden>
+<main>
+  <div class="wrap">
+    <nav class="breadcrumb" aria-label="Você está em">
+      <a href="index.html">Início</a><span>/</span>Loja
+    </nav>
+  </div>
+
+  <section class="section" style="padding-top:8px">
+    <div class="wrap">
+      <div class="section__head">
+        <div>
+          <p class="eyebrow">Catálogo demonstrativo</p>
+          <h2>Todos os produtos</h2>
+          <p>Seleção da equipe do salão para manter o resultado do atendimento em casa.</p>
+        </div>
+        <span class="price__note" data-count>12 produtos</span>
+      </div>
+
+      <div class="toolbar">
+        <div class="chips" role="group" aria-label="Filtrar por categoria">
+          <button class="chip" data-filter="todos" aria-pressed="true">Todos</button>
+          <button class="chip" data-filter="cabelos" aria-pressed="false">Cabelos</button>
+          <button class="chip" data-filter="skincare" aria-pressed="false">Skincare</button>
+          <button class="chip" data-filter="maquiagem" aria-pressed="false">Maquiagem</button>
+          <button class="chip" data-filter="unhas" aria-pressed="false">Unhas</button>
+        </div>
+        <label class="price__note">
+          Ordenar:
+          <select class="select" data-sort aria-label="Ordenar produtos">
+            <option value="destaque">Destaques</option>
+            <option value="menor">Menor preço</option>
+            <option value="maior">Maior preço</option>
+            <option value="nota">Melhor avaliados</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="grid-products" data-grid></div>
+    </div>
+  </section>
+</main>
+</section>
+<section class="route" data-route="produto" hidden>
+<main>
+  <div class="wrap">
+    <nav class="breadcrumb" aria-label="Você está em">
+      <a href="index.html">Início</a><span>/</span><a href="loja.html">Loja</a><span>/</span><span data-crumb>Produto</span>
+    </nav>
+
+    <section class="pdp" data-pdp></section>
+
+    <section class="tabs" data-tabs>
+      <div class="tabs__nav" role="tablist" aria-label="Informações do produto">
+        <button role="tab" data-tab="descricao" aria-selected="true" aria-controls="tab-descricao">Descrição</button>
+        <button role="tab" data-tab="uso" aria-selected="false" aria-controls="tab-uso">Como usar</button>
+        <button role="tab" data-tab="specs" aria-selected="false" aria-controls="tab-specs">Especificações</button>
+      </div>
+      <div class="tabs__panel" id="tab-descricao" role="tabpanel"></div>
+      <div class="tabs__panel" id="tab-uso" role="tabpanel" hidden></div>
+      <div class="tabs__panel" id="tab-specs" role="tabpanel" hidden></div>
+    </section>
+  </div>
+
+  <section class="section">
+    <div class="wrap">
+      <div class="section__head"><div><h2>Combina com</h2></div><a class="link-more" href="loja.html">Ver a loja</a></div>
+      <div class="grid-products grid-products--3" data-related></div>
+    </div>
+  </section>
+</main>
+</section>
+<section class="route" data-route="carrinho" hidden>
+<main>
+  <div class="wrap">
+    <nav class="breadcrumb" aria-label="Você está em">
+      <a href="index.html">Início</a><span>/</span>Sacola
+    </nav>
+  </div>
+
+  <section class="section" style="padding-top:8px">
+    <div class="wrap">
+      <div class="section__head">
+        <div>
+          <p class="eyebrow">Etapa 1 de 1 · demonstração</p>
+          <h2>Sua sacola</h2>
+          <p>Ajuste as quantidades, simule cupons e veja o resumo do pedido. Nenhum pagamento é processado nesta prévia.</p>
+        </div>
+      </div>
+      <div data-cart-page></div>
+    </div>
+  </section>
+</main>
+</section>
+
+<footer class="footer">
+  <div class="wrap">
+    <div class="footer__grid">
+      <div>
+        <a class="brand" href="index.html">
+          <span class="brand__mark" aria-hidden="true">J</span>
+          <span><span class="brand__name">Joyce Beauty</span>
+          <span class="brand__tag">Salão &amp; Loja</span></span>
+        </a>
+        <p style="color:var(--ink-soft);font-size:14px;max-width:34ch;margin-top:14px">
+          O cuidado do nosso salão em produtos selecionados para a sua rotina em casa.
+        </p>
+      </div>
+      <div>
+        <h4>Loja</h4>
+        <ul>
+          <li><a href="loja.html">Todos os produtos</a></li>
+          <li><a href="loja.html?cat=cabelos">Cabelos</a></li>
+          <li><a href="loja.html?cat=skincare">Skincare</a></li>
+          <li><a href="loja.html?cat=maquiagem">Maquiagem</a></li>
+          <li><a href="loja.html?cat=unhas">Unhas</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Atendimento</h4>
+        <ul>
+          <li>Seg a sex · 9h às 19h</li>
+          <li>Sábado · 9h às 16h</li>
+          <li>Retirada no salão</li>
+          <li>Trocas em até 7 dias</li>
+        </ul>
+      </div>
+      <div>
+        <h4>Salão</h4>
+        <ul>
+          <li>Cabelo &amp; coloração</li>
+          <li>Manicure &amp; pedicure</li>
+          <li>Maquiagem &amp; noivas</li>
+          <li>Estética facial</li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer__note">
+      <span>© <span data-year>2026</span> Joyce Beauty — prévia comercial para aprovação.</span>
+      <span>Conteúdo, preços e imagens meramente demonstrativos.</span>
+    </div>
+  </div>
+</footer>
+
+<script>window.JB_BUNDLE = true;</script>
+<script>
+/* ==========================================================================
+   Joyce Beauty — Catálogo DEMONSTRATIVO
+   Dados fictícios usados apenas na prévia comercial. Não representam
+   estoque, preços ou condições reais de venda.
+   ========================================================================== */
+
+const CATEGORIAS = [
+  { id: 'cabelos',   nome: 'Cabelos',    desc: 'Tratamento, brilho e nutrição' },
+  { id: 'skincare',  nome: 'Skincare',   desc: 'Rotina facial dia e noite' },
+  { id: 'maquiagem', nome: 'Maquiagem',  desc: 'Pele, olhos e lábios' },
+  { id: 'unhas',     nome: 'Unhas',      desc: 'Esmaltes e cuidados' }
+];
+
+const PRODUTOS = [
+  {
+    id: 'oleo-argan',
+    nome: 'Óleo Reparador de Argan',
+    categoria: 'cabelos',
+    preco: 89.9,
+    precoDe: 109.9,
+    img: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAyMDAgMjQwJyByb2xlPSdpbWcnPgogIDxkZWZzPgogICAgPGxpbmVhckdyYWRpZW50IGlkPSdnJyB4MT0nMCcgeTE9JzAnIHgyPScxJyB5Mj0nMSc+CiAgICAgIDxzdG9wIG9mZnNldD0nMCcgc3RvcC1jb2xvcj0nI2Q5YTA1YicvPjxzdG9wIG9mZnNldD0nMScgc3RvcC1jb2xvcj0nI2I5NzYyZicvPgogICAgPC9saW5lYXJHcmFkaWVudD4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0ncycgeDE9JzAnIHkxPScwJyB4Mj0nMScgeTI9JzAnPgogICAgICA8c3RvcCBvZmZzZXQ9JzAnIHN0b3AtY29sb3I9JyNmZmZmZmYnIHN0b3Atb3BhY2l0eT0nLjQ1Jy8+CiAgICAgIDxzdG9wIG9mZnNldD0nLjM1JyBzdG9wLWNvbG9yPScjZmZmZmZmJyBzdG9wLW9wYWNpdHk9JzAnLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgPC9kZWZzPgogIDxyZWN0IHg9Jzg0JyB5PScxOCcgd2lkdGg9JzMyJyBoZWlnaHQ9JzM0JyByeD0nNicgZmlsbD0nIzNiMmYyNicvPgogIDxyZWN0IHg9JzkyJyB5PSc0OCcgd2lkdGg9JzE2JyBoZWlnaHQ9JzE2JyBmaWxsPScjM2IyZjI2JyBvcGFjaXR5PScuOCcvPgogIDxyZWN0IHg9JzU4JyB5PSc2Micgd2lkdGg9Jzg0JyBoZWlnaHQ9JzE1OCcgcng9JzE2JyBmaWxsPSd1cmwoI2cpJy8+CiAgPHJlY3QgeD0nNTgnIHk9JzYyJyB3aWR0aD0nODQnIGhlaWdodD0nMTU4JyByeD0nMTYnIGZpbGw9J3VybCgjcyknLz4KICA8cmVjdCB4PSc3MicgeT0nMTA4JyB3aWR0aD0nNTYnIGhlaWdodD0nNjQnIHJ4PSc2JyBmaWxsPScjZmZmJyBvcGFjaXR5PScuODUnLz4KICA8cmVjdCB4PSc4MicgeT0nMTI0JyB3aWR0aD0nMzYnIGhlaWdodD0nNCcgcng9JzInIGZpbGw9JyMzYjJmMjYnIG9wYWNpdHk9Jy42NScvPgogIDxyZWN0IHg9JzgyJyB5PScxMzYnIHdpZHRoPScyNicgaGVpZ2h0PSczJyByeD0nMS41JyBmaWxsPScjMmIyMzIwJyBvcGFjaXR5PScuMjUnLz4KICA8cmVjdCB4PSc4MicgeT0nMTQ2JyB3aWR0aD0nMzAnIGhlaWdodD0nMycgcng9JzEuNScgZmlsbD0nIzJiMjMyMCcgb3BhY2l0eT0nLjE4Jy8+CiAgPHRpdGxlPsOTbGVvIGNhcGlsYXI8L3RpdGxlPgo8L3N2Zz4K',
+    flag: 'sale',
+    rating: 4.8,
+    avaliacoes: 132,
+    resumo: 'Finalizador leve que sela as pontas, controla o frizz e devolve brilho aos fios ressecados.',
+    descricao: 'Blend de óleo de argan e vitamina E que envolve a fibra capilar sem pesar. Indicado para cabelos ressecados, quimicamente tratados ou com pontas duplas. Textura seca, absorção rápida e perfume amadeirado suave.',
+    comoUsar: ['Aplique 2 a 3 gotas nas mãos e distribua no comprimento e pontas, com os fios úmidos.', 'Finalize normalmente com secador ou ao natural.', 'Pode ser reaplicado nos fios secos para dar brilho.'],
+    specs: { 'Conteúdo': '60 ml', 'Tipo de fio': 'Secos e tratados', 'Textura': 'Óleo seco', 'Livre de': 'Parabenos e petrolatos' },
+    variacoes: { rotulo: 'Tamanho', opcoes: ['30 ml', '60 ml', '120 ml'] }
+  },
+  {
+    id: 'mascara-hidratacao',
+    nome: 'Máscara de Hidratação Intensiva',
+    categoria: 'cabelos',
+    preco: 119.9,
+    precoDe: null,
+    img: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAyMDAgMjQwJyByb2xlPSdpbWcnPgogIDxkZWZzPgogICAgPGxpbmVhckdyYWRpZW50IGlkPSdnJyB4MT0nMCcgeTE9JzAnIHgyPScxJyB5Mj0nMSc+CiAgICAgIDxzdG9wIG9mZnNldD0nMCcgc3RvcC1jb2xvcj0nI2U2YjdjNCcvPjxzdG9wIG9mZnNldD0nMScgc3RvcC1jb2xvcj0nI2M5ODA5NicvPgogICAgPC9saW5lYXJHcmFkaWVudD4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0ncycgeDE9JzAnIHkxPScwJyB4Mj0nMScgeTI9JzAnPgogICAgICA8c3RvcCBvZmZzZXQ9JzAnIHN0b3AtY29sb3I9JyNmZmZmZmYnIHN0b3Atb3BhY2l0eT0nLjQ1Jy8+CiAgICAgIDxzdG9wIG9mZnNldD0nLjM1JyBzdG9wLWNvbG9yPScjZmZmZmZmJyBzdG9wLW9wYWNpdHk9JzAnLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgPC9kZWZzPgogIDxlbGxpcHNlIGN4PScxMDAnIGN5PSc5Nicgcng9JzY2JyByeT0nMTQnIGZpbGw9JyM2ZDNiNDgnLz4KICA8cmVjdCB4PSczNCcgeT0nOTYnIHdpZHRoPScxMzInIGhlaWdodD0nMzAnIHJ4PSc4JyBmaWxsPScjNmQzYjQ4Jy8+CiAgPHJlY3QgeD0nNDAnIHk9JzEyNCcgd2lkdGg9JzEyMCcgaGVpZ2h0PSc5Micgcng9JzE4JyBmaWxsPSd1cmwoI2cpJy8+CiAgPHJlY3QgeD0nNDAnIHk9JzEyNCcgd2lkdGg9JzEyMCcgaGVpZ2h0PSc5Micgcng9JzE4JyBmaWxsPSd1cmwoI3MpJy8+CiAgPHJlY3QgeD0nNjQnIHk9JzE1MCcgd2lkdGg9JzcyJyBoZWlnaHQ9JzQyJyByeD0nOCcgZmlsbD0nI2ZmZicgb3BhY2l0eT0nLjg4Jy8+CiAgPHJlY3QgeD0nNzgnIHk9JzE2NCcgd2lkdGg9JzQ0JyBoZWlnaHQ9JzQnIHJ4PScyJyBmaWxsPScjNmQzYjQ4JyBvcGFjaXR5PScuNycvPgogIDxyZWN0IHg9JzgyJyB5PScxNzYnIHdpZHRoPSczNicgaGVpZ2h0PSczJyByeD0nMS41JyBmaWxsPScjMmIyMzIwJyBvcGFjaXR5PScuMicvPgogIDx0aXRsZT5Nw6FzY2FyYSBkZSBoaWRyYXRhw6fDo288L3RpdGxlPgo8L3N2Zz4K',
+    flag: 'best',
+    rating: 4.9,
+    avaliacoes: 208,
+    resumo: 'Reposição profunda de massa e maciez em 5 minutos, no salão ou em casa.',
+    descricao: 'Máscara de alta concentração com manteiga de karité e proteínas da seda. Repõe água e nutrientes perdidos após coloração, alisamento ou exposição ao sol, deixando o cabelo macio e alinhado desde a primeira aplicação.',
+    comoUsar: ['Lave os cabelos com o shampoo da linha e retire o excesso de água.', 'Aplique mecha a mecha e deixe agir por 5 a 10 minutos.', 'Enxágue bem. Use de 1 a 2 vezes por semana.'],
+    specs: { 'Conteúdo': '250 g', 'Tipo de fio': 'Todos', 'Textura': 'Creme denso', 'Rendimento': 'Até 12 aplicações' },
+    variacoes: { rotulo: 'Tamanho', opcoes: ['250 g', '500 g'] }
+  },
+  {
+    id: 'serum-vitamina-c',
+    nome: 'Sérum Facial Vitamina C 10%',
+    categoria: 'skincare',
+    preco: 149.9,
+    precoDe: 179.9,
+    img: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAyMDAgMjQwJyByb2xlPSdpbWcnPgogIDxkZWZzPgogICAgPGxpbmVhckdyYWRpZW50IGlkPSdnJyB4MT0nMCcgeTE9JzAnIHgyPScxJyB5Mj0nMSc+CiAgICAgIDxzdG9wIG9mZnNldD0nMCcgc3RvcC1jb2xvcj0nI2YyYzE0ZScvPjxzdG9wIG9mZnNldD0nMScgc3RvcC1jb2xvcj0nI2UwOGEyYycvPgogICAgPC9saW5lYXJHcmFkaWVudD4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0ncycgeDE9JzAnIHkxPScwJyB4Mj0nMScgeTI9JzAnPgogICAgICA8c3RvcCBvZmZzZXQ9JzAnIHN0b3AtY29sb3I9JyNmZmZmZmYnIHN0b3Atb3BhY2l0eT0nLjQ1Jy8+CiAgICAgIDxzdG9wIG9mZnNldD0nLjM1JyBzdG9wLWNvbG9yPScjZmZmZmZmJyBzdG9wLW9wYWNpdHk9JzAnLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgPC9kZWZzPgogIDxyZWN0IHg9Jzg0JyB5PScxOCcgd2lkdGg9JzMyJyBoZWlnaHQ9JzM0JyByeD0nNicgZmlsbD0nIzJmMmEyMicvPgogIDxyZWN0IHg9JzkyJyB5PSc0OCcgd2lkdGg9JzE2JyBoZWlnaHQ9JzE2JyBmaWxsPScjMmYyYTIyJyBvcGFjaXR5PScuOCcvPgogIDxyZWN0IHg9JzU4JyB5PSc2Micgd2lkdGg9Jzg0JyBoZWlnaHQ9JzE1OCcgcng9JzE2JyBmaWxsPSd1cmwoI2cpJy8+CiAgPHJlY3QgeD0nNTgnIHk9JzYyJyB3aWR0aD0nODQnIGhlaWdodD0nMTU4JyByeD0nMTYnIGZpbGw9J3VybCgjcyknLz4KICA8cmVjdCB4PSc3MicgeT0nMTA4JyB3aWR0aD0nNTYnIGhlaWdodD0nNjQnIHJ4PSc2JyBmaWxsPScjZmZmJyBvcGFjaXR5PScuODUnLz4KICA8cmVjdCB4PSc4MicgeT0nMTI0JyB3aWR0aD0nMzYnIGhlaWdodD0nNCcgcng9JzInIGZpbGw9JyMyZjJhMjInIG9wYWNpdHk9Jy42NScvPgogIDxyZWN0IHg9JzgyJyB5PScxMzYnIHdpZHRoPScyNicgaGVpZ2h0PSczJyByeD0nMS41JyBmaWxsPScjMmIyMzIwJyBvcGFjaXR5PScuMjUnLz4KICA8cmVjdCB4PSc4MicgeT0nMTQ2JyB3aWR0aD0nMzAnIGhlaWdodD0nMycgcng9JzEuNScgZmlsbD0nIzJiMjMyMCcgb3BhY2l0eT0nLjE4Jy8+CiAgPHRpdGxlPlPDqXJ1bSBmYWNpYWw8L3RpdGxlPgo8L3N2Zz4K',
+    flag: 'sale',
+    rating: 4.7,
+    avaliacoes: 96,
+    resumo: 'Uniformiza o tom, ilumina e protege a pele contra os sinais do tempo.',
+    descricao: 'Vitamina C estabilizada em veículo aquoso de rápida absorção, com ácido ferúlico e vitamina E. Uso diário pela manhã para viço, uniformidade e defesa antioxidante.',
+    comoUsar: ['Pela manhã, na pele limpa e seca, aplique 3 a 4 gotas no rosto e pescoço.', 'Aguarde a absorção e siga com hidratante.', 'Finalize sempre com protetor solar.'],
+    specs: { 'Conteúdo': '30 ml', 'Ativo principal': 'Vitamina C 10%', 'Indicação': 'Manchas e falta de viço', 'Uso': 'Manhã' },
+    variacoes: { rotulo: 'Concentração', opcoes: ['10%', '15%'] }
+  },
+  {
+    id: 'hidratante-hialuronico',
+    nome: 'Hidratante Facial Ácido Hialurônico',
+    categoria: 'skincare',
+    preco: 129.9,
+    precoDe: null,
+    img: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAyMDAgMjQwJyByb2xlPSdpbWcnPgogIDxkZWZzPgogICAgPGxpbmVhckdyYWRpZW50IGlkPSdnJyB4MT0nMCcgeTE9JzAnIHgyPScxJyB5Mj0nMSc+CiAgICAgIDxzdG9wIG9mZnNldD0nMCcgc3RvcC1jb2xvcj0nI2NmZTNmMCcvPjxzdG9wIG9mZnNldD0nMScgc3RvcC1jb2xvcj0nIzlkYzJkYycvPgogICAgPC9saW5lYXJHcmFkaWVudD4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0ncycgeDE9JzAnIHkxPScwJyB4Mj0nMScgeTI9JzAnPgogICAgICA8c3RvcCBvZmZzZXQ9JzAnIHN0b3AtY29sb3I9JyNmZmZmZmYnIHN0b3Atb3BhY2l0eT0nLjQ1Jy8+CiAgICAgIDxzdG9wIG9mZnNldD0nLjM1JyBzdG9wLWNvbG9yPScjZmZmZmZmJyBzdG9wLW9wYWNpdHk9JzAnLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgPC9kZWZzPgogIDxlbGxpcHNlIGN4PScxMDAnIGN5PSc5Nicgcng9JzY2JyByeT0nMTQnIGZpbGw9JyMzYTVhNzAnLz4KICA8cmVjdCB4PSczNCcgeT0nOTYnIHdpZHRoPScxMzInIGhlaWdodD0nMzAnIHJ4PSc4JyBmaWxsPScjM2E1YTcwJy8+CiAgPHJlY3QgeD0nNDAnIHk9JzEyNCcgd2lkdGg9JzEyMCcgaGVpZ2h0PSc5Micgcng9JzE4JyBmaWxsPSd1cmwoI2cpJy8+CiAgPHJlY3QgeD0nNDAnIHk9JzEyNCcgd2lkdGg9JzEyMCcgaGVpZ2h0PSc5Micgcng9JzE4JyBmaWxsPSd1cmwoI3MpJy8+CiAgPHJlY3QgeD0nNjQnIHk9JzE1MCcgd2lkdGg9JzcyJyBoZWlnaHQ9JzQyJyByeD0nOCcgZmlsbD0nI2ZmZicgb3BhY2l0eT0nLjg4Jy8+CiAgPHJlY3QgeD0nNzgnIHk9JzE2NCcgd2lkdGg9JzQ0JyBoZWlnaHQ9JzQnIHJ4PScyJyBmaWxsPScjM2E1YTcwJyBvcGFjaXR5PScuNycvPgogIDxyZWN0IHg9JzgyJyB5PScxNzYnIHdpZHRoPSczNicgaGVpZ2h0PSczJyByeD0nMS41JyBmaWxsPScjMmIyMzIwJyBvcGFjaXR5PScuMicvPgogIDx0aXRsZT5IaWRyYXRhbnRlIGZhY2lhbDwvdGl0bGU+Cjwvc3ZnPgo=',
+    flag: null,
+    rating: 4.8,
+    avaliacoes: 154,
+    resumo: 'Gel-creme oil free que hidrata por 24 horas sem deixar a pele oleosa.',
+    descricao: 'Combina três pesos moleculares de ácido hialurônico com niacinamida para hidratar em camadas diferentes da pele. Textura gel-creme fresca, ideal para o clima quente e para uso sob maquiagem.',
+    comoUsar: ['Aplique de manhã e à noite na pele limpa.', 'Espalhe em movimentos ascendentes até absorver.'],
+    specs: { 'Conteúdo': '50 g', 'Textura': 'Gel-creme', 'Tipo de pele': 'Todos, inclusive oleosa', 'Livre de': 'Óleos e fragrância' },
+    variacoes: null
+  },
+  {
+    id: 'base-alta-cobertura',
+    nome: 'Base Líquida Alta Cobertura',
+    categoria: 'maquiagem',
+    preco: 99.9,
+    precoDe: null,
+    img: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAyMDAgMjQwJyByb2xlPSdpbWcnPgogIDxkZWZzPgogICAgPGxpbmVhckdyYWRpZW50IGlkPSdnJyB4MT0nMCcgeTE9JzAnIHgyPScxJyB5Mj0nMSc+CiAgICAgIDxzdG9wIG9mZnNldD0nMCcgc3RvcC1jb2xvcj0nI2U5ZDNjMicvPjxzdG9wIG9mZnNldD0nMScgc3RvcC1jb2xvcj0nI2NiYTk4ZicvPgogICAgPC9saW5lYXJHcmFkaWVudD4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0ncycgeDE9JzAnIHkxPScwJyB4Mj0nMScgeTI9JzAnPgogICAgICA8c3RvcCBvZmZzZXQ9JzAnIHN0b3AtY29sb3I9JyNmZmZmZmYnIHN0b3Atb3BhY2l0eT0nLjQ1Jy8+CiAgICAgIDxzdG9wIG9mZnNldD0nLjM1JyBzdG9wLWNvbG9yPScjZmZmZmZmJyBzdG9wLW9wYWNpdHk9JzAnLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgPC9kZWZzPgogIDxyZWN0IHg9Jzg4JyB5PScxNCcgd2lkdGg9JzI0JyBoZWlnaHQ9JzEyJyByeD0nNCcgZmlsbD0nIzRhM2EzMCcvPgogIDxyZWN0IHg9Jzk2JyB5PScyNCcgd2lkdGg9JzgnIGhlaWdodD0nMjQnIGZpbGw9JyM0YTNhMzAnLz4KICA8cmVjdCB4PSc4MCcgeT0nNDQnIHdpZHRoPSc0MCcgaGVpZ2h0PScyMCcgcng9JzUnIGZpbGw9JyM0YTNhMzAnLz4KICA8cGF0aCBkPSdNNTQgNjZoOTJhMTAgMTAgMCAwIDEgMTAgMTB2MTM0YTEwIDEwIDAgMCAxLTEwIDEwSDU0YTEwIDEwIDAgMCAxLTEwLTEwVjc2YTEwIDEwIDAgMCAxIDEwLTEweicgZmlsbD0ndXJsKCNnKScvPgogIDxwYXRoIGQ9J001NCA2Nmg5MmExMCAxMCAwIDAgMSAxMCAxMHYxMzRhMTAgMTAgMCAwIDEtMTAgMTBINTRhMTAgMTAgMCAwIDEtMTAtMTBWNzZhMTAgMTAgMCAwIDEgMTAtMTB6JyBmaWxsPSd1cmwoI3MpJy8+CiAgPHJlY3QgeD0nNjInIHk9JzExMicgd2lkdGg9Jzc2JyBoZWlnaHQ9JzYwJyByeD0nNicgZmlsbD0nI2ZmZicgb3BhY2l0eT0nLjg2Jy8+CiAgPHJlY3QgeD0nNzYnIHk9JzEyOCcgd2lkdGg9JzQ4JyBoZWlnaHQ9JzUnIHJ4PScyLjUnIGZpbGw9JyM0YTNhMzAnIG9wYWNpdHk9Jy43Jy8+CiAgPHJlY3QgeD0nODAnIHk9JzE0Micgd2lkdGg9JzQwJyBoZWlnaHQ9JzMnIHJ4PScxLjUnIGZpbGw9JyMyYjIzMjAnIG9wYWNpdHk9Jy4yJy8+CiAgPHJlY3QgeD0nODQnIHk9JzE1Micgd2lkdGg9JzMyJyBoZWlnaHQ9JzMnIHJ4PScxLjUnIGZpbGw9JyMyYjIzMjAnIG9wYWNpdHk9Jy4xNScvPgogIDx0aXRsZT5CYXNlIGzDrXF1aWRhPC90aXRsZT4KPC9zdmc+Cg==',
+    flag: 'new',
+    rating: 4.6,
+    avaliacoes: 74,
+    resumo: 'Acabamento natural de longa duração, em 12 tons desenvolvidos no salão.',
+    descricao: 'Base de cobertura construível com pigmentos de alta dispersão e toque seco. Resiste até 12 horas sem craquelar, com acabamento acetinado que não marca linhas de expressão.',
+    comoUsar: ['Aplique sobre a pele hidratada com pincel, esponja úmida ou dedos.', 'Construa a cobertura em camadas finas.'],
+    specs: { 'Conteúdo': '30 ml', 'Acabamento': 'Acetinado natural', 'Fixação': 'Até 12 horas', 'FPS': 'FPS 15' },
+    variacoes: { rotulo: 'Tom', opcoes: ['100 Porcelana', '210 Bege', '320 Caramelo', '430 Cacau'] }
+  },
+  {
+    id: 'batom-matte-rose',
+    nome: 'Batom Matte Rosé',
+    categoria: 'maquiagem',
+    preco: 59.9,
+    precoDe: 74.9,
+    img: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAyMDAgMjQwJyByb2xlPSdpbWcnPgogIDxkZWZzPgogICAgPGxpbmVhckdyYWRpZW50IGlkPSdnJyB4MT0nMCcgeTE9JzAnIHgyPScxJyB5Mj0nMSc+CiAgICAgIDxzdG9wIG9mZnNldD0nMCcgc3RvcC1jb2xvcj0nI2M5NTU2YicvPjxzdG9wIG9mZnNldD0nMScgc3RvcC1jb2xvcj0nIzljMmY0NScvPgogICAgPC9saW5lYXJHcmFkaWVudD4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0ncycgeDE9JzAnIHkxPScwJyB4Mj0nMScgeTI9JzAnPgogICAgICA8c3RvcCBvZmZzZXQ9JzAnIHN0b3AtY29sb3I9JyNmZmZmZmYnIHN0b3Atb3BhY2l0eT0nLjQ1Jy8+CiAgICAgIDxzdG9wIG9mZnNldD0nLjM1JyBzdG9wLWNvbG9yPScjZmZmZmZmJyBzdG9wLW9wYWNpdHk9JzAnLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgPC9kZWZzPgogIDxwYXRoIGQ9J003OCA3NGg0NHYtMjZhMTAgMTAgMCAwIDAtNi05bC0zMi0xOHY1M3onIGZpbGw9J3VybCgjZyknLz4KICA8cmVjdCB4PSc3MicgeT0nNzQnIHdpZHRoPSc1NicgaGVpZ2h0PScyNicgcng9JzUnIGZpbGw9JyMyYjIzMjAnLz4KICA8cmVjdCB4PSc2OCcgeT0nMTAwJyB3aWR0aD0nNjQnIGhlaWdodD0nMTIwJyByeD0nMTAnIGZpbGw9J3VybCgjZyknLz4KICA8cmVjdCB4PSc2OCcgeT0nMTAwJyB3aWR0aD0nNjQnIGhlaWdodD0nMTIwJyByeD0nMTAnIGZpbGw9J3VybCgjcyknLz4KICA8cmVjdCB4PSc2OCcgeT0nMTUwJyB3aWR0aD0nNjQnIGhlaWdodD0nMTYnIGZpbGw9JyMyYjIzMjAnIG9wYWNpdHk9Jy45Jy8+CiAgPGNpcmNsZSBjeD0nMTAwJyBjeT0nMTkwJyByPScxMycgZmlsbD0nI2ZmZicgb3BhY2l0eT0nLjg1Jy8+CiAgPHRpdGxlPkJhdG9tIG1hdHRlPC90aXRsZT4KPC9zdmc+Cg==',
+    flag: 'sale',
+    rating: 4.9,
+    avaliacoes: 241,
+    resumo: 'Cor intensa em uma passada, com conforto de bálsamo e efeito matte aveludado.',
+    descricao: 'Fórmula matte enriquecida com óleo de jojoba, que entrega cor opaca sem ressecar os lábios. Assinatura da casa, é o tom mais pedido nas maquiagens de noiva do salão.',
+    comoUsar: ['Contorne os lábios e preencha do centro para os cantos.', 'Para maior duração, pressione um lenço e reaplique.'],
+    specs: { 'Conteúdo': '3,8 g', 'Acabamento': 'Matte aveludado', 'Duração': 'Até 8 horas', 'Vegano': 'Sim' },
+    variacoes: { rotulo: 'Cor', opcoes: ['Rosé Clássico', 'Nude Suave', 'Vinho Profundo'] }
+  },
+  {
+    id: 'paleta-nude',
+    nome: 'Paleta de Sombras Nude Atelier',
+    categoria: 'maquiagem',
+    preco: 139.9,
+    precoDe: null,
+    img: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAyMDAgMjQwJyByb2xlPSdpbWcnPgogIDxkZWZzPgogICAgPGxpbmVhckdyYWRpZW50IGlkPSdnJyB4MT0nMCcgeTE9JzAnIHgyPScxJyB5Mj0nMSc+CiAgICAgIDxzdG9wIG9mZnNldD0nMCcgc3RvcC1jb2xvcj0nI2M4OGE3MicvPjxzdG9wIG9mZnNldD0nMScgc3RvcC1jb2xvcj0nIzhkNWE0YScvPgogICAgPC9saW5lYXJHcmFkaWVudD4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0ncycgeDE9JzAnIHkxPScwJyB4Mj0nMScgeTI9JzAnPgogICAgICA8c3RvcCBvZmZzZXQ9JzAnIHN0b3AtY29sb3I9JyNmZmZmZmYnIHN0b3Atb3BhY2l0eT0nLjQ1Jy8+CiAgICAgIDxzdG9wIG9mZnNldD0nLjM1JyBzdG9wLWNvbG9yPScjZmZmZmZmJyBzdG9wLW9wYWNpdHk9JzAnLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgPC9kZWZzPgogIDxyZWN0IHg9JzI0JyB5PSc2MCcgd2lkdGg9JzE1MicgaGVpZ2h0PScxMjAnIHJ4PScxNCcgZmlsbD0nIzNhMmYyYicvPgogIDxyZWN0IHg9JzM0JyB5PSc3MCcgd2lkdGg9JzEzMicgaGVpZ2h0PSc1OCcgcng9JzgnIGZpbGw9JyNmZmYnIG9wYWNpdHk9Jy45Jy8+CiAgPHJlY3QgeD0nNDInIHk9Jzc4JyB3aWR0aD0nMzYnIGhlaWdodD0nNDInIHJ4PSc1JyBmaWxsPScjYzg4YTcyJy8+CiAgPHJlY3QgeD0nODQnIHk9Jzc4JyB3aWR0aD0nMzYnIGhlaWdodD0nNDInIHJ4PSc1JyBmaWxsPScjOGQ1YTRhJy8+CiAgPHJlY3QgeD0nMTI2JyB5PSc3OCcgd2lkdGg9JzMyJyBoZWlnaHQ9JzQyJyByeD0nNScgZmlsbD0nI2M4OGE3Micgb3BhY2l0eT0nLjU1Jy8+CiAgPHJlY3QgeD0nMzQnIHk9JzEzNicgd2lkdGg9JzEzMicgaGVpZ2h0PSczNCcgcng9JzgnIGZpbGw9JyNmZmYnIG9wYWNpdHk9Jy41NScvPgogIDxyZWN0IHg9JzQ4JyB5PScxNDYnIHdpZHRoPSc0NicgaGVpZ2h0PSc2JyByeD0nMycgZmlsbD0nIzhkNWE0YScgb3BhY2l0eT0nLjcnLz4KICA8cmVjdCB4PScxMDQnIHk9JzE0Nicgd2lkdGg9JzQ2JyBoZWlnaHQ9JzYnIHJ4PSczJyBmaWxsPScjYzg4YTcyJyBvcGFjaXR5PScuNScvPgogIDxyZWN0IHg9JzI0JyB5PScxODYnIHdpZHRoPScxNTInIGhlaWdodD0nMTAnIHJ4PSc1JyBmaWxsPScjOGQ1YTRhJyBvcGFjaXR5PScuMzUnLz4KICA8dGl0bGU+UGFsZXRhIGRlIHNvbWJyYXM8L3RpdGxlPgo8L3N2Zz4K',
+    flag: null,
+    rating: 4.7,
+    avaliacoes: 88,
+    resumo: 'Doze tons neutros, do matte ao cintilante, para o dia e para a noite.',
+    descricao: 'Paleta com pigmentação alta e baixa dispersão, pensada para construir desde um olhar natural até um esfumado marcante. Acompanha espelho e pincel duplo.',
+    comoUsar: ['Use os tons claros na pálpebra móvel e os escuros no côncavo.', 'Esfume as bordas para uma transição suave.'],
+    specs: { 'Cores': '12 tons', 'Acabamentos': 'Matte, acetinado e glitter', 'Peso': '14 g', 'Acompanha': 'Espelho e pincel' },
+    variacoes: null
+  },
+  {
+    id: 'esmalte-gel',
+    nome: 'Esmalte em Gel Efeito Salão',
+    categoria: 'unhas',
+    preco: 24.9,
+    precoDe: null,
+    img: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAyMDAgMjQwJyByb2xlPSdpbWcnPgogIDxkZWZzPgogICAgPGxpbmVhckdyYWRpZW50IGlkPSdnJyB4MT0nMCcgeTE9JzAnIHgyPScxJyB5Mj0nMSc+CiAgICAgIDxzdG9wIG9mZnNldD0nMCcgc3RvcC1jb2xvcj0nI2Q5NmY4YScvPjxzdG9wIG9mZnNldD0nMScgc3RvcC1jb2xvcj0nI2IyM2Y2MCcvPgogICAgPC9saW5lYXJHcmFkaWVudD4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0ncycgeDE9JzAnIHkxPScwJyB4Mj0nMScgeTI9JzAnPgogICAgICA8c3RvcCBvZmZzZXQ9JzAnIHN0b3AtY29sb3I9JyNmZmZmZmYnIHN0b3Atb3BhY2l0eT0nLjQ1Jy8+CiAgICAgIDxzdG9wIG9mZnNldD0nLjM1JyBzdG9wLWNvbG9yPScjZmZmZmZmJyBzdG9wLW9wYWNpdHk9JzAnLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgPC9kZWZzPgogIDxyZWN0IHg9Jzg2JyB5PScxNicgd2lkdGg9JzI4JyBoZWlnaHQ9JzQ2JyByeD0nNicgZmlsbD0nIzJiMjMyMCcvPgogIDxyZWN0IHg9Jzk0JyB5PSc1OCcgd2lkdGg9JzEyJyBoZWlnaHQ9JzE0JyBmaWxsPScjMmIyMzIwJyBvcGFjaXR5PScuOCcvPgogIDxwYXRoIGQ9J002NiA3Mmg2OGE4IDggMCAwIDEgOCA4djEzMGExMCAxMCAwIDAgMS0xMCAxMEg2OGExMCAxMCAwIDAgMS0xMC0xMFY4MGE4IDggMCAwIDEgOC04eicgZmlsbD0ndXJsKCNnKScvPgogIDxwYXRoIGQ9J002NiA3Mmg2OGE4IDggMCAwIDEgOCA4djEzMGExMCAxMCAwIDAgMS0xMCAxMEg2OGExMCAxMCAwIDAgMS0xMC0xMFY4MGE4IDggMCAwIDEgOC04eicgZmlsbD0ndXJsKCNzKScvPgogIDxjaXJjbGUgY3g9JzEwMCcgY3k9JzE1MCcgcj0nMjQnIGZpbGw9JyNmZmYnIG9wYWNpdHk9Jy44NScvPgogIDxjaXJjbGUgY3g9JzEwMCcgY3k9JzE1MCcgcj0nMTMnIGZpbGw9JyNiMjNmNjAnLz4KICA8dGl0bGU+RXNtYWx0ZSBlbSBnZWw8L3RpdGxlPgo8L3N2Zz4K',
+    flag: 'new',
+    rating: 4.5,
+    avaliacoes: 63,
+    resumo: 'Brilho de cabine sem cabine: secagem rápida e até 7 dias sem lascar.',
+    descricao: 'Esmalte de cobertura alta com pincel chanfrado que acompanha o formato da cutícula. Fórmula 9-free, com brilho espelhado que dispensa extra brilho.',
+    comoUsar: ['Aplique duas camadas finas, aguardando 1 minuto entre elas.', 'Finalize com o top coat da linha para prolongar a duração.'],
+    specs: { 'Conteúdo': '9 ml', 'Duração': 'Até 7 dias', 'Fórmula': '9-free', 'Secagem': '60 segundos' },
+    variacoes: { rotulo: 'Cor', opcoes: ['Rosa Leitoso', 'Nude Café', 'Vermelho Clássico', 'Cereja'] }
+  },
+  {
+    id: 'oleo-cuticulas',
+    nome: 'Óleo Nutritivo para Cutículas',
+    categoria: 'unhas',
+    preco: 34.9,
+    precoDe: null,
+    img: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAyMDAgMjQwJyByb2xlPSdpbWcnPgogIDxkZWZzPgogICAgPGxpbmVhckdyYWRpZW50IGlkPSdnJyB4MT0nMCcgeTE9JzAnIHgyPScxJyB5Mj0nMSc+CiAgICAgIDxzdG9wIG9mZnNldD0nMCcgc3RvcC1jb2xvcj0nI2U4Yzk4YScvPjxzdG9wIG9mZnNldD0nMScgc3RvcC1jb2xvcj0nI2M3OWE0YScvPgogICAgPC9saW5lYXJHcmFkaWVudD4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0ncycgeDE9JzAnIHkxPScwJyB4Mj0nMScgeTI9JzAnPgogICAgICA8c3RvcCBvZmZzZXQ9JzAnIHN0b3AtY29sb3I9JyNmZmZmZmYnIHN0b3Atb3BhY2l0eT0nLjQ1Jy8+CiAgICAgIDxzdG9wIG9mZnNldD0nLjM1JyBzdG9wLWNvbG9yPScjZmZmZmZmJyBzdG9wLW9wYWNpdHk9JzAnLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgPC9kZWZzPgogIDxyZWN0IHg9Jzg2JyB5PScxNicgd2lkdGg9JzI4JyBoZWlnaHQ9JzQ2JyByeD0nNicgZmlsbD0nIzRhM2EyMicvPgogIDxyZWN0IHg9Jzk0JyB5PSc1OCcgd2lkdGg9JzEyJyBoZWlnaHQ9JzE0JyBmaWxsPScjNGEzYTIyJyBvcGFjaXR5PScuOCcvPgogIDxwYXRoIGQ9J002NiA3Mmg2OGE4IDggMCAwIDEgOCA4djEzMGExMCAxMCAwIDAgMS0xMCAxMEg2OGExMCAxMCAwIDAgMS0xMC0xMFY4MGE4IDggMCAwIDEgOC04eicgZmlsbD0ndXJsKCNnKScvPgogIDxwYXRoIGQ9J002NiA3Mmg2OGE4IDggMCAwIDEgOCA4djEzMGExMCAxMCAwIDAgMS0xMCAxMEg2OGExMCAxMCAwIDAgMS0xMC0xMFY4MGE4IDggMCAwIDEgOC04eicgZmlsbD0ndXJsKCNzKScvPgogIDxjaXJjbGUgY3g9JzEwMCcgY3k9JzE1MCcgcj0nMjQnIGZpbGw9JyNmZmYnIG9wYWNpdHk9Jy44NScvPgogIDxjaXJjbGUgY3g9JzEwMCcgY3k9JzE1MCcgcj0nMTMnIGZpbGw9JyNjNzlhNGEnLz4KICA8dGl0bGU+w5NsZW8gcGFyYSBjdXTDrWN1bGFzPC90aXRsZT4KPC9zdmc+Cg==',
+    flag: null,
+    rating: 4.6,
+    avaliacoes: 51,
+    resumo: 'Amacia a cutícula e fortalece a borda livre entre uma manicure e outra.',
+    descricao: 'Óleo de amêndoas doces com vitamina E e pantenol. Mantém a região hidratada, reduz ressecamento e ajuda a evitar a formação de repuxos.',
+    comoUsar: ['Aplique uma gota na base de cada unha e massageie.', 'Use à noite, diariamente.'],
+    specs: { 'Conteúdo': '10 ml', 'Aplicador': 'Pincel', 'Ativos': 'Amêndoas, vitamina E e pantenol', 'Uso': 'Diário' },
+    variacoes: null
+  },
+  {
+    id: 'shampoo-sem-sulfato',
+    nome: 'Shampoo Nutritivo sem Sulfato',
+    categoria: 'cabelos',
+    preco: 79.9,
+    precoDe: null,
+    img: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAyMDAgMjQwJyByb2xlPSdpbWcnPgogIDxkZWZzPgogICAgPGxpbmVhckdyYWRpZW50IGlkPSdnJyB4MT0nMCcgeTE9JzAnIHgyPScxJyB5Mj0nMSc+CiAgICAgIDxzdG9wIG9mZnNldD0nMCcgc3RvcC1jb2xvcj0nI2NmZTBkMicvPjxzdG9wIG9mZnNldD0nMScgc3RvcC1jb2xvcj0nIzk4YjhhNCcvPgogICAgPC9saW5lYXJHcmFkaWVudD4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0ncycgeDE9JzAnIHkxPScwJyB4Mj0nMScgeTI9JzAnPgogICAgICA8c3RvcCBvZmZzZXQ9JzAnIHN0b3AtY29sb3I9JyNmZmZmZmYnIHN0b3Atb3BhY2l0eT0nLjQ1Jy8+CiAgICAgIDxzdG9wIG9mZnNldD0nLjM1JyBzdG9wLWNvbG9yPScjZmZmZmZmJyBzdG9wLW9wYWNpdHk9JzAnLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgPC9kZWZzPgogIDxyZWN0IHg9Jzg4JyB5PScxNCcgd2lkdGg9JzI0JyBoZWlnaHQ9JzEyJyByeD0nNCcgZmlsbD0nIzMzNDYzYScvPgogIDxyZWN0IHg9Jzk2JyB5PScyNCcgd2lkdGg9JzgnIGhlaWdodD0nMjQnIGZpbGw9JyMzMzQ2M2EnLz4KICA8cmVjdCB4PSc4MCcgeT0nNDQnIHdpZHRoPSc0MCcgaGVpZ2h0PScyMCcgcng9JzUnIGZpbGw9JyMzMzQ2M2EnLz4KICA8cGF0aCBkPSdNNTQgNjZoOTJhMTAgMTAgMCAwIDEgMTAgMTB2MTM0YTEwIDEwIDAgMCAxLTEwIDEwSDU0YTEwIDEwIDAgMCAxLTEwLTEwVjc2YTEwIDEwIDAgMCAxIDEwLTEweicgZmlsbD0ndXJsKCNnKScvPgogIDxwYXRoIGQ9J001NCA2Nmg5MmExMCAxMCAwIDAgMSAxMCAxMHYxMzRhMTAgMTAgMCAwIDEtMTAgMTBINTRhMTAgMTAgMCAwIDEtMTAtMTBWNzZhMTAgMTAgMCAwIDEgMTAtMTB6JyBmaWxsPSd1cmwoI3MpJy8+CiAgPHJlY3QgeD0nNjInIHk9JzExMicgd2lkdGg9Jzc2JyBoZWlnaHQ9JzYwJyByeD0nNicgZmlsbD0nI2ZmZicgb3BhY2l0eT0nLjg2Jy8+CiAgPHJlY3QgeD0nNzYnIHk9JzEyOCcgd2lkdGg9JzQ4JyBoZWlnaHQ9JzUnIHJ4PScyLjUnIGZpbGw9JyMzMzQ2M2EnIG9wYWNpdHk9Jy43Jy8+CiAgPHJlY3QgeD0nODAnIHk9JzE0Micgd2lkdGg9JzQwJyBoZWlnaHQ9JzMnIHJ4PScxLjUnIGZpbGw9JyMyYjIzMjAnIG9wYWNpdHk9Jy4yJy8+CiAgPHJlY3QgeD0nODQnIHk9JzE1Micgd2lkdGg9JzMyJyBoZWlnaHQ9JzMnIHJ4PScxLjUnIGZpbGw9JyMyYjIzMjAnIG9wYWNpdHk9Jy4xNScvPgogIDx0aXRsZT5TaGFtcG9vIG51dHJpdGl2bzwvdGl0bGU+Cjwvc3ZnPgo=',
+    flag: null,
+    rating: 4.7,
+    avaliacoes: 119,
+    resumo: 'Limpeza suave que preserva a cor e a hidratação dos fios tratados.',
+    descricao: 'Tensoativos de origem vegetal que higienizam sem agredir a fibra nem desbotar a coloração. Espuma cremosa, enxágue fácil e perfume floral leve.',
+    comoUsar: ['Aplique nos fios molhados, massageie o couro cabeludo e enxágue.', 'Repita se necessário e siga com a máscara da linha.'],
+    specs: { 'Conteúdo': '300 ml', 'Tipo de fio': 'Coloridos e tratados', 'Livre de': 'Sulfatos e sal', 'pH': '5,5' },
+    variacoes: { rotulo: 'Tamanho', opcoes: ['300 ml', '1 L'] }
+  },
+  {
+    id: 'protetor-facial',
+    nome: 'Protetor Solar Facial FPS 60',
+    categoria: 'skincare',
+    preco: 89.9,
+    precoDe: 99.9,
+    img: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAyMDAgMjQwJyByb2xlPSdpbWcnPgogIDxkZWZzPgogICAgPGxpbmVhckdyYWRpZW50IGlkPSdnJyB4MT0nMCcgeTE9JzAnIHgyPScxJyB5Mj0nMSc+CiAgICAgIDxzdG9wIG9mZnNldD0nMCcgc3RvcC1jb2xvcj0nI2YzZTJiNicvPjxzdG9wIG9mZnNldD0nMScgc3RvcC1jb2xvcj0nI2RjYjg1ZicvPgogICAgPC9saW5lYXJHcmFkaWVudD4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0ncycgeDE9JzAnIHkxPScwJyB4Mj0nMScgeTI9JzAnPgogICAgICA8c3RvcCBvZmZzZXQ9JzAnIHN0b3AtY29sb3I9JyNmZmZmZmYnIHN0b3Atb3BhY2l0eT0nLjQ1Jy8+CiAgICAgIDxzdG9wIG9mZnNldD0nLjM1JyBzdG9wLWNvbG9yPScjZmZmZmZmJyBzdG9wLW9wYWNpdHk9JzAnLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgPC9kZWZzPgogIDxyZWN0IHg9Jzg0JyB5PScxNicgd2lkdGg9JzMyJyBoZWlnaHQ9JzIyJyByeD0nNycgZmlsbD0nIzRhM2QyMCcvPgogIDxwYXRoIGQ9J002MiAzOGg3NmwxMCAxNzBhOCA4IDAgMCAxLTggOUg2MGE4IDggMCAwIDEtOC05eicgZmlsbD0ndXJsKCNnKScvPgogIDxwYXRoIGQ9J002MiAzOGg3NmwxMCAxNzBhOCA4IDAgMCAxLTggOUg2MGE4IDggMCAwIDEtOC05eicgZmlsbD0ndXJsKCNzKScvPgogIDxyZWN0IHg9JzcwJyB5PScxMTAnIHdpZHRoPSc2MCcgaGVpZ2h0PSc1OCcgcng9JzYnIGZpbGw9JyNmZmYnIG9wYWNpdHk9Jy44NicvPgogIDxyZWN0IHg9JzgyJyB5PScxMjYnIHdpZHRoPSczNicgaGVpZ2h0PSc1JyByeD0nMi41JyBmaWxsPScjNGEzZDIwJyBvcGFjaXR5PScuNycvPgogIDxyZWN0IHg9Jzg0JyB5PScxNDAnIHdpZHRoPSczMicgaGVpZ2h0PSczJyByeD0nMS41JyBmaWxsPScjMmIyMzIwJyBvcGFjaXR5PScuMicvPgogIDxyZWN0IHg9JzUyJyB5PScyMTQnIHdpZHRoPSc5NicgaGVpZ2h0PScxMCcgcng9JzQnIGZpbGw9JyM0YTNkMjAnIG9wYWNpdHk9Jy44NScvPgogIDx0aXRsZT5Qcm90ZXRvciBzb2xhciBmYWNpYWw8L3RpdGxlPgo8L3N2Zz4K',
+    flag: 'sale',
+    rating: 4.8,
+    avaliacoes: 176,
+    resumo: 'Toque seco com cor, protege e uniformiza sem deixar aspecto esbranquiçado.',
+    descricao: 'Proteção UVA/UVB de amplo espectro com pigmentos que se adaptam ao tom da pele. Base perfeita para a maquiagem e passo indispensável em qualquer rotina de skincare.',
+    comoUsar: ['Aplique generosamente no rosto e pescoço 15 minutos antes da exposição solar.', 'Reaplique a cada 2 horas ou após transpirar.'],
+    specs: { 'Conteúdo': '50 g', 'Proteção': 'FPS 60 / FPUVA 20', 'Textura': 'Fluida com cor', 'Resistente à água': 'Sim' },
+    variacoes: { rotulo: 'Cor', opcoes: ['Sem cor', 'Bege claro', 'Bege médio'] }
+  },
+  {
+    id: 'kit-spa-maos-pes',
+    nome: 'Kit Spa Mãos & Pés',
+    categoria: 'unhas',
+    preco: 179.9,
+    precoDe: 219.9,
+    img: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAyMDAgMjQwJyByb2xlPSdpbWcnPgogIDxkZWZzPgogICAgPGxpbmVhckdyYWRpZW50IGlkPSdnJyB4MT0nMCcgeTE9JzAnIHgyPScxJyB5Mj0nMSc+CiAgICAgIDxzdG9wIG9mZnNldD0nMCcgc3RvcC1jb2xvcj0nI2VjY2ZkNicvPjxzdG9wIG9mZnNldD0nMScgc3RvcC1jb2xvcj0nI2NmOWFhOScvPgogICAgPC9saW5lYXJHcmFkaWVudD4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0ncycgeDE9JzAnIHkxPScwJyB4Mj0nMScgeTI9JzAnPgogICAgICA8c3RvcCBvZmZzZXQ9JzAnIHN0b3AtY29sb3I9JyNmZmZmZmYnIHN0b3Atb3BhY2l0eT0nLjQ1Jy8+CiAgICAgIDxzdG9wIG9mZnNldD0nLjM1JyBzdG9wLWNvbG9yPScjZmZmZmZmJyBzdG9wLW9wYWNpdHk9JzAnLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgPC9kZWZzPgogIDxyZWN0IHg9JzMwJyB5PSc4NCcgd2lkdGg9JzE0MCcgaGVpZ2h0PScxMTgnIHJ4PScxMicgZmlsbD0ndXJsKCNnKScvPgogIDxyZWN0IHg9JzMwJyB5PSc4NCcgd2lkdGg9JzE0MCcgaGVpZ2h0PScxMTgnIHJ4PScxMicgZmlsbD0ndXJsKCNzKScvPgogIDxyZWN0IHg9JzMwJyB5PSc4NCcgd2lkdGg9JzE0MCcgaGVpZ2h0PScyNicgcng9JzEyJyBmaWxsPScjNmI0NDUwJy8+CiAgPHJlY3QgeD0nOTInIHk9Jzg0JyB3aWR0aD0nMTYnIGhlaWdodD0nMTE4JyBmaWxsPScjNmI0NDUwJyBvcGFjaXR5PScuNTUnLz4KICA8cGF0aCBkPSdNMTAwIDg0Yy0xNC0xNi0zNC0xOC0zOC02LTQgMTEgMTIgMTIgMzggNnpNMTAwIDg0YzE0LTE2IDM0LTE4IDM4LTYgNCAxMS0xMiAxMi0zOCA2eicgZmlsbD0nIzZiNDQ1MCcvPgogIDxyZWN0IHg9JzUwJyB5PScxMzQnIHdpZHRoPSczNCcgaGVpZ2h0PSc1MCcgcng9JzYnIGZpbGw9JyNmZmYnIG9wYWNpdHk9Jy44Jy8+CiAgPHJlY3QgeD0nMTE2JyB5PScxMzQnIHdpZHRoPSczNCcgaGVpZ2h0PSc1MCcgcng9JzYnIGZpbGw9JyNmZmYnIG9wYWNpdHk9Jy42Jy8+CiAgPHRpdGxlPktpdCBzcGEgbcOjb3MgZSBww6lzPC90aXRsZT4KPC9zdmc+Cg==',
+    flag: 'sale',
+    rating: 4.9,
+    avaliacoes: 42,
+    resumo: 'O ritual do spa do salão em casa: esfoliante, máscara e creme reparador.',
+    descricao: 'Kit com três passos para renovar a pele das mãos e dos pés. Esfoliante de açúcar mascavo, máscara de ureia e creme reparador de manteiga de cupuaçu. Vem em embalagem-presente.',
+    comoUsar: ['Esfolie, enxágue e seque.', 'Aplique a máscara e deixe agir por 10 minutos.', 'Finalize com o creme reparador, massageando até absorver.'],
+    specs: { 'Itens': '3 produtos', 'Conteúdo': '150 g + 100 g + 120 g', 'Indicação': 'Pele ressecada', 'Embalagem': 'Caixa presente' },
+    variacoes: null
+  }
+];
+
+/* ==========================================================================
+   Joyce Beauty — Lógica da prévia (front-end apenas)
+   Carrinho persistido em localStorage. Nenhuma integração de pagamento.
+
+   Funciona em dois modos:
+   - multipágina  : index.html / loja.html / produto.html / carrinho.html
+   - pacote único : dist/joyce-beauty-previa.html (rotas por hash, window.JB_BUNDLE)
+   ========================================================================== */
+
+(function () {
+  'use strict';
+
+  const STORAGE_KEY = 'jb_preview_cart_v1';
+  const FRETE_GRATIS_A_PARTIR_DE = 249;
+  const FRETE_PADRAO = 24.9;
+  const CUPONS = { JOYCE10: 0.10, BEAUTY15: 0.15 };
+
+  /* ------------------------------ utilitários ---------------------------- */
+
+  const brl = v => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  const $  = (sel, ctx) => (ctx || document).querySelector(sel);
+  const $$ = (sel, ctx) => Array.from((ctx || document).querySelectorAll(sel));
+  const byId = id => PRODUTOS.find(p => p.id === id);
+  const catNome = id => (CATEGORIAS.find(c => c.id === id) || {}).nome || id;
+  const escape = s => String(s).replace(/[&<>"']/g, c => (
+    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+  ));
+
+  /* Parâmetros da rota: no pacote único vêm do hash (#/produto?id=…),
+     nas páginas separadas vêm da query string normal. */
+  function parametros() {
+    const hash = location.hash || '';
+    const corte = hash.indexOf('?');
+    return new URLSearchParams(corte >= 0 ? hash.slice(corte) : location.search);
+  }
+
+  function estrelas(nota) {
+    const cheias = Math.round(nota);
+    return '★'.repeat(cheias) + '☆'.repeat(5 - cheias);
+  }
+
+  function toast(msg) {
+    let el = $('.toast');
+    if (!el) {
+      el = document.createElement('div');
+      el.className = 'toast';
+      el.setAttribute('role', 'status');
+      document.body.appendChild(el);
+    }
+    el.textContent = msg;
+    el.classList.add('is-visible');
+    clearTimeout(toast._t);
+    toast._t = setTimeout(() => el.classList.remove('is-visible'), 2600);
+  }
+
+  /* -------------------------------- carrinho ----------------------------- */
+
+  function lerCarrinho() {
+    try {
+      const dados = JSON.parse(localStorage.getItem(STORAGE_KEY));
+      return Array.isArray(dados) ? dados.filter(i => byId(i.id)) : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function salvarCarrinho(itens) {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(itens));
+    } catch (e) {
+      /* modo privativo ou arquivo local: a sacola segue válida na sessão atual */
+    }
+    Cart.itens = itens;
+    atualizarContador();
+  }
+
+  const Cart = {
+    itens: lerCarrinho(),
+
+    chave(id, variacao) { return id + '::' + (variacao || ''); },
+
+    adicionar(id, qtd = 1, variacao = null) {
+      const produto = byId(id);
+      if (!produto) return;
+      const chave = this.chave(id, variacao);
+      const existente = this.itens.find(i => this.chave(i.id, i.variacao) === chave);
+      if (existente) existente.qtd += qtd;
+      else this.itens.push({ id, qtd, variacao });
+      salvarCarrinho(this.itens);
+      toast(`${produto.nome} adicionado à sacola`);
+    },
+
+    definirQtd(chave, qtd) {
+      const item = this.itens.find(i => this.chave(i.id, i.variacao) === chave);
+      if (!item) return;
+      item.qtd = Math.max(1, Math.min(99, qtd));
+      salvarCarrinho(this.itens);
+    },
+
+    remover(chave) {
+      this.itens = this.itens.filter(i => this.chave(i.id, i.variacao) !== chave);
+      salvarCarrinho(this.itens);
+    },
+
+    limpar() { salvarCarrinho([]); },
+
+    quantidade() { return this.itens.reduce((t, i) => t + i.qtd, 0); },
+
+    subtotal() {
+      return this.itens.reduce((t, i) => {
+        const p = byId(i.id);
+        return t + (p ? p.preco * i.qtd : 0);
+      }, 0);
+    }
+  };
+
+  function atualizarContador() {
+    const total = Cart.quantidade();
+    $$('[data-cart-count]').forEach(el => {
+      el.textContent = total;
+      el.hidden = total === 0;
+    });
+  }
+
+  /* ------------------------------- componentes --------------------------- */
+
+  const FLAGS = { sale: ['flag--sale', 'Oferta'], new: ['flag--new', 'Novidade'], best: ['', 'Mais vendido'] };
+
+  function cardProduto(p) {
+    const flag = p.flag && FLAGS[p.flag]
+      ? `<div class="card__flags"><span class="flag ${FLAGS[p.flag][0]}">${FLAGS[p.flag][1]}</span></div>` : '';
+    const de = p.precoDe ? `<span class="price__old">${brl(p.precoDe)}</span>` : '';
+    const link = `produto.html?id=${encodeURIComponent(p.id)}`;
+    return `
+      <article class="card">
+        <a class="card__media" href="${link}" aria-label="Ver ${escape(p.nome)}">
+          ${flag}
+          <img src="${p.img}" alt="${escape(p.nome)}" loading="lazy" width="200" height="240">
+        </a>
+        <div class="card__body">
+          <span class="card__cat">${escape(catNome(p.categoria))}</span>
+          <h3 class="card__title"><a href="${link}">${escape(p.nome)}</a></h3>
+          <p class="rating"><span class="rating__stars" aria-hidden="true">${estrelas(p.rating)}</span>
+             ${p.rating.toFixed(1).replace('.', ',')} · ${p.avaliacoes} avaliações</p>
+          <div class="price">
+            <span class="price__now">${brl(p.preco)}</span>${de}
+          </div>
+          <span class="price__note">ou 3x de ${brl(p.preco / 3)} sem juros</span>
+        </div>
+        <div class="card__actions">
+          <button class="btn btn--primary" data-add="${p.id}">Adicionar</button>
+          <a class="btn btn--light" href="${link}">Detalhes</a>
+        </div>
+      </article>`;
+  }
+
+  function iconeCheck() {
+    return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+      <path d="M20 6 9 17l-5-5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  }
+
+  /* ---------------------------- vitrine / catálogo ----------------------- */
+
+  function initVitrine(escopo) {
+    const raiz = escopo || document;
+    const grade = $('[data-grid]', raiz);
+    if (!grade) return;
+
+    const estado = grade._estado || (grade._estado = { ordem: 'destaque' });
+    estado.categoria = parametros().get('cat') || 'todos';
+    estado.limite = parseInt(grade.dataset.limit || '0', 10);
+
+    function ordenar(lista) {
+      const copia = lista.slice();
+      if (estado.ordem === 'menor') copia.sort((a, b) => a.preco - b.preco);
+      if (estado.ordem === 'maior') copia.sort((a, b) => b.preco - a.preco);
+      if (estado.ordem === 'nota')  copia.sort((a, b) => b.rating - a.rating);
+      return copia;
+    }
+
+    function render() {
+      let lista = estado.categoria === 'todos'
+        ? PRODUTOS
+        : PRODUTOS.filter(p => p.categoria === estado.categoria);
+      lista = ordenar(lista);
+      if (estado.limite) lista = lista.slice(0, estado.limite);
+
+      grade.innerHTML = lista.length
+        ? lista.map(cardProduto).join('')
+        : '<p class="empty">Nenhum produto nesta categoria na prévia.</p>';
+
+      $$('[data-filter]', raiz).forEach(c => {
+        c.setAttribute('aria-pressed', String(c.dataset.filter === estado.categoria));
+      });
+
+      const contador = $('[data-count]', raiz);
+      if (contador) {
+        contador.textContent = `${lista.length} ${lista.length === 1 ? 'produto' : 'produtos'}`;
+      }
+    }
+
+    grade._render = render;
+
+    if (!grade.dataset.bound) {
+      grade.dataset.bound = '1';
+
+      $$('[data-filter]', raiz).forEach(chip => {
+        chip.addEventListener('click', () => {
+          estado.categoria = chip.dataset.filter;
+          grade._render();
+        });
+      });
+
+      const ordenacao = $('[data-sort]', raiz);
+      if (ordenacao) {
+        ordenacao.addEventListener('change', () => {
+          estado.ordem = ordenacao.value;
+          grade._render();
+        });
+      }
+    }
+
+    render();
+  }
+
+  /* ---------------------------- página de produto ------------------------ */
+
+  function initProduto(escopo) {
+    const contexto = escopo || document;
+    const raiz = $('[data-pdp]', contexto);
+    if (!raiz) return;
+
+    const p = byId(parametros().get('id')) || PRODUTOS[0];
+    const estado = raiz._estado || (raiz._estado = {});
+    estado.produto = p;
+    estado.variacao = p.variacoes ? p.variacoes.opcoes[0] : null;
+
+    document.title = `${p.nome} · Joyce Beauty`;
+
+    const de = p.precoDe ? `<span class="price__old">${brl(p.precoDe)}</span>` : '';
+    const economia = p.precoDe
+      ? `<span class="flag flag--sale">-${Math.round((1 - p.preco / p.precoDe) * 100)}%</span>` : '';
+
+    const blocoVariacoes = p.variacoes ? `
+      <div class="field">
+        <label id="lbl-var">${escape(p.variacoes.rotulo)}</label>
+        <div class="options" role="group" aria-labelledby="lbl-var">
+          ${p.variacoes.opcoes.map((o, i) => `
+            <button type="button" class="option" data-option="${escape(o)}" aria-pressed="${i === 0}">${escape(o)}</button>`).join('')}
+        </div>
+      </div>` : '';
+
+    raiz.innerHTML = `
+      <div class="gallery">
+        <div class="gallery__main"><img id="pdp-img" src="${p.img}" alt="${escape(p.nome)}" width="200" height="240"></div>
+        <div class="gallery__thumbs">
+          ${[0, 1, 2].map(i => `
+            <button class="thumb" type="button" data-thumb="${i}" aria-pressed="${i === 0}" aria-label="Imagem ${i + 1}">
+              <img src="${p.img}" alt="" width="200" height="240">
+            </button>`).join('')}
+        </div>
+      </div>
+      <div class="pdp__info">
+        <span class="card__cat">${escape(catNome(p.categoria))}</span>
+        <h1>${escape(p.nome)}</h1>
+        <p class="rating"><span class="rating__stars" aria-hidden="true">${estrelas(p.rating)}</span>
+           ${p.rating.toFixed(1).replace('.', ',')} · ${p.avaliacoes} avaliações</p>
+        <div class="pdp__price"><span class="price__now">${brl(p.preco)}</span>${de} ${economia}</div>
+        <span class="price__note">ou 3x de ${brl(p.preco / 3)} sem juros · frete grátis acima de ${brl(FRETE_GRATIS_A_PARTIR_DE)}</span>
+        <p class="pdp__desc">${escape(p.resumo)}</p>
+        ${blocoVariacoes}
+        <div class="field">
+          <label for="pdp-qtd">Quantidade</label>
+          <div class="qty">
+            <button type="button" data-step="-1" aria-label="Diminuir">−</button>
+            <input id="pdp-qtd" type="number" value="1" min="1" max="99" inputmode="numeric">
+            <button type="button" data-step="1" aria-label="Aumentar">+</button>
+          </div>
+        </div>
+        <div class="pdp__buy">
+          <button class="btn btn--primary" data-pdp-add>Adicionar à sacola</button>
+          <a class="btn btn--ghost" href="carrinho.html">Ver sacola</a>
+        </div>
+        <ul class="split__list">
+          <li>${iconeCheck()}<span>Retirada sem custo no salão Joyce Beauty</span></li>
+          <li>${iconeCheck()}<span>Entrega em todo o Brasil · 3 a 8 dias úteis</span></li>
+          <li>${iconeCheck()}<span>Troca garantida em até 7 dias</span></li>
+        </ul>
+      </div>`;
+
+    /* abas */
+    const abas = $('[data-tabs]', contexto);
+    if (abas) {
+      $('#tab-descricao', abas).innerHTML = `<p>${escape(p.descricao)}</p>`;
+      $('#tab-uso', abas).innerHTML = `<ul>${p.comoUsar.map(t => `<li>${escape(t)}</li>`).join('')}</ul>`;
+      $('#tab-specs', abas).innerHTML = `<dl class="spec">${Object.entries(p.specs)
+        .map(([k, v]) => `<div><dt>${escape(k)}</dt><dd>${escape(v)}</dd></div>`).join('')}</dl>`;
+
+      $$('[data-tab]', abas).forEach((btn, i) => {
+        btn.setAttribute('aria-selected', String(i === 0));
+        if (!btn.dataset.bound) {
+          btn.dataset.bound = '1';
+          btn.addEventListener('click', () => {
+            $$('[data-tab]', abas).forEach(b => b.setAttribute('aria-selected', String(b === btn)));
+            $$('.tabs__panel', abas).forEach(pan => { pan.hidden = pan.id !== 'tab-' + btn.dataset.tab; });
+          });
+        }
+      });
+      $$('.tabs__panel', abas).forEach(pan => { pan.hidden = pan.id !== 'tab-descricao'; });
+    }
+
+    /* migalhas */
+    const migalha = $('[data-crumb]', contexto);
+    if (migalha) migalha.textContent = p.nome;
+
+    /* interações */
+    if (!raiz.dataset.bound) {
+      raiz.dataset.bound = '1';
+
+      raiz.addEventListener('click', ev => {
+        const campoQtd = $('#pdp-qtd', raiz);
+
+        const passo = ev.target.closest('[data-step]');
+        if (passo && campoQtd) {
+          campoQtd.value = Math.max(1, Math.min(99, (parseInt(campoQtd.value, 10) || 1) + Number(passo.dataset.step)));
+          return;
+        }
+        const opcao = ev.target.closest('[data-option]');
+        if (opcao) {
+          raiz._estado.variacao = opcao.dataset.option;
+          $$('[data-option]', raiz).forEach(o => o.setAttribute('aria-pressed', String(o === opcao)));
+          return;
+        }
+        const thumb = ev.target.closest('[data-thumb]');
+        if (thumb) {
+          $$('[data-thumb]', raiz).forEach(t => t.setAttribute('aria-pressed', String(t === thumb)));
+          return;
+        }
+        if (ev.target.closest('[data-pdp-add]')) {
+          Cart.adicionar(raiz._estado.produto.id, parseInt(campoQtd.value, 10) || 1, raiz._estado.variacao);
+        }
+      });
+    }
+
+    /* relacionados */
+    const relacionados = $('[data-related]', contexto);
+    if (relacionados) {
+      const lista = PRODUTOS.filter(x => x.categoria === p.categoria && x.id !== p.id).slice(0, 3);
+      const complemento = PRODUTOS.filter(x => x.id !== p.id && !lista.includes(x)).slice(0, 3 - lista.length);
+      relacionados.innerHTML = lista.concat(complemento).map(cardProduto).join('');
+    }
+  }
+
+  /* ------------------------------ página carrinho ------------------------ */
+
+  function initCarrinho(escopo) {
+    const raiz = $('[data-cart-page]', escopo || document);
+    if (!raiz) return;
+
+    const estado = raiz._estado || (raiz._estado = { desconto: 0, cupom: '' });
+
+    function render() {
+      if (!Cart.itens.length) {
+        raiz.innerHTML = `
+          <div class="cart-empty">
+            <h2>Sua sacola está vazia</h2>
+            <p>Explore os produtos demonstrativos da prévia e adicione seus favoritos.</p>
+            <a class="btn btn--primary" href="loja.html">Ver a loja</a>
+          </div>`;
+        return;
+      }
+
+      const subtotal = Cart.subtotal();
+      const valorDesconto = subtotal * estado.desconto;
+      const base = subtotal - valorDesconto;
+      const frete = base >= FRETE_GRATIS_A_PARTIR_DE ? 0 : FRETE_PADRAO;
+      const total = base + frete;
+      const faltando = Math.max(0, FRETE_GRATIS_A_PARTIR_DE - base);
+      const progresso = Math.min(100, (base / FRETE_GRATIS_A_PARTIR_DE) * 100);
+
+      raiz.innerHTML = `
+        <div class="cart-layout">
+          <div>
+            <div class="cart-list">
+              ${Cart.itens.map(item => {
+                const p = byId(item.id);
+                const chave = Cart.chave(item.id, item.variacao);
+                return `
+                <article class="cart-item">
+                  <div class="cart-item__media"><img src="${p.img}" alt="${escape(p.nome)}" width="200" height="240"></div>
+                  <div>
+                    <h3 class="serif"><a href="produto.html?id=${encodeURIComponent(p.id)}">${escape(p.nome)}</a></h3>
+                    <p class="cart-item__meta">${escape(catNome(p.categoria))}${item.variacao ? ' · ' + escape(item.variacao) : ''} · ${brl(p.preco)} cada</p>
+                    <div class="qty">
+                      <button type="button" data-cart-step="-1" data-key="${escape(chave)}" aria-label="Diminuir">−</button>
+                      <input type="number" value="${item.qtd}" min="1" max="99" data-cart-qty="${escape(chave)}" inputmode="numeric" aria-label="Quantidade de ${escape(p.nome)}">
+                      <button type="button" data-cart-step="1" data-key="${escape(chave)}" aria-label="Aumentar">+</button>
+                    </div>
+                  </div>
+                  <div class="cart-item__right">
+                    <strong class="price__now">${brl(p.preco * item.qtd)}</strong>
+                    <button class="link-del" data-cart-remove="${escape(chave)}">Remover</button>
+                  </div>
+                </article>`;
+              }).join('')}
+            </div>
+            <p class="hint" style="margin-top:16px">
+              <button class="link-del" data-cart-clear>Esvaziar sacola</button> ·
+              <a href="loja.html" style="text-decoration:underline">continuar comprando</a>
+            </p>
+          </div>
+
+          <aside class="summary">
+            <h2>Resumo</h2>
+            <div class="progress"><i style="width:${progresso}%"></i></div>
+            <p class="hint">${faltando > 0
+              ? `Faltam <strong>${brl(faltando)}</strong> para o frete grátis.`
+              : '<span class="hint--ok">Você garantiu o frete grátis!</span>'}</p>
+
+            <div class="coupon">
+              <input type="text" id="cupom" placeholder="Cupom (JOYCE10)" aria-label="Cupom de desconto" value="${escape(estado.cupom)}">
+              <button class="btn btn--light" data-coupon>Aplicar</button>
+            </div>
+            <p class="hint" data-coupon-msg>${estado.cupom
+              ? `<span class="hint--ok">Cupom ${escape(estado.cupom)} aplicado.</span>`
+              : 'Cupons de demonstração: JOYCE10 e BEAUTY15.'}</p>
+
+            <div class="summary__row"><span>Subtotal</span><span>${brl(subtotal)}</span></div>
+            ${valorDesconto > 0 ? `<div class="summary__row"><span>Desconto</span><span class="free">− ${brl(valorDesconto)}</span></div>` : ''}
+            <div class="summary__row"><span>Frete</span><span>${frete === 0 ? '<span class="free">Grátis</span>' : brl(frete)}</span></div>
+            <div class="summary__row summary__row--total"><span>Total</span><span>${brl(total)}</span></div>
+            <p class="price__note" style="display:block;margin:6px 0 18px">em até 3x de ${brl(total / 3)} sem juros</p>
+
+            <button class="btn btn--primary btn--block" data-checkout>Finalizar compra</button>
+            <p class="hint" style="text-align:center;margin-top:12px">Prévia comercial — nenhum pagamento é processado.</p>
+          </aside>
+        </div>`;
+    }
+
+    raiz._render = render;
+
+    if (!raiz.dataset.bound) {
+      raiz.dataset.bound = '1';
+
+      raiz.addEventListener('click', ev => {
+        const passo = ev.target.closest('[data-cart-step]');
+        if (passo) {
+          const campo = $(`[data-cart-qty="${CSS.escape(passo.dataset.key)}"]`, raiz);
+          Cart.definirQtd(passo.dataset.key, (parseInt(campo.value, 10) || 1) + Number(passo.dataset.cartStep));
+          raiz._render();
+          return;
+        }
+        const remover = ev.target.closest('[data-cart-remove]');
+        if (remover) { Cart.remover(remover.dataset.cartRemove); toast('Produto removido da sacola'); raiz._render(); return; }
+
+        if (ev.target.closest('[data-cart-clear]')) { Cart.limpar(); raiz._render(); return; }
+
+        if (ev.target.closest('[data-coupon]')) {
+          const codigo = ($('#cupom', raiz).value || '').trim().toUpperCase();
+          if (CUPONS[codigo]) { raiz._estado.desconto = CUPONS[codigo]; raiz._estado.cupom = codigo; toast(`Cupom ${codigo} aplicado`); }
+          else { raiz._estado.desconto = 0; raiz._estado.cupom = ''; toast('Cupom inválido nesta prévia'); }
+          raiz._render();
+          return;
+        }
+
+        if (ev.target.closest('[data-checkout]')) {
+          toast('Checkout indisponível: esta é uma prévia comercial.');
+        }
+      });
+
+      raiz.addEventListener('change', ev => {
+        const campo = ev.target.closest('[data-cart-qty]');
+        if (campo) { Cart.definirQtd(campo.dataset.cartQty, parseInt(campo.value, 10) || 1); raiz._render(); }
+      });
+    }
+
+    render();
+  }
+
+  /* ------------------------------ interações gerais ---------------------- */
+
+  function initGlobal() {
+    atualizarContador();
+
+    const alternar = $('[data-menu-toggle]');
+    const menu = $('#nav-principal');
+    if (alternar && menu) {
+      alternar.addEventListener('click', () => {
+        const aberto = menu.classList.toggle('is-open');
+        alternar.setAttribute('aria-expanded', String(aberto));
+      });
+    }
+
+    document.addEventListener('click', ev => {
+      const botao = ev.target.closest('[data-add]');
+      if (botao) { ev.preventDefault(); Cart.adicionar(botao.dataset.add, 1); }
+    });
+
+    $$('[data-demo-form]').forEach(form => {
+      form.addEventListener('submit', ev => {
+        ev.preventDefault();
+        form.reset();
+        toast('Cadastro simulado: a prévia não envia dados.');
+      });
+    });
+
+    const ano = $('[data-year]');
+    if (ano) ano.textContent = new Date().getFullYear();
+  }
+
+  /* Exposto para o roteador do pacote único. */
+  window.JoyceBeauty = { initGlobal, initVitrine, initProduto, initCarrinho, atualizarContador, toast };
+
+  document.addEventListener('DOMContentLoaded', () => {
+    initGlobal();
+    if (window.JB_BUNDLE) return;   /* no pacote único quem chama é o roteador */
+    initVitrine();
+    initProduto();
+    initCarrinho();
+  });
+})();
+
+</script>
+<script>
+
+/* Roteador do pacote único: troca de "página" pelo hash, sem recarregar. */
+(function () {
+  'use strict';
+  var ROTAS = ["home", "loja", "produto", "carrinho"];
+  var TITULOS = {
+    home: 'Joyce Beauty · Loja virtual (prévia)',
+    loja: 'Loja · Joyce Beauty (prévia)',
+    produto: 'Produto · Joyce Beauty (prévia)',
+    carrinho: 'Sacola · Joyce Beauty (prévia)'
+  };
+  var secoes = {};
+  ROTAS.forEach(function (r) { secoes[r] = document.querySelector('[data-route="' + r + '"]'); });
+
+  function rotaAtual() {
+    var h = (location.hash || '').replace(/^#\/?/, '');
+    return h.split('?')[0] || 'home';
+  }
+
+  function marcarMenu(nome) {
+    Array.prototype.forEach.call(document.querySelectorAll('#nav-principal a'), function (a) {
+      var alvo = (a.getAttribute('href') || '').replace(/^#\//, '').split('?')[0] || 'home';
+      if (alvo === nome && a.getAttribute('href').indexOf('?') === -1) a.setAttribute('aria-current', 'page');
+      else a.removeAttribute('aria-current');
+    });
+  }
+
+  function mostrar(nome) {
+    ROTAS.forEach(function (r) { secoes[r].hidden = (r !== nome); });
+    var JB = window.JoyceBeauty;
+    if (nome === 'home' || nome === 'loja') JB.initVitrine(secoes[nome]);
+    if (nome === 'produto') JB.initProduto(secoes[nome]);
+    if (nome === 'carrinho') JB.initCarrinho(secoes[nome]);
+    JB.atualizarContador();
+    if (nome !== 'produto') document.title = TITULOS[nome];
+    marcarMenu(nome);
+    var menu = document.getElementById('nav-principal');
+    if (menu) menu.classList.remove('is-open');
+  }
+
+  function algumaVisivel() {
+    return ROTAS.some(function (r) { return !secoes[r].hidden; });
+  }
+
+  function navegar(inicial) {
+    var nome = rotaAtual();
+    if (ROTAS.indexOf(nome) === -1) {          /* âncora interna, ex.: #destaques */
+      if (!algumaVisivel()) mostrar('home');
+      var alvo = document.getElementById(nome);
+      if (alvo) alvo.scrollIntoView({ behavior: 'smooth' });
+      return;
+    }
+    mostrar(nome);
+    if (!inicial) window.scrollTo({ top: 0, behavior: 'auto' });
+  }
+
+  /* Links do site continuam apontando para *.html: traduzimos para rotas. */
+  document.addEventListener('click', function (ev) {
+    var a = ev.target.closest ? ev.target.closest('a[href]') : null;
+    if (!a) return;
+    var m = /^(index|loja|produto|carrinho)\.html(\?.*)?$/.exec(a.getAttribute('href') || '');
+    if (!m) return;
+    ev.preventDefault();
+    var destino = '#/' + (m[1] === 'index' ? '' : m[1]) + (m[2] || '');
+    if (location.hash === destino) navegar(false);
+    else location.hash = destino;
+  });
+
+  window.addEventListener('hashchange', function () { navegar(false); });
+  document.addEventListener('DOMContentLoaded', function () { navegar(true); });
+})();
+
+</script>
+</body>
+</html>
