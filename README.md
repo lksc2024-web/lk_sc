@@ -17,6 +17,8 @@ python3 -m http.server 8080
 index.html
 assets/
   css/estilo.css
+  css/fontes.css    ← Bodoni Moda e Jost, hospedadas aqui
+  fonts/
   js/config.js      ← contatos do estúdio
   js/site.js
   img/
