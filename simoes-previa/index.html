@@ -198,6 +198,7 @@ section[id]{scroll-margin-top:84px}
 .gal-nav{position:absolute;top:50%;transform:translateY(-50%);display:none}
 .gal-nav.l{left:12px}.gal-nav.r{right:12px}
 @media (hover:hover){.gal-nav{display:grid}}
+@media (min-width:900px){.slide{aspect-ratio:16/8}}
 .thumbs{display:flex;gap:8px;padding:10px 16px 0;overflow-x:auto}
 .thumbs button{flex:none;width:76px;aspect-ratio:3/2;border-radius:8px;overflow:hidden;border:2px solid transparent;padding:0;cursor:pointer;opacity:.7;background:none}
 .thumbs button[aria-current="true"]{border-color:var(--brass);opacity:1}
@@ -492,18 +493,18 @@ function Header({onNav}){
   const go=id=>{setOpen(false);setTimeout(()=>scrollToId(id),open?60:0)};
   useEffect(()=>{document.body.style.overflow=open?'hidden':'';},[open]);
   const links=[['imoveis','Imóveis'],['sobre','A imobiliária'],['contato','Contato']];
-  return html`<header class="hdr"><div class="wrap">
+  return html`<${React.Fragment}><header class="hdr"><div class="wrap">
     <${Brand} onClick=${()=>window.scrollTo({top:0,behavior:'smooth'})}/>
     <nav class="nav" aria-label="Principal">${links.map(([id,l])=>html`<button key=${id} onClick=${()=>go(id)}>${l}</button>`)}</nav>
     <a class="btn btn-wa hdr-cta" href=${waLink('Olá, Simões Imobiliária! Gostaria de falar com um corretor.')} target="_blank" rel="noopener">${I.wa} WhatsApp</a>
     <button class="menu-btn" aria-label="Abrir menu" aria-expanded=${open} onClick=${()=>setOpen(true)}>${I.menu}</button>
-  </div>
+  </div></header>
   ${open&&html`<div class="drawer" role="dialog" aria-modal="true" aria-label="Menu">
     <div class="drawer-top"><${Brand} onClick=${()=>{setOpen(false);window.scrollTo({top:0})}}/><button class="icon-btn" aria-label="Fechar menu" onClick=${()=>setOpen(false)}>${I.close}</button></div>
     <nav>${links.map(([id,l])=>html`<button key=${id} onClick=${()=>go(id)}>${l}</button>`)}</nav>
     <a class="btn btn-wa" href=${waLink('Olá, Simões Imobiliária! Gostaria de falar com um corretor.')} target="_blank" rel="noopener">${I.wa} Falar no WhatsApp</a>
   </div>`}
-  </header>`;
+  <//>`;
 }
 
 function Hero({onOpen,onSearch}){
