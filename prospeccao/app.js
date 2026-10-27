@@ -243,6 +243,7 @@ async function buscar(e) {
   const onde = bairro ? `${bairro}, ${cidade.n} - ${cidade.uf}` : `${cidade.n} - ${cidade.uf}`;
 
   estado.buscando = true;
+  $("#b-erro").hidden = true;
   $("#btn-buscar").disabled = true;
   $("#painel-progresso").hidden = false;
   progresso(0, "Começando…", `Buscando ${nichos.join(", ")}`);
@@ -281,7 +282,7 @@ async function buscar(e) {
   await Promise.all([carregarBuscas(), carregarLeads()]);
   renderBuscar();
 
-  if (!total) { fimBusca(trava, falhas ? ultimoErro : "Nenhuma empresa encontrada. Tente outro termo ou cidade."); return; }
+  if (!total) { fimBusca(trava, falhas ? ultimoErro : "Nenhuma empresa encontrada. Tente outro termo ou cidade.", true); return; }
   await enriquecer([...ids]);
   fimBusca(trava, `Pronto! ${total} empresas (${novos} novas).`);
   estado.filtro = { ...estado.filtro, busca: busca.id, status: "" };
@@ -289,12 +290,15 @@ async function buscar(e) {
   irPara("leads");
 }
 
-function fimBusca(trava, msg) {
+// Erros ficam fixos na tela (o aviso rápido some antes de dar tempo de ler).
+function fimBusca(trava, msg, fixo = false) {
   trava?.release?.();
   estado.buscando = false;
   $("#btn-buscar").disabled = false;
   $("#painel-progresso").hidden = true;
-  toast(msg);
+  $("#b-erro").hidden = !fixo;
+  if (fixo) { $("#b-erro").textContent = msg; $("#b-erro").scrollIntoView({ block: "center" }); }
+  else toast(msg);
 }
 
 // Visita os sites para achar e-mail, WhatsApp e redes. Só preenche o que está vazio.

@@ -43,6 +43,30 @@ export function leadDe(lugar, nicho) {
   };
 }
 
+// Traduz o erro do Google para o que a pessoa precisa fazer no console.
+const MOTIVOS = {
+  API_KEY_INVALID: "A chave do Google está incorreta. Copie de novo em Credenciais e cole em Ajustes.",
+  SERVICE_DISABLED: "A “Places API (New)” não está ativada. No console do Google: APIs e serviços → Biblioteca → Places API (New) → Ativar.",
+  BILLING_DISABLED: "O faturamento não está ativado no projeto do Google. Ative em Faturamento (é exigido mesmo para a cota grátis).",
+  API_KEY_SERVICE_BLOCKED: "A chave está restrita e não libera a “Places API (New)”. Em Credenciais → sua chave → Restrições de API, marque Places API (New).",
+  API_KEY_HTTP_REFERRER_BLOCKED: "A chave está restrita a sites. Em Credenciais → sua chave → Restrições do aplicativo, escolha “Nenhum”.",
+  API_KEY_IP_ADDRESS_BLOCKED: "A chave está restrita a endereços IP. Em Credenciais → sua chave → Restrições do aplicativo, escolha “Nenhum”.",
+  RATE_LIMIT_EXCEEDED: "Limite de buscas do Google atingido (cota diária). Tente amanhã ou aumente a cota no console.",
+  RESOURCE_EXHAUSTED: "Limite de buscas do Google atingido (cota diária). Tente amanhã ou aumente a cota no console.",
+};
+
+export function explicarErro(status, dados) {
+  const e = (dados && dados.error) || {};
+  const motivos = (e.details || []).map((d) => d.reason).filter(Boolean);
+  const msg = e.message || `HTTP ${status}`;
+  let motivo = motivos.find((m) => MOTIVOS[m]);
+  if (!motivo && /billing/i.test(msg)) motivo = "BILLING_DISABLED";
+  if (!motivo && /has not been used|is disabled/i.test(msg)) motivo = "SERVICE_DISABLED";
+  if (!motivo && /api key not valid/i.test(msg)) motivo = "API_KEY_INVALID";
+  if (!motivo && e.status === "RESOURCE_EXHAUSTED") motivo = "RESOURCE_EXHAUSTED";
+  return `${motivo ? MOTIVOS[motivo] : "O Google recusou a busca."} (Google: ${msg})`;
+}
+
 export default async function handler(req, res) {
   if (req.method !== "POST") return responder(res, 405, { erro: "Use POST." });
   const sessao = await autenticar(req);
@@ -67,13 +91,13 @@ export default async function handler(req, res) {
       headers: { "Content-Type": "application/json", "X-Goog-Api-Key": chave, "X-Goog-FieldMask": CAMPOS },
       body: JSON.stringify(token ? { ...corpo, pageToken: token } : corpo),
     });
-    chamadas++;
     const dados = await r.json().catch(() => ({}));
+    if (r.ok) chamadas++; // chamada recusada não é cobrada pelo Google
     if (!r.ok) {
-      const msg = (dados.error && dados.error.message) || `HTTP ${r.status}`;
+      const erro = explicarErro(r.status, dados);
+      console.error("Google Places", r.status, JSON.stringify(dados.error || dados).slice(0, 1000));
       if (leads.length) break; // devolve o que já veio
-      return responder(res, r.status === 403 || r.status === 400 ? 400 : 502,
-        { erro: `O Google recusou a busca: ${msg}`, chamadas });
+      return responder(res, r.status === 403 || r.status === 400 ? 400 : 502, { erro, chamadas });
     }
     for (const p of dados.places || []) leads.push(leadDe(p, nicho));
     token = dados.nextPageToken;
