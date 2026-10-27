@@ -1,0 +1,15 @@
+{
+  "name": "Prospecção",
+  "short_name": "Prospecção",
+  "description": "Encontre empresas no Google Maps e organize seus contatos de venda.",
+  "lang": "pt-BR",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f5f4f",
+  "theme_color": "#0f5f4f",
+  "icons": [
+    { "src": "/icone-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icone-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/icone-512-mask.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

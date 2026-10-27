@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f5f4f">
+<meta name="description" content="Encontre empresas no Google Maps e organize seus contatos de venda.">
+<title>Prospecção</title>
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="/icone-192.png">
+<link rel="apple-touch-icon" href="/icone-192.png">
+<style>
+:root {
+  --bg: #f4f6f5; --card: #ffffff; --txt: #16201d; --sub: #5d6b66; --linha: #dfe5e2;
+  --pri: #0f5f4f; --pri-txt: #ffffff; --pri-suave: #e2f0ec; --wa: #1f9d55; --perigo: #b42318;
+  --amarelo: #b7791f; --sombra: 0 1px 2px rgba(0,0,0,.06), 0 4px 16px rgba(0,0,0,.05);
+  --s-novo: #2563eb; --s-contatado: #b7791f; --s-respondeu: #7c3aed; --s-reuniao: #0e7490;
+  --s-fechado: #15803d; --s-descartado: #6b7280;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e1412; --card: #161e1b; --txt: #e8eeec; --sub: #9aa8a3; --linha: #26312d;
+    --pri: #3fb59a; --pri-txt: #04140f; --pri-suave: #16302a; --wa: #34c172; --perigo: #f87171;
+    --amarelo: #f5c542; --sombra: none;
+    --s-novo: #60a5fa; --s-contatado: #f5c542; --s-respondeu: #a78bfa; --s-reuniao: #22d3ee;
+    --s-fechado: #4ade80; --s-descartado: #9ca3af;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e1412; --card: #161e1b; --txt: #e8eeec; --sub: #9aa8a3; --linha: #26312d;
+  --pri: #3fb59a; --pri-txt: #04140f; --pri-suave: #16302a; --wa: #34c172; --perigo: #f87171;
+  --amarelo: #f5c542; --sombra: none;
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; background: var(--bg); color: var(--txt);
+  font: 16px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+body { padding-bottom: calc(76px + env(safe-area-inset-bottom)); }
+button, input, select, textarea { font: inherit; color: inherit; }
+a { color: var(--pri); }
+[hidden] { display: none !important; }
+
+header.topo { position: sticky; top: 0; z-index: 5; background: var(--pri); color: #fff;
+  padding: calc(12px + env(safe-area-inset-top)) 16px 12px; display: flex; align-items: center; gap: 10px; }
+:root[data-theme="dark"] header.topo { background: #11372e; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) header.topo { background: #11372e; } }
+header.topo h1 { font-size: 19px; margin: 0; flex: 1; }
+main { max-width: 720px; margin: 0 auto; padding: 16px; }
+
+.cartao { background: var(--card); border: 1px solid var(--linha); border-radius: 14px; padding: 16px;
+  box-shadow: var(--sombra); margin-bottom: 14px; }
+.cartao h2 { font-size: 17px; margin: 0 0 12px; }
+label.campo { display: block; font-size: 14px; color: var(--sub); margin: 12px 0 6px; font-weight: 600; }
+input[type=text], input[type=email], input[type=password], input[type=search], select, textarea {
+  width: 100%; padding: 12px 14px; border: 1px solid var(--linha); border-radius: 10px;
+  background: var(--bg); min-height: 48px; }
+textarea { min-height: 96px; resize: vertical; }
+input:focus, select:focus, textarea:focus { outline: 2px solid var(--pri); outline-offset: 0; border-color: transparent; }
+.dica { font-size: 13px; color: var(--sub); margin: 6px 0 0; }
+
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px;
+  padding: 0 18px; border-radius: 12px; border: 1px solid var(--linha); background: var(--card);
+  font-weight: 600; cursor: pointer; text-decoration: none; color: var(--txt); }
+.btn.pri { background: var(--pri); color: var(--pri-txt); border-color: var(--pri); }
+.btn.wa { background: var(--wa); color: #fff; border-color: var(--wa); }
+.btn.perigo { color: var(--perigo); }
+.btn.cheio { width: 100%; }
+.btn:disabled { opacity: .45; cursor: default; }
+.btn.peq { min-height: 38px; padding: 0 12px; font-size: 14px; border-radius: 10px; }
+
+.segmento { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.segmento button { border: 1px solid var(--linha); background: var(--bg); border-radius: 12px; padding: 10px 6px;
+  text-align: center; cursor: pointer; min-height: 64px; }
+.segmento button b { display: block; font-size: 15px; }
+.segmento button span { font-size: 12px; color: var(--sub); }
+.segmento button[aria-pressed="true"] { border-color: var(--pri); background: var(--pri-suave); outline: 1px solid var(--pri); }
+
+.chips { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
+.chips::-webkit-scrollbar { display: none; }
+.chip { flex: none; border: 1px solid var(--linha); background: var(--card); border-radius: 999px;
+  padding: 7px 13px; font-size: 14px; cursor: pointer; white-space: nowrap; }
+.chip[aria-pressed="true"] { background: var(--pri); color: var(--pri-txt); border-color: var(--pri); }
+.chip small { opacity: .75; margin-left: 4px; }
+
+.sugestoes { position: relative; }
+.sugestoes ul { position: absolute; left: 0; right: 0; top: 2px; z-index: 4; list-style: none; margin: 0; padding: 4px;
+  background: var(--card); border: 1px solid var(--linha); border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,.15); }
+.sugestoes li { padding: 11px 12px; border-radius: 8px; cursor: pointer; }
+.sugestoes li:hover, .sugestoes li.ativo { background: var(--pri-suave); }
+
+.progresso { height: 8px; background: var(--linha); border-radius: 99px; overflow: hidden; margin: 12px 0 6px; }
+.progresso div { height: 100%; background: var(--pri); width: 0; transition: width .3s; }
+
+.lead { background: var(--card); border: 1px solid var(--linha); border-radius: 14px; padding: 14px;
+  margin-bottom: 10px; box-shadow: var(--sombra); }
+.lead .cab { display: flex; gap: 10px; align-items: flex-start; cursor: pointer; }
+.lead .cab div { flex: 1; min-width: 0; }
+.lead h3 { margin: 0; font-size: 16px; line-height: 1.3; }
+.lead .meta { font-size: 13px; color: var(--sub); margin-top: 3px; }
+.lead .acoes { display: flex; gap: 8px; margin-top: 12px; }
+.lead .acoes .btn { flex: 1; min-height: 42px; font-size: 14px; padding: 0 8px; }
+.selos { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.selo { font-size: 12px; border-radius: 6px; padding: 2px 7px; background: var(--bg); border: 1px solid var(--linha); color: var(--sub); }
+.status { font-size: 12px; font-weight: 700; border-radius: 6px; padding: 3px 8px; white-space: nowrap;
+  color: var(--cor); border: 1px solid var(--cor); }
+.estrela { color: var(--amarelo); }
+
+.resumo { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 14px; }
+.resumo div { background: var(--card); border: 1px solid var(--linha); border-radius: 12px; padding: 10px; text-align: center; }
+.resumo b { display: block; font-size: 22px; }
+.resumo span { font-size: 12px; color: var(--sub); }
+
+.vazio { text-align: center; color: var(--sub); padding: 36px 12px; }
+
+nav.abas { position: fixed; left: 0; right: 0; bottom: 0; z-index: 6; display: flex; background: var(--card);
+  border-top: 1px solid var(--linha); padding-bottom: env(safe-area-inset-bottom); }
+nav.abas button { flex: 1; border: 0; background: none; padding: 10px 0 12px; font-size: 12px; color: var(--sub);
+  display: flex; flex-direction: column; align-items: center; gap: 3px; cursor: pointer; min-height: 60px; }
+nav.abas button svg { width: 24px; height: 24px; }
+nav.abas button[aria-current="page"] { color: var(--pri); font-weight: 700; }
+
+dialog.folha { border: 0; padding: 0; margin: auto 0 0; width: 100%; max-width: 100%; max-height: 92vh;
+  border-radius: 18px 18px 0 0; background: var(--bg); color: var(--txt); }
+@media (min-width: 760px) { dialog.folha { margin: auto; max-width: 680px; border-radius: 18px; } }
+dialog.folha::backdrop { background: rgba(0,0,0,.45); }
+.folha .barra { position: sticky; top: 0; background: var(--bg); padding: 14px 16px 10px; display: flex; gap: 10px;
+  align-items: flex-start; border-bottom: 1px solid var(--linha); z-index: 2; }
+.folha .barra h2 { margin: 0; font-size: 18px; flex: 1; }
+.folha .corpo { padding: 14px 16px calc(24px + env(safe-area-inset-bottom)); }
+.fechar { border: 0; background: var(--card); border-radius: 50%; width: 40px; height: 40px; font-size: 22px; cursor: pointer; flex: none; }
+.grade2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.info { display: grid; gap: 8px; font-size: 15px; }
+.info div { display: flex; gap: 10px; }
+.info dt { color: var(--sub); min-width: 78px; font-size: 14px; }
+.info dd { margin: 0; word-break: break-word; }
+.historico { list-style: none; padding: 0; margin: 0; }
+.historico li { border-left: 2px solid var(--linha); padding: 0 0 12px 12px; font-size: 14px; }
+.historico time { display: block; color: var(--sub); font-size: 12px; }
+
+.aviso { background: var(--pri-suave); border-radius: 10px; padding: 10px 12px; font-size: 14px; margin: 10px 0; }
+.erro { color: var(--perigo); font-size: 14px; margin-top: 8px; }
+.toast { position: fixed; left: 16px; right: 16px; bottom: calc(84px + env(safe-area-inset-bottom)); z-index: 20;
+  background: #1d2724; color: #fff; padding: 12px 16px; border-radius: 12px; text-align: center; font-size: 15px;
+  max-width: 480px; margin: 0 auto; }
+details.guia summary { cursor: pointer; font-weight: 600; padding: 6px 0; }
+details.guia ol { padding-left: 20px; margin: 8px 0; }
+details.guia li { margin-bottom: 8px; }
+.linha-flex { display: flex; gap: 8px; align-items: center; }
+.linha-flex > * { flex: 1; }
+.tela-login { max-width: 420px; margin: 8vh auto 0; }
+.logo { width: 72px; height: 72px; border-radius: 18px; display: block; margin: 0 auto 12px; }
+</style>
+</head>
+<body>
+
+<header class="topo">
+  <h1 id="titulo">Prospecção</h1>
+</header>
+
+<main>
+  <!-- Login -->
+  <section id="tela-login" class="tela-login" hidden>
+    <img class="logo" src="/icone-192.png" alt="">
+    <div class="cartao">
+      <h2>Entrar</h2>
+      <form id="form-login">
+        <label class="campo" for="login-email">E-mail</label>
+        <input id="login-email" type="email" autocomplete="email" required value="lksc2024@gmail.com">
+        <label class="campo" for="login-senha">Senha</label>
+        <input id="login-senha" type="password" autocomplete="current-password" minlength="6" required>
+        <p class="erro" id="login-erro" hidden></p>
+        <button class="btn pri cheio" style="margin-top:16px">Entrar</button>
+        <button class="btn cheio" type="button" id="btn-criar" style="margin-top:8px">Primeiro acesso: criar senha</button>
+      </form>
+    </div>
+  </section>
+
+  <!-- Buscar -->
+  <section id="tela-buscar" hidden>
+    <div class="aviso" id="aviso-chave" hidden>Antes da primeira busca, cadastre a chave do Google em <a href="#" data-ir="ajustes">Ajustes</a>.</div>
+    <form class="cartao" id="form-busca" autocomplete="off">
+      <h2>Nova busca</h2>
+      <label class="campo" for="b-nichos">O que você procura?</label>
+      <input id="b-nichos" type="text" placeholder="ex.: padaria, pet shop, dentista" required>
+      <p class="dica">Separe por vírgula para buscar vários tipos de uma vez.</p>
+      <label class="campo" for="b-cidade">Cidade</label>
+      <input id="b-cidade" type="text" placeholder="Comece a digitar…" required>
+      <div class="sugestoes"><ul id="b-sugestoes" hidden></ul></div>
+      <label class="campo" for="b-bairro">Bairro <span style="font-weight:400">(opcional)</span></label>
+      <input id="b-bairro" type="text" placeholder="ex.: Centro">
+      <label class="campo">Tamanho da busca</label>
+      <div class="segmento" id="b-tamanho">
+        <button type="button" data-t="rapida"><b>Rápida</b><span>até 20 por tipo</span></button>
+        <button type="button" data-t="padrao" aria-pressed="true"><b>Padrão</b><span>até 60 por tipo</span></button>
+        <button type="button" data-t="cidade"><b>Cidade toda</b><span>varre o mapa</span></button>
+      </div>
+      <p class="dica" id="b-custo"></p>
+      <button class="btn pri cheio" id="btn-buscar" style="margin-top:14px">Buscar empresas</button>
+    </form>
+
+    <div class="cartao" id="painel-progresso" hidden>
+      <h2 id="prog-titulo">Buscando…</h2>
+      <div class="progresso"><div id="prog-barra"></div></div>
+      <p class="dica" id="prog-etapa"></p>
+      <p class="dica">Mantenha o app aberto até terminar.</p>
+    </div>
+
+    <div class="cartao">
+      <h2>Buscas anteriores</h2>
+      <div id="lista-buscas"></div>
+    </div>
+  </section>
+
+  <!-- Leads -->
+  <section id="tela-leads" hidden>
+    <div class="resumo" id="resumo"></div>
+    <input id="f-texto" type="search" placeholder="Procurar por nome, bairro, categoria…" style="margin-bottom:10px">
+    <div class="chips" id="f-status" style="margin-bottom:8px"></div>
+    <div class="chips" id="f-extra" style="margin-bottom:12px">
+      <button class="chip" data-f="wa" aria-pressed="false">Com WhatsApp</button>
+      <button class="chip" data-f="email" aria-pressed="false">Com e-mail</button>
+      <button class="chip" data-f="semsite" aria-pressed="false">Sem site</button>
+      <button class="chip" data-f="nota" aria-pressed="false">Nota 4,5+</button>
+    </div>
+    <div class="linha-flex" style="margin-bottom:12px">
+      <select id="f-ordem" aria-label="Ordenar">
+        <option value="recentes">Mais recentes</option>
+        <option value="avaliacoes">Mais avaliações</option>
+        <option value="nota">Maior nota</option>
+        <option value="nome">Nome (A–Z)</option>
+      </select>
+      <button class="btn" id="btn-exportar" style="flex:none">Planilha</button>
+    </div>
+    <div class="aviso" id="f-busca-aviso" hidden></div>
+    <div id="lista-leads"></div>
+    <button class="btn cheio" id="btn-mais" hidden>Mostrar mais</button>
+  </section>
+
+  <!-- Ajustes -->
+  <section id="tela-ajustes" hidden>
+    <div class="cartao">
+      <h2>Chave do Google</h2>
+      <p class="dica" style="margin-top:0">É ela que permite buscar empresas no Google Maps pelo caminho oficial.</p>
+      <label class="campo" for="a-chave">Chave da API</label>
+      <input id="a-chave" type="password" autocomplete="off" placeholder="AIza…">
+      <div class="grade2" style="margin-top:10px">
+        <button class="btn pri" id="btn-salvar-chave">Salvar</button>
+        <button class="btn" id="btn-testar-chave">Testar</button>
+      </div>
+      <p class="dica" id="a-chave-status"></p>
+      <details class="guia" style="margin-top:10px">
+        <summary>Como criar a chave (passo a passo)</summary>
+        <ol>
+          <li>Abra <a href="https://console.cloud.google.com/" target="_blank" rel="noopener">console.cloud.google.com</a> e entre com sua conta Google.</li>
+          <li>No topo, toque em <b>Selecionar projeto → Novo projeto</b>. Dê o nome “Prospecção” e crie.</li>
+          <li>Abra o menu ☰ → <b>APIs e serviços → Biblioteca</b>, procure <b>Places API (New)</b> e toque em <b>Ativar</b>.</li>
+          <li>O Google vai pedir para ativar o <b>faturamento</b> (cartão). É obrigatório, mas há uma cota grátis por mês.</li>
+          <li>Menu ☰ → <b>APIs e serviços → Credenciais → Criar credenciais → Chave de API</b>.</li>
+          <li>Toque na chave criada → em <b>Restrições de API</b>, marque só <b>Places API (New)</b> → Salvar.</li>
+          <li>Copie a chave (começa com “AIza”) e cole no campo acima.</li>
+          <li><b>Recomendado:</b> em <b>APIs e serviços → Places API (New) → Cotas</b>, limite as buscas por dia (ex.: 30). Assim você nunca passa da cota grátis.</li>
+        </ol>
+      </details>
+    </div>
+
+    <div class="cartao">
+      <h2>Uso este mês</h2>
+      <div id="a-uso"></div>
+    </div>
+
+    <div class="cartao">
+      <h2>Mensagens de WhatsApp</h2>
+      <p class="dica" style="margin-top:0">Use {nome}, {cidade}, {bairro} e {categoria}: são trocados pelos dados da empresa.</p>
+      <div id="a-templates"></div>
+      <button class="btn cheio" id="btn-novo-template" style="margin-top:6px">+ Nova mensagem</button>
+      <label class="linha-flex" style="margin-top:14px; gap:12px">
+        <input type="checkbox" id="a-auto" style="flex:none; width:22px; height:22px">
+        <span>Ao enviar mensagem, mudar lead “Novo” para “Contatado”</span>
+      </label>
+      <button class="btn pri cheio" id="btn-salvar-templates" style="margin-top:14px">Salvar mensagens</button>
+    </div>
+
+    <div class="cartao">
+      <h2>Aparência</h2>
+      <select id="a-tema" aria-label="Tema">
+        <option value="">Igual ao celular</option>
+        <option value="light">Claro</option>
+        <option value="dark">Escuro</option>
+      </select>
+    </div>
+
+    <button class="btn cheio perigo" id="btn-sair">Sair da conta</button>
+    <p class="dica" style="text-align:center; margin-top:18px">Dica: no Chrome, toque em ⋮ → <b>Adicionar à tela inicial</b> para usar como app.</p>
+  </section>
+</main>
+
+<nav class="abas" id="abas" hidden>
+  <button data-tela="buscar" aria-current="page">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>Buscar</button>
+  <button data-tela="leads">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>Leads</button>
+  <button data-tela="ajustes">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg>Ajustes</button>
+</nav>
+
+<dialog class="folha" id="folha-lead"></dialog>
+<div class="toast" id="toast" hidden></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="/app.js"></script>
+</body>
+</html>
