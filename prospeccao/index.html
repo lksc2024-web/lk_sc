@@ -194,7 +194,10 @@ details.guia li { margin-bottom: 8px; }
         <button type="button" data-t="cidade"><b>Cidade toda</b><span>varre o mapa</span></button>
       </div>
       <p class="dica" id="b-custo"></p>
-      <button class="btn pri cheio" id="btn-buscar" style="margin-top:14px">Buscar empresas</button>
+      <div style="display:grid; grid-template-columns:1fr 2fr; gap:8px; margin-top:14px">
+        <button class="btn" type="button" id="btn-limpar-busca">Limpar</button>
+        <button class="btn pri" id="btn-buscar">Buscar empresas</button>
+      </div>
     </form>
 
     <div class="aviso" id="b-erro" role="alert" style="color:var(--perigo)" hidden></div>
@@ -232,6 +235,7 @@ details.guia li { margin-bottom: 8px; }
       </select>
       <button class="btn" id="btn-exportar" style="flex:none">Planilha</button>
     </div>
+    <button class="btn cheio" id="btn-limpar-filtros" style="margin-bottom:12px" hidden>✕ Limpar filtros</button>
     <div class="aviso" id="f-busca-aviso" hidden></div>
     <div id="lista-leads"></div>
     <button class="btn cheio" id="btn-mais" hidden>Mostrar mais</button>

@@ -37,12 +37,15 @@ const $$ = (s, el = document) => [...el.querySelectorAll(s)];
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const norm = (s) => String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
 
+const FILTRO_PADRAO = { status: "", texto: "", wa: false, email: false, site: "", nota: false, busca: "", ordem: "recentes" };
 const estado = {
   usuario: null, config: null, leads: [], buscas: [], municipios: null,
   cidade: null, tamanho: "padrao", buscando: false,
-  filtro: { status: "", texto: "", wa: false, email: false, site: "", nota: false, busca: "", ordem: "recentes" },
+  filtro: null, // preenchido com FILTRO_PADRAO logo abaixo
   mostrar: POR_PAGINA,
 };
+
+estado.filtro = { ...FILTRO_PADRAO };
 
 // ── Utilidades de interface ────────────────────────────────────────────────────
 let toastTimer;
@@ -424,6 +427,7 @@ function renderLeads() {
   const base = filtrados(true), sites = contarSites(base);
   $("#f-site").innerHTML = [["", "Com e sem site", base.length], ["com", "Com site", sites.com], ["sem", "Sem site", sites.sem]]
     .map(([v, n, c]) => `<button class="chip" data-site="${v}" aria-pressed="${f.site === v}">${n}<small>${c}</small></button>`).join("");
+  $("#btn-limpar-filtros").hidden = Object.keys(FILTRO_PADRAO).every((k) => f[k] === FILTRO_PADRAO[k]);
   const busca = estado.buscas.find((b) => b.id === f.busca);
   $("#f-busca-aviso").hidden = !busca;
   if (busca) {
@@ -644,6 +648,24 @@ $("#b-tamanho").addEventListener("click", (e) => {
   atualizarCusto();
 });
 $("#form-busca").addEventListener("submit", buscar);
+$("#btn-limpar-busca").addEventListener("click", () => {
+  if (estado.buscando) return;
+  $("#form-busca").reset();
+  estado.cidade = null;
+  estado.tamanho = "padrao";
+  $$("#b-tamanho button").forEach((x) => x.setAttribute("aria-pressed", x.dataset.t === "padrao"));
+  $("#b-sugestoes").hidden = true;
+  $("#b-erro").hidden = true;
+  atualizarCusto();
+  $("#b-nichos").focus();
+});
+$("#btn-limpar-filtros").addEventListener("click", () => {
+  estado.filtro = { ...FILTRO_PADRAO };
+  estado.mostrar = POR_PAGINA;
+  $("#f-texto").value = "";
+  $("#f-ordem").value = FILTRO_PADRAO.ordem;
+  renderLeads();
+});
 $("#lista-buscas").addEventListener("click", (e) => {
   const b = e.target.closest("[data-busca]"); if (!b) return;
   estado.filtro = { ...estado.filtro, busca: b.dataset.busca, status: "" };
