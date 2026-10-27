@@ -23,6 +23,9 @@ const TEMPLATES_PADRAO = [
   { id: "sem_site", nome: "Para quem não tem site",
     texto: "Oi! Vi a {nome} no Google com ótimas avaliações, mas não encontrei um site de vocês. " +
       "Trabalho justamente ajudando {categoria} de {cidade} a aparecer melhor na internet. Posso te mostrar um exemplo?" },
+  { id: "com_site", nome: "Para quem já tem site",
+    texto: "Oi! Vi o site da {nome} e as avaliações de vocês no Google. Trabalho ajudando {categoria} de {cidade} " +
+      "a transformar as visitas do site em mais clientes. Posso te mostrar duas ideias rápidas?" },
   { id: "followup", nome: "Retomar conversa",
     texto: "Oi, tudo certo? Passando aqui para retomar nossa conversa sobre a {nome}. Conseguiu dar uma olhada?" },
 ];
@@ -37,7 +40,7 @@ const norm = (s) => String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toL
 const estado = {
   usuario: null, config: null, leads: [], buscas: [], municipios: null,
   cidade: null, tamanho: "padrao", buscando: false,
-  filtro: { status: "", texto: "", wa: false, email: false, semsite: false, nota: false, busca: "", ordem: "recentes" },
+  filtro: { status: "", texto: "", wa: false, email: false, site: "", nota: false, busca: "", ordem: "recentes" },
   mostrar: POR_PAGINA,
 };
 
@@ -122,6 +125,15 @@ async function carregarConfig() {
   }
   estado.config = data || { google_key: "", templates: TEMPLATES_PADRAO, padrao: "apresentacao", auto_contatado: true };
   if (!estado.config.templates?.length) estado.config.templates = TEMPLATES_PADRAO;
+  // Contas criadas antes da mensagem “Para quem já tem site” recebem ela uma vez.
+  let jaOferecida = false;
+  try { jaOferecida = localStorage.getItem("msg_com_site") === "1"; localStorage.setItem("msg_com_site", "1"); } catch { /* sem armazenamento */ }
+  if (data && !jaOferecida && !estado.config.templates.some((t) => t.id === "com_site")) {
+    const nova = TEMPLATES_PADRAO.find((t) => t.id === "com_site");
+    const i = estado.config.templates.findIndex((t) => t.id === "sem_site");
+    estado.config.templates.splice(i < 0 ? estado.config.templates.length : i + 1, 0, nova);
+    await sb.from("config").update({ templates: estado.config.templates }).eq("user_id", estado.usuario.id);
+  }
 }
 
 async function carregarBuscas() {
@@ -284,7 +296,8 @@ async function buscar(e) {
 
   if (!total) { fimBusca(trava, falhas ? ultimoErro : "Nenhuma empresa encontrada. Tente outro termo ou cidade.", true); return; }
   await enriquecer([...ids]);
-  fimBusca(trava, `Pronto! ${total} empresas (${novos} novas).`);
+  const s = contarSites(estado.leads.filter((l) => ids.has(l.id)));
+  fimBusca(trava, `Pronto! ${total} empresas: ${s.com} com site e ${s.sem} sem site.`);
   estado.filtro = { ...estado.filtro, busca: busca.id, status: "" };
   estado.mostrar = POR_PAGINA;
   irPara("leads");
@@ -334,19 +347,31 @@ function renderBuscar() {
   atualizarCusto();
   const el = $("#lista-buscas");
   if (!estado.buscas.length) { el.innerHTML = `<p class="dica" style="margin:0">Nenhuma busca ainda.</p>`; return; }
-  el.innerHTML = estado.buscas.slice(0, 30).map((b) => `
+  el.innerHTML = estado.buscas.slice(0, 30).map((b) => {
+    const s = contarSites(estado.leads.filter((l) => (l.buscas || []).includes(b.id)));
+    return `
     <button class="btn cheio" data-busca="${b.id}" style="justify-content:space-between; margin-bottom:8px; text-align:left; font-weight:400">
       <span><b>${esc(b.nichos.join(", "))}</b><br><small style="color:var(--sub)">${esc(b.bairro ? b.bairro + ", " : "")}${esc(b.cidade)} - ${b.uf} · ${new Date(b.criado_em).toLocaleDateString("pt-BR")}</small></span>
-      <span style="flex:none">${b.total} <small style="color:var(--sub)">(${b.novos} novos)</small></span>
-    </button>`).join("");
+      <span style="flex:none; text-align:right">${b.total} <small style="color:var(--sub)">(${b.novos} novos)</small>
+        ${b.total ? `<br><small style="color:var(--sub)">${s.com} com site · ${s.sem} sem</small>` : ""}</span>
+    </button>`;
+  }).join("");
 }
 
 // ── Leads ──────────────────────────────────────────────────────────────────────
-function filtrados() {
+// Perfil de Instagram/Facebook ou link de WhatsApp no lugar do site não conta como site.
+const temSite = (l) => !!l.site && !/instagram\.com|facebook\.com|linktr\.ee|wa\.me|whatsapp\.com/.test(l.site);
+
+function contarSites(lista) {
+  const com = lista.filter(temSite).length;
+  return { com, sem: lista.length - com };
+}
+
+function filtrados(ignorarSite = false) {
   const f = estado.filtro, termo = norm(f.texto);
   let lista = estado.leads.filter((l) =>
     (!f.status || l.status === f.status) && (!f.wa || l.whatsapp) && (!f.email || l.email) &&
-    (!f.semsite || !l.site || /instagram|facebook|linktr|wa\.me/.test(l.site)) && (!f.nota || l.nota >= 4.5) &&
+    (ignorarSite || !f.site || (f.site === "com") === temSite(l)) && (!f.nota || l.nota >= 4.5) &&
     (!f.busca || (l.buscas || []).includes(f.busca)) &&
     (!termo || norm(`${l.nome} ${l.bairro} ${l.categoria} ${l.cidade} ${l.nicho}`).includes(termo)));
   const ord = {
@@ -365,7 +390,7 @@ function cartaoLead(l) {
   if (l.whatsapp) selos.push("WhatsApp");
   if (l.email) selos.push("E-mail");
   if (l.instagram) selos.push("Instagram");
-  if (!l.site) selos.push("Sem site");
+  selos.push(temSite(l) ? "Tem site" : "Sem site");
   if (l.fechado) selos.push("Fechado");
   const nota = l.nota ? `<span class="estrela">★</span> ${String(l.nota).replace(".", ",")} (${l.avaliacoes})` : "Sem avaliações";
   return `<article class="lead" data-id="${l.id}">
@@ -396,10 +421,16 @@ function renderLeads() {
   $("#f-status").innerHTML = [["", "Todos", todos.length], ...STATUS.map(([s, n]) => [s, n, conta(s)])]
     .map(([s, n, c]) => `<button class="chip" data-s="${s}" aria-pressed="${f.status === s}">${n}<small>${c}</small></button>`).join("");
   $$("#f-extra .chip").forEach((b) => b.setAttribute("aria-pressed", !!f[b.dataset.f]));
+  const base = filtrados(true), sites = contarSites(base);
+  $("#f-site").innerHTML = [["", "Com e sem site", base.length], ["com", "Com site", sites.com], ["sem", "Sem site", sites.sem]]
+    .map(([v, n, c]) => `<button class="chip" data-site="${v}" aria-pressed="${f.site === v}">${n}<small>${c}</small></button>`).join("");
   const busca = estado.buscas.find((b) => b.id === f.busca);
   $("#f-busca-aviso").hidden = !busca;
-  if (busca) $("#f-busca-aviso").innerHTML = `Mostrando a busca “${esc(busca.nichos.join(", "))}” em ${esc(busca.cidade)}. ` +
-    `<a href="#" id="limpar-busca">Ver todos</a>`;
+  if (busca) {
+    const daBusca = estado.leads.filter((l) => (l.buscas || []).includes(busca.id)), s = contarSites(daBusca);
+    $("#f-busca-aviso").innerHTML = `Busca “${esc(busca.nichos.join(", "))}” em ${esc(busca.cidade)}: ` +
+      `<b>${daBusca.length} empresas</b> — ${s.com} com site e ${s.sem} sem site. <a href="#" id="limpar-busca">Ver todos</a>`;
+  }
 
   const lista = filtrados();
   $("#lista-leads").innerHTML = lista.length ? lista.slice(0, estado.mostrar).map(cartaoLead).join("")
@@ -418,8 +449,8 @@ function preencher(texto, l) {
 function templateSugerido(l) {
   const ts = estado.config.templates;
   if (["contatado", "respondeu", "reuniao"].includes(l.status)) return ts.find((t) => t.id === "followup") || ts[0];
-  if (!l.site) return ts.find((t) => t.id === "sem_site") || ts[0];
-  return ts.find((t) => t.id === estado.config.padrao) || ts[0];
+  const foco = ts.find((t) => t.id === (temSite(l) ? "com_site" : "sem_site"));
+  return foco || ts.find((t) => t.id === estado.config.padrao) || ts[0];
 }
 
 async function enviarWhatsApp(l, texto, nomeTemplate) {
@@ -628,6 +659,10 @@ $("#f-status").addEventListener("click", (e) => {
 $("#f-extra").addEventListener("click", (e) => {
   const b = e.target.closest("[data-f]"); if (!b) return;
   estado.filtro[b.dataset.f] = !estado.filtro[b.dataset.f]; estado.mostrar = POR_PAGINA; renderLeads();
+});
+$("#f-site").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-site]"); if (!b) return;
+  estado.filtro.site = b.dataset.site; estado.mostrar = POR_PAGINA; renderLeads();
 });
 $("#f-ordem").addEventListener("change", (e) => { estado.filtro.ordem = e.target.value; renderLeads(); });
 $("#f-busca-aviso").addEventListener("click", (e) => {
