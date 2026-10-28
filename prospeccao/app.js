@@ -1440,6 +1440,15 @@ $("#a-tema").addEventListener("change", (e) => {
   aplicarTema(e.target.value);
 });
 $("#btn-sair").addEventListener("click", () => sb.auth.signOut());
+$("#btn-trocar-senha").addEventListener("click", async () => {
+  const s1 = $("#a-senha").value, s2 = $("#a-senha2").value;
+  if (s1.length < 6) return toast("A senha precisa ter pelo menos 6 caracteres.");
+  if (s1 !== s2) return toast("As duas senhas não são iguais.");
+  const { error } = await sb.auth.updateUser({ password: s1 });
+  if (error) return toast("Não deu para trocar a senha: " + error.message);
+  $("#a-senha").value = $("#a-senha2").value = "";
+  toast("Senha trocada. Use a nova senha no computador e no iPad.");
+});
 $("#btn-salvar-perfil").addEventListener("click", () => salvarConfig({ perfil: lerPerfil() }, "Perfil e preços salvos."));
 $("#btn-salvar-roteiro").addEventListener("click", () => salvarConfig({ perfil: lerPerfil() }, "Roteiro salvo."));
 $("#btn-restaurar-roteiro").addEventListener("click", () => {
