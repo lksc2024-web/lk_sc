@@ -38,7 +38,7 @@ const $$ = (s, el = document) => [...el.querySelectorAll(s)];
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const norm = (s) => String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
 
-const FILTRO_PADRAO = { status: "", texto: "", wa: false, email: false, grupo: "", nota: false, busca: "", ordem: "recentes" };
+const FILTRO_PADRAO = { status: "", texto: "", wa: false, email: false, mensal: false, grupo: "", nota: false, busca: "", ordem: "recentes" };
 const TELAS = { buscar: "Buscar empresas", leads: "Meus leads", painel: "Painel de vendas", ajustes: "Ajustes" };
 const estado = {
   usuario: null, config: null, leads: [], buscas: [], municipios: null, medianas: {}, analisandoSites: false,
@@ -390,6 +390,7 @@ function filtrados(ignorarGrupo = false) {
   let lista = estado.leads.filter((l) =>
     (!f.status || l.status === f.status) && (!f.wa || l.whatsapp) && (!f.email || l.email) &&
     (ignorarGrupo || !f.grupo || analise(l).grupo === f.grupo) && (!f.nota || l.nota >= 4.5) &&
+    (!f.mensal || Vendas.planoMensal(l, analise(l), perfil())?.recomendado) &&
     (!f.busca || (l.buscas || []).includes(f.busca)) &&
     (!termo || norm(`${l.nome} ${l.bairro} ${l.categoria} ${l.cidade} ${l.nicho}`).includes(termo)));
   const ord = {
@@ -433,6 +434,7 @@ function cartaoLead(l) {
     </div>
     <div class="selos">${seloGrupo(a.grupo)}${selos.map((s) => `<span class="selo">${s}</span>`).join("")}</div>
     ${a.principal ? `<p class="oport">💡 ${esc(cap(blocoCurto(l, a)))}</p>` : ""}
+    ${(() => { const pl = Vendas.planoMensal(l, a, perfil()); return pl?.recomendado ? `<p class="mensal">🔁 Vale plano mensal (${pl.nivel}): ${Vendas.fmtReais(pl.valor[0])} a ${Vendas.fmtReais(pl.valor[1])}/mês</p>` : ""; })()}
     <div class="medidor">${medidor}${prox?.urgente ? ` · <span class="urgente">${esc(prox.texto)} hoje</span>` : ""}</div>
     <div class="acoes">
       <button class="btn wa" data-acao="wa" ${l.whatsapp ? "" : "disabled"}>${acaoBtn}</button>
@@ -545,7 +547,7 @@ async function registrarResposta(l, tipo, txt) {
 }
 
 // ── Ficha do lead ──────────────────────────────────────────────────────────────
-const ETAPAS_MSG = ["abordagem", "follow1", "follow2", "encerramento", "rejeicao", "atencao", "desejo", "aprovacao", "retomar"];
+const ETAPAS_MSG = ["abordagem", "follow1", "follow2", "encerramento", "rejeicao", "atencao", "desejo", "valor", "aprovacao", "retomar"];
 
 function itemDiag(ok, txt) {
   return `<li class="${ok ? "ok" : "falta"}"><span aria-hidden="true">${ok ? "✓" : "✗"}</span> ${txt}</li>`;
@@ -587,6 +589,31 @@ function htmlOportunidades(l, a, escolhida) {
   }).join("");
 }
 
+// Proposta de valor: onde o dinheiro entra, resultado, como usar, conta de retorno e plano mensal.
+function htmlValor(l, a, op, conta) {
+  const p = Vendas.precoDe(op.servico, perfil());
+  const r = Vendas.retorno(l, { principal: op }, perfil(), conta.ticket, conta.clientes);
+  const pl = Vendas.planoMensal(l, { ...a, principal: op }, perfil());
+  return `<h2>💰 Proposta de valor: ${esc(p.nome)}</h2>
+    <dl class="valor">
+      <div><dt>Onde o dinheiro entra</dt><dd>${esc(cap(p.retorno))}.</dd></div>
+      <div><dt>Resultado esperado</dt><dd>${esc(cap(p.resultado))}.</dd></div>
+      <div><dt>Como eles usam</dt><dd>${esc(cap(p.uso))}.</dd></div>
+    </dl>
+    <h2 style="margin-top:16px">Conta de retorno</h2>
+    <div class="grade2">
+      <label class="campo" style="margin:0">Ticket médio (R$)<input id="l-ticket" type="number" inputmode="numeric" min="1" value="${conta.ticket}"></label>
+      <label class="campo" style="margin:0">Clientes a mais/mês<input id="l-clientes" type="number" inputmode="numeric" min="1" value="${conta.clientes}"></label>
+    </div>
+    <p class="conta">Investimento médio ${Vendas.fmtReais(r.investimento)} · ganho de ${Vendas.fmtReais(r.ganhoMes)}/mês → <b>se paga em ~${r.meses} ${r.meses > 1 ? "meses" : "mês"}</b></p>
+    <p class="dica" style="margin-top:0">O ticket é uma estimativa para o setor: pergunte ao cliente e ajuste.</p>
+    <h2 style="margin-top:16px">Manutenção mensal</h2>
+    ${pl && pl.valor ? `<p class="plano ${pl.recomendado ? "sim" : "nao"}"><b>${pl.recomendado ? "✅" : "➖"} ${esc(pl.nivel)}: ${Vendas.fmtReais(pl.valor[0])} a ${Vendas.fmtReais(pl.valor[1])}/mês</b><br>${esc(pl.motivo)}</p>
+      ${p.manutencao ? `<p class="dica" style="margin-top:6px">Inclui: ${esc(p.manutencao)}.</p>` : ""}`
+      : `<p class="dica" style="margin:0">${esc(pl?.motivo || "Sem mensalidade para este serviço.")}</p>`}
+    <button class="btn cheio" id="l-usar-valor" style="margin-top:10px">Usar na mensagem (proposta de valor)</button>`;
+}
+
 function contextoIa(l, a, etapa) {
   const c = Vendas.ciclo(l);
   return {
@@ -596,6 +623,8 @@ function contextoIa(l, a, etapa) {
       site: l.site || "não tem", grupo: Vendas.GRUPOS[a.grupo].nome, diagnostico_site: l.dados?.diag || null },
     oportunidades: a.oportunidades.slice(0, 4).map((o) => ({ servico: Vendas.precoDe(o.servico).nome, observado: Vendas.montarMensagem(l, "_p", a, { roteiro: { _p: "{problema}" } }, o) })),
     etapa_atual: Vendas.NOME_ETAPA[etapa] || etapa,
+    plano_mensal: (() => { const pl = Vendas.planoMensal(l, a, perfil()); return pl ? { nivel: pl.nivel, recomendado: pl.recomendado, valor: pl.valor, motivo: pl.motivo } : null; })(),
+    proposta_valor: a.principal ? (({ retorno, resultado, uso, manutencao }) => ({ retorno, resultado, uso, manutencao }))(Vendas.precoDe(a.principal.servico, perfil())) : null,
     conversa: [...c.envios.map((e) => ({ t: e.t, de: "vendedor", texto: e.txt })), ...c.respostas.map((r) => ({ t: r.t, de: "cliente", tipo: r.tipo, texto: r.txt }))]
       .sort((x, y) => x.t.localeCompare(y.t)).slice(-12),
   };
@@ -608,10 +637,11 @@ function abrirLead(id, opcoes = {}) {
   const dlg = $("#folha-lead");
   let etapa = opcoes.etapa || etapaSugerida(l);
   let oportId = opcoes.oport || a.principal?.id;
+  const conta = { ticket: opcoes.ticket || Vendas.ticketEstimado(l), clientes: opcoes.clientes || 2 };
   const oport = () => a.oportunidades.find((o) => o.id === oportId) || a.principal;
   const msgDe = (et) => et.startsWith("extra:")
     ? preencher(estado.config.templates.find((t) => t.id === et.slice(6))?.texto || "", l)
-    : Vendas.montarMensagem(l, et, a, perfil(), oport());
+    : Vendas.montarMensagem(l, et, a, perfil(), oport(), conta);
   const linha = (rotulo, valor) => valor ? `<div><dt>${rotulo}</dt><dd>${valor}</dd></div>` : "";
   const link = (url, txt) => `<a href="${esc(url)}" target="_blank" rel="noopener">${esc(txt || url)}</a>`;
   const curto = (url) => url.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "");
@@ -672,6 +702,8 @@ function abrirLead(id, opcoes = {}) {
         ${p ? `<p class="dica">A mensagem usa a oportunidade marcada. Os valores são só para você (edite a tabela em Ajustes).</p>` : ""}
       </div>
 
+      ${a.principal ? `<div class="cartao" id="l-valor">${htmlValor(l, a, oport(), conta)}</div>` : ""}
+
       <div class="grade2" style="margin-bottom:14px">
         ${l.tel_digitos ? `<a class="btn" id="l-ligar" href="tel:+${esc(l.tel_digitos)}">Ligar</a>` : ""}
         ${l.email ? `<a class="btn" href="mailto:${esc(l.email.split(",")[0].trim())}">E-mail</a>` : ""}
@@ -720,11 +752,29 @@ function abrirLead(id, opcoes = {}) {
       enviarEtapa(l, etapa.startsWith("extra:") ? "extra" : etapa, $("#l-msg", dlg).value, nome).then(() => abrirLead(l.id));
     };
   }
+  const atualizarValor = () => {
+    const box = $("#l-valor", dlg);
+    if (box) box.innerHTML = htmlValor(l, a, oport(), conta);
+    if ($("#l-msg", dlg) && !etapa.startsWith("extra:")) $("#l-msg", dlg).value = msgDe(etapa);
+  };
   $("#l-oports", dlg).onchange = (e) => {
     if (e.target.name !== "l-oport") return;
     oportId = e.target.value;
-    if ($("#l-msg", dlg) && !etapa.startsWith("extra:")) $("#l-msg", dlg).value = msgDe(etapa);
+    atualizarValor();
   };
+  const boxValor = $("#l-valor", dlg);
+  if (boxValor) {
+    boxValor.addEventListener("change", (e) => {
+      if (e.target.id === "l-ticket") conta.ticket = Math.max(1, +e.target.value || 1);
+      if (e.target.id === "l-clientes") conta.clientes = Math.max(1, +e.target.value || 1);
+      atualizarValor();
+    });
+    boxValor.addEventListener("click", (e) => {
+      if (e.target.id !== "l-usar-valor") return;
+      etapa = "valor";
+      if (selEtapa) { selEtapa.value = "valor"; $("#l-msg", dlg).value = msgDe(etapa); $("#l-msg", dlg).scrollIntoView({ block: "center" }); }
+    });
+  }
   const campoResp = $("#l-resposta", dlg);
   campoResp.oninput = () => {
     const t = Vendas.classificarResposta(campoResp.value);
@@ -804,6 +854,13 @@ function atualizarBadgeHoje() {
 }
 
 const pct = (a, b) => (b ? Math.round((a / b) * 100) : 0);
+// Soma da mensalidade média dos leads em que o plano mensal é recomendado.
+function recorrente(lista) {
+  return lista.reduce((s, l) => {
+    const pl = Vendas.planoMensal(l, analise(l), perfil());
+    return pl?.recomendado && pl.valor ? s + (pl.valor[0] + pl.valor[1]) / 2 : s;
+  }, 0);
+}
 
 function renderPainel() {
   recalcular();
@@ -836,7 +893,10 @@ function renderPainel() {
     <div><b>${interessados.length}</b><span>interessados</span></div>
     <div><b>${fechados.length}</b><span>fechados</span></div>
     <div><b>${pct(fechados.length, abordados.length)}%</b><span>de fechamento</span></div>
-    <div><b>${Vendas.fmtReais(Math.round(valor))}</b><span>em negociação</span></div>`;
+    <div><b>${Vendas.fmtReais(Math.round(valor))}</b><span>em negociação</span></div>
+    <div><b>${Vendas.fmtReais(Math.round(recorrente(emNegociacao)))}</b><span>por mês em manutenção (negociando)</span></div>
+    <div><b>${Vendas.fmtReais(Math.round(recorrente(fechados)))}</b><span>por mês em manutenção (fechados)</span></div>
+    <div><b>${L.filter((l) => Vendas.planoMensal(l, analise(l), perfil())?.recomendado).length}</b><span>leads que valem plano mensal</span></div>`;
 
   // Funil
   const etapas = [["Encontrados", L.length], ["Abordados", abordados.length], ["Responderam", responderam.length],
@@ -958,7 +1018,7 @@ function exportar() {
     ["email", "E-mail"], ["site", "Site"], ["instagram", "Instagram"], ["facebook", "Facebook"], ["endereco", "Endereço"],
     ["bairro", "Bairro"], ["cidade", "Cidade"], ["uf", "UF"], ["nota", "Nota"], ["avaliacoes", "Avaliações"],
     ["status", "Etapa"], ["grupo", "Grupo"], ["oportunidade", "Oportunidade"], ["valor", "Valor sugerido"],
-    ["chance", "Chance de fechar"], ["maps", "Google Maps"]];
+    ["chance", "Chance de fechar"], ["mensal", "Plano mensal"], ["maps", "Google Maps"]];
   const cel = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
   const valor = (l, k) => {
     const a = analise(l);
@@ -968,6 +1028,7 @@ function exportar() {
     if (k === "oportunidade") return a.principal ? Vendas.precoDe(a.principal.servico, perfil()).nome : "";
     if (k === "valor") return a.principal ? Vendas.faixaPreco(Vendas.precoDe(a.principal.servico, perfil())) : "";
     if (k === "chance") return chanceDe(l, a).pct + "%";
+    if (k === "mensal") { const pl = Vendas.planoMensal(l, a, perfil()); return pl?.valor ? `${pl.nivel}: ${Vendas.fmtReais(pl.valor[0])} a ${Vendas.fmtReais(pl.valor[1])}/mês` : ""; }
     return l[k];
   };
   const linhas = [cols.map((c) => cel(c[1])).join(";"), ...lista.map((l) => cols.map(([k]) => cel(valor(l, k))).join(";"))];
@@ -1002,9 +1063,13 @@ function renderAjustes() {
   for (const k of ["nome", "marca", "portfolio", "prazo"]) $(`#a-p-${k}`).value = pf[k] || "";
   $("#a-precos").innerHTML = Object.entries(Vendas.SERVICOS).map(([id]) => {
     const p = Vendas.precoDe(id, pf);
-    return `<div class="preco-linha" data-servico="${id}"><span>${esc(p.nome)}${p.mensal ? " <small>(por mês)</small>" : ""}</span>
-      <input type="number" inputmode="numeric" min="0" step="100" data-k="min" value="${p.min}" aria-label="${esc(p.nome)}: valor mínimo">
-      <input type="number" inputmode="numeric" min="0" step="100" data-k="max" value="${p.max}" aria-label="${esc(p.nome)}: valor máximo"></div>`;
+    return `<div class="preco-bloco" data-servico="${id}"><b>${esc(p.nome)}</b>
+      <div class="preco-linha"><span>${p.mensal ? "Por mês" : "Projeto"}</span>
+        <input type="number" inputmode="numeric" min="0" step="100" data-k="min" value="${p.min}" aria-label="${esc(p.nome)}: valor mínimo">
+        <input type="number" inputmode="numeric" min="0" step="100" data-k="max" value="${p.max}" aria-label="${esc(p.nome)}: valor máximo"></div>
+      ${p.mensal || !Vendas.SERVICOS[id].mmax ? "" : `<div class="preco-linha"><span>Manutenção/mês</span>
+        <input type="number" inputmode="numeric" min="0" step="10" data-k="mmin" value="${p.mmin}" aria-label="${esc(p.nome)}: manutenção mínima">
+        <input type="number" inputmode="numeric" min="0" step="10" data-k="mmax" value="${p.mmax}" aria-label="${esc(p.nome)}: manutenção máxima"></div>`}</div>`;
   }).join("");
   $("#a-roteiro").innerHTML = Object.keys(Vendas.ROTEIRO_PADRAO).map((e) => `
     <label class="campo" for="a-r-${e}">${Vendas.NOME_ETAPA[e]}</label>
@@ -1046,9 +1111,14 @@ function lerPerfil() {
   for (const k of ["nome", "marca", "portfolio", "prazo"]) pf[k] = $(`#a-p-${k}`).value.trim();
   pf.precos = {};
   for (const el of $$("#a-precos [data-servico]")) {
-    const min = +$("[data-k=min]", el).value || 0, max = +$("[data-k=max]", el).value || 0;
-    const base = Vendas.SERVICOS[el.dataset.servico];
-    if (min !== base.min || max !== base.max) pf.precos[el.dataset.servico] = { min, max: Math.max(min, max) };
+    const base = Vendas.SERVICOS[el.dataset.servico], ajuste = {};
+    for (const k of ["min", "max", "mmin", "mmax"]) {
+      const inp = $(`[data-k=${k}]`, el);
+      if (inp && +inp.value !== base[k]) ajuste[k] = +inp.value || 0;
+    }
+    if (ajuste.max != null || ajuste.min != null) ajuste.max = Math.max(ajuste.min ?? base.min, ajuste.max ?? base.max);
+    if (ajuste.mmax != null || ajuste.mmin != null) ajuste.mmax = Math.max(ajuste.mmin ?? base.mmin, ajuste.mmax ?? base.mmax);
+    if (Object.keys(ajuste).length) pf.precos[el.dataset.servico] = ajuste;
   }
   pf.roteiro = {};
   for (const ta of $$("#a-roteiro [data-etapa]")) {

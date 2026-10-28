@@ -3,19 +3,78 @@
 "use strict";
 
 // Tabela de preços padrão (estimativas de mercado no Brasil; o vendedor ajusta em Ajustes).
+// mmin/mmax = mensalidade de manutenção. Os textos explicam ao cliente onde o dinheiro entra,
+// o resultado esperado e como ele usa no dia a dia (muita empresa não sabe usar o que compra).
 const SERVICOS = {
-  landing: { nome: "Landing page", min: 1500, max: 4000, prazo: "7 dias" },
-  site: { nome: "Site profissional", min: 2500, max: 8000, prazo: "10 a 20 dias" },
-  reforma: { nome: "Reforma e otimização de site", min: 800, max: 3000, prazo: "5 a 10 dias" },
-  whatsapp_botao: { nome: "Botão de WhatsApp e captação", min: 300, max: 1200, prazo: "2 a 3 dias" },
-  agendamento: { nome: "Agendamento online", min: 1500, max: 5000, prazo: "7 a 15 dias" },
-  avaliacoes: { nome: "Automação de avaliações no Google", min: 800, max: 2500, prazo: "5 dias" },
-  trafego: { nome: "Gestão de tráfego pago", min: 1200, max: 3500, mensal: true, prazo: "início em 5 dias" },
-  ia_atendente: { nome: "Atendente com IA no WhatsApp", min: 2500, max: 8000, prazo: "10 a 20 dias", obs: "+ mensalidade de manutenção" },
-  crm: { nome: "CRM e automação de vendas", min: 4000, max: 15000, prazo: "20 a 40 dias" },
-  app: { nome: "Aplicativo próprio", min: 15000, max: 60000, prazo: "45 a 90 dias" },
-  sistema: { nome: "Sistema sob medida", min: 10000, max: 50000, prazo: "30 a 90 dias" },
+  landing: { nome: "Landing page", min: 1500, max: 4000, mmin: 150, mmax: 400, prazo: "7 dias",
+    retorno: "quem vê vocês no Google ou no Instagram cai numa página feita para converter e chama no WhatsApp na hora",
+    resultado: "mais pedidos de orçamento chegando já interessados, sem depender só do direct",
+    uso: "vocês colocam o link na bio e no Google, e os contatos chegam direto no WhatsApp de vocês",
+    manutencao: "hospedagem, domínio, ajustes de preços e fotos e relatório mensal de visitas" },
+  site: { nome: "Site profissional", min: 2500, max: 8000, mmin: 200, mmax: 600, prazo: "10 a 20 dias",
+    retorno: "o cliente que pesquisa no Google encontra vocês, vê serviços e fotos e chama no WhatsApp; hoje esse cliente vai para o concorrente",
+    resultado: "mais contatos vindos do Google todo mês e mais confiança de quem ainda não conhece vocês",
+    uso: "vocês não precisam mexer em nada técnico: os contatos chegam no WhatsApp e eu atualizo o conteúdo quando pedirem",
+    manutencao: "hospedagem, domínio, segurança, backups, atualizações de conteúdo e relatório de visitas" },
+  reforma: { nome: "Reforma e otimização de site", min: 800, max: 3000, mmin: 150, mmax: 400, prazo: "5 a 10 dias",
+    retorno: "o site que já existe para de perder visitantes (no celular, na demora ou na falta de confiança) e passa a gerar contato",
+    resultado: "mais visitas virando conversa no WhatsApp, com o mesmo tráfego que vocês já têm",
+    uso: "continua o mesmo site de vocês, só que funcionando direito; não muda nada na rotina",
+    manutencao: "monitoramento do site no ar, segurança, backups e pequenos ajustes" },
+  whatsapp_botao: { nome: "Botão de WhatsApp e captação", min: 300, max: 1200, mmin: 0, mmax: 0, prazo: "2 a 3 dias",
+    retorno: "quem está no site e quer falar consegue chamar em um toque, em vez de desistir",
+    resultado: "mais conversas iniciadas pelo site",
+    uso: "as mensagens chegam no WhatsApp de vocês como qualquer outra",
+    manutencao: "" },
+  agendamento: { nome: "Agendamento online", min: 1500, max: 5000, mmin: 150, mmax: 450, prazo: "7 a 15 dias",
+    retorno: "o cliente marca sozinho, a qualquer hora (inclusive à noite e no fim de semana), e o lembrete automático reduz faltas",
+    resultado: "agenda mais cheia, menos faltas e menos tempo da equipe respondendo mensagem para marcar horário",
+    uso: "vocês veem a agenda no celular e recebem cada horário marcado; o cliente recebe o lembrete sozinho",
+    manutencao: "sistema no ar, lembretes funcionando, ajustes de horários e serviços e suporte à equipe" },
+  avaliacoes: { nome: "Automação de avaliações no Google", min: 800, max: 2500, mmin: 100, mmax: 300, prazo: "5 dias",
+    retorno: "mais avaliações colocam vocês acima dos concorrentes no Google, e quem aparece primeiro recebe mais clientes",
+    resultado: "nota e número de avaliações subindo mês a mês",
+    uso: "depois do atendimento, o cliente satisfeito recebe automaticamente o pedido de avaliação; vocês não fazem nada",
+    manutencao: "automação rodando, respostas às avaliações e relatório mensal da reputação" },
+  trafego: { nome: "Gestão de tráfego pago", min: 1200, max: 3500, mensal: true, mmin: 1200, mmax: 3500, prazo: "início em 5 dias",
+    retorno: "anúncios aparecem para pessoas da região que procuram exatamente o que vocês vendem, e cada contato é medido",
+    resultado: "um fluxo previsível de novos clientes por mês, com relatório de quanto custou cada um",
+    uso: "vocês só atendem os contatos que chegam; eu cuido dos anúncios e mostro os números todo mês",
+    manutencao: "criação e otimização dos anúncios, medição e relatório mensal (a verba dos anúncios é à parte)" },
+  ia_atendente: { nome: "Atendente com IA no WhatsApp", min: 2500, max: 8000, mmin: 300, mmax: 1500, prazo: "10 a 20 dias",
+    retorno: "nenhum cliente fica sem resposta: a IA responde na hora, tira dúvidas e agenda, até de madrugada",
+    resultado: "menos clientes perdidos por demora e equipe livre para atender quem já está pronto para comprar",
+    uso: "a IA responde no WhatsApp de vocês; quando precisa de uma pessoa, ela passa a conversa para a equipe",
+    manutencao: "custo da IA, treinamento com as perguntas novas, ajustes de respostas e relatório de atendimentos" },
+  crm: { nome: "CRM e automação de vendas", min: 4000, max: 15000, mmin: 300, mmax: 1200, prazo: "20 a 40 dias",
+    retorno: "nenhum contato é esquecido: o sistema lembra de cada retorno e manda mensagens de acompanhamento sozinho",
+    resultado: "mais vendas fechadas com os mesmos contatos que já chegam hoje",
+    uso: "a equipe vê no celular quem atender e quando; o sistema avisa e faz os acompanhamentos",
+    manutencao: "sistema no ar, backups, treinamento da equipe, novas automações e suporte" },
+  app: { nome: "Aplicativo próprio", min: 15000, max: 60000, mmin: 800, mmax: 3000, prazo: "45 a 90 dias",
+    retorno: "o cliente volta mais vezes pelo app (agendamento, pedidos, fidelidade) sem vocês pagarem anúncio para trazê-lo de novo",
+    resultado: "mais recompra e um canal direto com os clientes, com promoções no celular deles",
+    uso: "vocês gerenciam pedidos e promoções por um painel simples; os clientes usam o app",
+    manutencao: "lojas de aplicativo, servidores, atualizações, correções e suporte" },
+  sistema: { nome: "Sistema sob medida", min: 10000, max: 50000, mmin: 500, mmax: 2500, prazo: "30 a 90 dias",
+    retorno: "processos manuais viram automáticos, o que economiza horas da equipe e evita erros",
+    resultado: "operação mais rápida e organizada, com números na mão para decidir",
+    uso: "a equipe usa pelo navegador ou celular, com treinamento incluso",
+    manutencao: "servidores, backups, correções, melhorias e suporte" },
 };
+
+// Ticket médio estimado por tipo de negócio (só para a conta de exemplo; o vendedor ajusta na ficha).
+const TICKETS = [
+  [/imobili/i, 6000], [/advoca|advogad|contab/i, 1500], [/odonto|dent/i, 400], [/cl[ií]nica|m[eé]dic|est[eé]tica|fisio|psic|nutri/i, 300],
+  [/academia|personal/i, 150], [/sal[aã]o|barbe|manicure|beleza|depila/i, 90], [/pet|veterin/i, 150], [/restaurante|pizzaria|hamburg|bar\b|lanch/i, 70],
+  [/hotel|pousada/i, 500], [/escola|curso/i, 400], [/oficina|auto|mec[aâ]nic/i, 500], [/loja|com[eé]rcio/i, 120],
+];
+// Negócios de ticket alto pagam e aproveitam melhor um plano mensal.
+const TICKET_ALTO = 300;
+function ticketEstimado(l) {
+  const t = `${l.categoria} ${l.nicho}`;
+  return (TICKETS.find(([rx]) => rx.test(t)) || [null, 150])[1];
+}
 
 const GRUPOS = {
   sem: { nome: "Sem presença digital", icone: "🔴", cor: "var(--g-sem)" },
@@ -178,6 +237,43 @@ function analisar(l, medianas = {}) {
   return { grupo, oportunidades: ops, principal: ops[0], potencial: Math.round(Math.max(0, Math.min(95, potencial))), ctx };
 }
 
+// ── Plano mensal: vale a pena oferecer manutenção para esta empresa? ─────────────
+// Pontua o porte (avaliações = movimento), o ticket, se já investe em marketing e a reputação.
+function planoMensal(l, a, perfil = {}) {
+  const op = a.principal;
+  if (!op) return null;
+  const p = precoDe(op.servico, perfil);
+  if (!p.mmax) return { recomendado: false, nivel: "Sem mensalidade", motivo: "Este serviço é entrega única.", p };
+  const d = l.dados?.diag || {};
+  const ticket = ticketEstimado(l);
+  let pts = 0;
+  const porques = [];
+  if (l.avaliacoes >= 200) { pts += 3; porques.push(`movimento alto (${l.avaliacoes} avaliações)`); }
+  else if (l.avaliacoes >= 50) { pts += 2; porques.push(`bom movimento (${l.avaliacoes} avaliações)`); }
+  else if (l.avaliacoes >= 15) pts += 1;
+  if (ticket >= TICKET_ALTO) { pts += 2; porques.push("ticket alto do setor"); }
+  if (d.pixel || d.google_tag) { pts += 1; porques.push("já investe em anúncios"); }
+  if (l.site && !soRede(l.site)) pts += 1;
+  if (l.nota >= 4.5) pts += 1;
+  if (p.mensal) return { recomendado: true, nivel: "Recorrente", motivo: "O serviço já é mensal por natureza.", valor: [p.mmin, p.mmax], p, pts };
+  const faixa = (f0, f1) => [Math.round((p.mmin + (p.mmax - p.mmin) * f0) / 10) * 10, Math.round((p.mmin + (p.mmax - p.mmin) * f1) / 10) * 10];
+  if (pts >= 5) return { recomendado: true, nivel: "Premium", valor: faixa(0.6, 1), p, pts,
+    motivo: `Vale muito a pena: ${porques.join(", ") || "empresa estruturada"}. Ofereça manutenção completa com relatório.` };
+  if (pts >= 3) return { recomendado: true, nivel: "Profissional", valor: faixa(0.25, 0.6), p, pts,
+    motivo: `Vale a pena: ${porques.join(", ") || "empresa com movimento"}. Ofereça manutenção com ajustes mensais.` };
+  return { recomendado: false, nivel: "Básico opcional", valor: faixa(0, 0.2), p, pts,
+    motivo: "Negócio pequeno: foque na entrega única e ofereça só o básico (hospedagem e suporte) como opção." };
+}
+
+// Conta de exemplo: em quantos meses o investimento se paga com N clientes a mais por mês.
+function retorno(l, a, perfil = {}, ticket = null, clientes = 2) {
+  const p = precoDe(a.principal?.servico || "site", perfil);
+  const t = ticket || ticketEstimado(l);
+  const investimento = (p.min + p.max) / 2;
+  const ganhoMes = t * clientes;
+  return { ticket: t, clientes, investimento, ganhoMes, meses: ganhoMes ? Math.max(1, Math.ceil(investimento / ganhoMes)) : 0 };
+}
+
 // ── Mensagens do ciclo (modulares: cada {bloco} vem do diagnóstico do lead) ────────
 const ROTEIRO_PADRAO = {
   abordagem: "Olá, tudo bem? {apresentacao}\n\n{elogio} Dei uma olhada na presença digital de vocês: {problema}. " +
@@ -194,11 +290,14 @@ const ROTEIRO_PADRAO = {
     "E prefere que eu apresente numa chamada rápida de 15 minutos ou mando tudo por aqui?",
   aprovacao: "Perfeito, vamos nessa! Vou te enviar a proposta com escopo, prazo ({prazo}) e valores. Qual o melhor e-mail e o nome do responsável? Assim que aprovar, já começo.",
   retomar: "Oi! Passando para retomar nossa conversa sobre {curto} da {nome}. Conseguiu ver? Fico à disposição para qualquer dúvida.",
+  valor: "Te explico de forma simples como isso funcionaria para a {nome}:\n\n" +
+    "💰 Onde vocês ganham: {retorno}.\n📈 Resultado esperado: {resultado}.\n📱 Como vocês usam: {uso}.\n\n" +
+    "Uma conta rápida: {exemplo_retorno}{manutencao_frase}\n\nQuer que eu monte a proposta com escopo e prazo ({prazo})?",
 };
 const NOME_ETAPA = {
   abordagem: "Primeiro contato", follow1: "Lembrete 1", follow2: "Lembrete 2 (valor)", encerramento: "Encerramento",
   rejeicao: "Resposta a rejeição", atencao: "Resposta a dúvida", desejo: "Resposta a interesse", aprovacao: "Fechamento",
-  retomar: "Retomar conversa",
+  retomar: "Retomar conversa", valor: "Proposta de valor (como funciona e retorno)",
 };
 
 function preencherBlocos(texto, vars) {
@@ -214,7 +313,7 @@ function precoDe(servicoId, perfil = {}) {
 function fmtReais(v) { return "R$ " + Number(v || 0).toLocaleString("pt-BR"); }
 function faixaPreco(p) { return `${fmtReais(p.min)} a ${fmtReais(p.max)}${p.mensal ? "/mês" : ""}${p.obs ? " " + p.obs : ""}`; }
 
-function montarMensagem(l, etapa, analise, perfil = {}, oportunidade = null) {
+function montarMensagem(l, etapa, analise, perfil = {}, oportunidade = null, conta = {}) {
   const op = oportunidade || analise.principal || OPORTUNIDADES[1];
   const d = l.dados?.diag || {};
   const servico = precoDe(op.servico, perfil);
@@ -234,7 +333,14 @@ function montarMensagem(l, etapa, analise, perfil = {}, oportunidade = null) {
     beneficio: bloco(op.beneficio), curto: bloco(op.curto), prazo: perfil.prazo || servico.prazo,
     portfolio_frase: perfil.portfolio ? `. Alguns trabalhos estão aqui: ${perfil.portfolio}` : ", sempre com escopo e prazo combinados antes de começar.",
     portfolio_frase2: perfil.portfolio ? ` Exemplos do meu trabalho: ${perfil.portfolio}.` : "",
+    retorno: servico.retorno || "", resultado: servico.resultado || "", uso: servico.uso || "",
   };
+  const r = retorno(l, { principal: op }, perfil, conta.ticket, conta.clientes || 2);
+  vars.exemplo_retorno = `se isso trouxer só ${r.clientes} cliente${r.clientes > 1 ? "s" : ""} a mais por mês (ticket médio de ${fmtReais(r.ticket)}), ` +
+    `são ${fmtReais(r.ganhoMes)} a mais por mês, e o investimento se paga em cerca de ${r.meses} ${r.meses > 1 ? "meses" : "mês"}.`;
+  const plano = planoMensal(l, { principal: op }, perfil);
+  vars.manutencao_frase = plano?.recomendado && servico.manutencao
+    ? `\n\nE vocês não precisam se preocupar com a parte técnica: eu cuido de tudo todo mês (${servico.manutencao}).` : "";
   const roteiro = { ...ROTEIRO_PADRAO, ...(perfil.roteiro || {}) };
   return preencherBlocos(roteiro[etapa] || roteiro.abordagem, vars).replace(/\.\./g, ".").replace(/[ \t]+\n/g, "\n").trim();
 }
@@ -364,4 +470,5 @@ window.Vendas = {
   SERVICOS, GRUPOS, OPORTUNIDADES, ROTEIRO_PADRAO, NOME_ETAPA, NOME_RESPOSTA, ICONE_RESPOSTA,
   contextoComparacao, analisar, montarMensagem, classificarResposta, ciclo, intervalos, proximaAcao,
   taxasReais, chanceFechamento, termometro, precoDe, faixaPreco, fmtReais, soRede, precisaAnalise, etapaChance,
+  planoMensal, retorno, ticketEstimado,
 };

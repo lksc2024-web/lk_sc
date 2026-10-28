@@ -50,7 +50,7 @@ main { max-width: 720px; margin: 0 auto; padding: 16px; }
   box-shadow: var(--sombra); margin-bottom: 14px; }
 .cartao h2 { font-size: 17px; margin: 0 0 12px; }
 label.campo { display: block; font-size: 14px; color: var(--sub); margin: 12px 0 6px; font-weight: 600; }
-input[type=text], input[type=email], input[type=password], input[type=search], select, textarea {
+input[type=text], input[type=email], input[type=password], input[type=search], input[type=number], select, textarea {
   width: 100%; padding: 12px 14px; border: 1px solid var(--linha); border-radius: 10px;
   background: var(--bg); min-height: 48px; }
 textarea { min-height: 96px; resize: vertical; }
@@ -128,6 +128,7 @@ dialog.folha::backdrop { background: rgba(0,0,0,.45); }
 .folha .corpo { padding: 14px 16px calc(24px + env(safe-area-inset-bottom)); }
 .fechar { border: 0; background: var(--card); border-radius: 50%; width: 40px; height: 40px; font-size: 22px; cursor: pointer; flex: none; }
 .grade2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.grade2 > * { min-width: 0; }
 .info { display: grid; gap: 8px; font-size: 15px; }
 .info div { display: flex; gap: 10px; }
 .info dt { color: var(--sub); min-width: 78px; font-size: 14px; }
@@ -210,6 +211,14 @@ details.guia li { margin-bottom: 8px; }
 .ref-horas i { height: 16px; background: var(--bg); border-radius: 2px; font-style: normal; }
 .ref-horas i.on { background: var(--pri); }
 .ref-cab .ref-horas i { background: none; height: auto; color: var(--sub); font-size: 10px; }
+.preco-bloco { border-top: 1px solid var(--linha); padding: 10px 0 4px; font-size: 14px; }
+.mensal { margin: 6px 0 0; font-size: 13px; color: var(--g-boa); font-weight: 600; }
+.valor { display: grid; gap: 10px; margin: 0; font-size: 14px; }
+.valor dt { font-weight: 700; color: var(--sub); font-size: 12px; text-transform: uppercase; letter-spacing: .03em; }
+.valor dd { margin: 2px 0 0; }
+.conta { font-size: 15px; margin: 12px 0 6px; padding: 10px 12px; border-radius: 10px; background: var(--pri-suave); }
+.plano { margin: 0; font-size: 14px; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--linha); }
+.plano.sim { border-color: var(--g-boa); }
 .preco-linha { display: grid; grid-template-columns: 1fr 92px 92px; gap: 6px; align-items: center; margin-bottom: 6px; font-size: 14px; }
 .preco-linha input { min-height: 40px; padding: 6px 8px; }
 .resposta-ia { white-space: pre-wrap; font-size: 15px; }
@@ -293,6 +302,7 @@ nav.abas button { position: relative; }
       <button class="chip" data-f="wa" aria-pressed="false">Com WhatsApp</button>
       <button class="chip" data-f="email" aria-pressed="false">Com e-mail</button>
       <button class="chip" data-f="nota" aria-pressed="false">Nota 4,5+</button>
+      <button class="chip" data-f="mensal" aria-pressed="false">🔁 Vale plano mensal</button>
     </div>
     <div class="linha-flex" style="margin-bottom:12px">
       <select id="f-ordem" aria-label="Ordenar">
@@ -401,7 +411,7 @@ nav.abas button { position: relative; }
       <label class="campo" for="a-p-prazo">Prazo padrão de entrega <span style="font-weight:400">(opcional)</span></label>
       <input id="a-p-prazo" type="text" placeholder="em branco = prazo de cada serviço na tabela">
       <h2 style="margin-top:20px">Tabela de preços (só você vê)</h2>
-      <p class="dica" style="margin-top:0">Valores mínimo e máximo em reais. São estimativas de mercado: ajuste para a sua realidade.</p>
+      <p class="dica" style="margin-top:0">Valores mínimo e máximo em reais, do projeto e da manutenção mensal. São estimativas de mercado: ajuste para a sua realidade.</p>
       <div id="a-precos"></div>
       <button class="btn pri cheio" id="btn-salvar-perfil" style="margin-top:14px">Salvar perfil e preços</button>
     </div>
