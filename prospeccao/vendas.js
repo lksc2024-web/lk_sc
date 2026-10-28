@@ -76,6 +76,44 @@ function ticketEstimado(l) {
   return (TICKETS.find(([rx]) => rx.test(t)) || [null, 150])[1];
 }
 
+// Portfólio: projetos já construídos, com os nichos e serviços que eles exemplificam.
+// publico=false: o link ainda pede login da Vercel (proteção de deploy ligada) e o cliente não abre.
+const PORTFOLIO_PADRAO = [
+  { nome: "Simões Imobiliária", url: "simoes-imobiliaria.vercel.app", nichos: "imobiliária, imóveis, corretor", servicos: "site, landing, crm", publico: true },
+  { nome: "Mirante Imóveis", url: "mirante-imoveis-beta.vercel.app", nichos: "imobiliária, imóveis, corretor", servicos: "site, landing", publico: true },
+  { nome: "M Gameiro Imóveis", url: "m-gameiro-imoveis.vercel.app", nichos: "imobiliária, imóveis, corretor", servicos: "site", publico: false },
+  { nome: "T&T Burger", url: "t-t-burger-website-redesign.vercel.app", nichos: "hamburgueria, restaurante, lanchonete, delivery, bar", servicos: "site, landing", publico: true },
+  { nome: "Mr Burdog", url: "mr-burdog-website-rebuild.vercel.app", nichos: "restaurante, lanchonete, hamburgueria, cachorro-quente, food truck", servicos: "site, landing", publico: true },
+  { nome: "Vértice (sistema de gestão)", url: "vertice-gestao.vercel.app", nichos: "", servicos: "sistema, crm, app", publico: true },
+  { nome: "RL Studio Pilates", url: "missao-pilates.vercel.app", nichos: "pilates, estúdio, academia, fisioterapia, clínica, salão, pet shop, banho e tosa", servicos: "agendamento, site", publico: false },
+  { nome: "FeelMov Premium Studio", url: "feelmov-premium-preview.vercel.app", nichos: "personal, academia, estúdio, treino, crossfit", servicos: "site, agendamento", publico: false },
+  { nome: "Academia TR Fit", url: "academia-tr-fit.vercel.app", nichos: "academia, crossfit, treino", servicos: "site", publico: false },
+  { nome: "Dra. Gabriela Reis (odontologia)", url: "gabriela-reis.vercel.app", nichos: "dentista, odonto, clínica, médico, estética, consultório, psicólogo, nutricionista, advogado", servicos: "site, agendamento", publico: false },
+  { nome: "Âmbar (loja virtual)", url: "loja-ambar-previa.vercel.app", nichos: "loja, perfumaria, calçados, bijuteria, moda, pet shop, presentes, cosméticos", servicos: "landing, site, app", publico: false },
+  { nome: "Mini Chic (moda)", url: "minichic-ceu-de-areia.vercel.app", nichos: "moda, roupas, boutique, loja", servicos: "site, landing", publico: false },
+  { nome: "FM Arquitetura", url: "fm-arquitetura-premium.vercel.app", nichos: "arquitetura, interiores, design, engenharia, decoração, marcenaria", servicos: "site", publico: false },
+  { nome: "Orla Superesportivos", url: "orla-superesportivos.vercel.app", nichos: "carros, veículos, concessionária, automóveis, motos", servicos: "site", publico: false },
+  { nome: "Alvora (indústria de café)", url: "alvora-industria-cafe.vercel.app", nichos: "café, cafeteria, indústria, alimentos, distribuidora", servicos: "site", publico: true },
+];
+
+// Até 2 projetos que mais se parecem com o lead: nicho primeiro, depois o serviço oferecido;
+// links públicos têm preferência (o cliente consegue abrir).
+function exemplosPara(l, op, perfil = {}) {
+  const lista = perfil.portfolio_itens?.length ? perfil.portfolio_itens : PORTFOLIO_PADRAO;
+  const alvo = semAcento(`${l.categoria} ${l.nicho}`);
+  const pontos = (it) => {
+    let p = 0;
+    for (const n of String(it.nichos || "").split(",").map(semAcento).filter(Boolean)) if (alvo.includes(n) || n.split(" ").every((w) => alvo.includes(w))) p += 3;
+    if (op && String(it.servicos || "").split(",").map((x) => x.trim()).includes(op.servico)) p += 2;
+    if (it.publico !== false) p += 1;
+    return p;
+  };
+  return lista.map((it) => ({ ...it, pts: pontos(it) })).filter((it) => it.pts >= 2 && it.url)
+    .sort((a, b) => b.pts - a.pts).slice(0, 2);
+}
+function semAcento(t) { return String(t || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim(); }
+function linkCompleto(u) { return /^https?:\/\//.test(u) ? u : `https://${u}`; }
+
 const GRUPOS = {
   sem: { nome: "Sem presença digital", icone: "🔴", cor: "var(--g-sem)" },
   melhorar: { nome: "Presença a melhorar", icone: "🟡", cor: "var(--g-melhorar)" },
@@ -286,14 +324,14 @@ const ROTEIRO_PADRAO = {
   rejeicao: "Entendo, obrigado por responder! Só para eu entender melhor: vocês já têm alguém cuidando disso ou não é prioridade agora? " +
     "Se mudar, fico à disposição, e o diagnóstico gratuito continua valendo.",
   atencao: "Claro! Funciona assim: primeiro faço um diagnóstico gratuito da {nome} e te mostro o que dá para melhorar ({curto} é o ponto principal). " +
-    "Depois, se fizer sentido, te passo uma proposta fechada, com escopo, prazo ({prazo}) e valor, sem surpresa.{portfolio_frase2} Posso preparar o diagnóstico?",
+    "Depois, se fizer sentido, te passo uma proposta fechada, com escopo, prazo ({prazo}) e valor, sem surpresa.{portfolio_frase2}{exemplos}\n\nPosso preparar o diagnóstico?",
   desejo: "Que ótimo! Vou preparar a prévia da {nome}. Para acertar em cheio, me conta: hoje a maioria dos clientes chega por onde (Instagram, Google, indicação)? " +
-    "E prefere que eu apresente numa chamada rápida de 15 minutos ou mando tudo por aqui?",
+    "E prefere que eu apresente numa chamada rápida de 15 minutos ou mando tudo por aqui?{exemplos}",
   aprovacao: "Perfeito, vamos nessa! Vou te enviar a proposta com escopo, prazo ({prazo}) e valores. Qual o melhor e-mail e o nome do responsável? Assim que aprovar, já começo.",
   retomar: "Oi! {de_novo}Passando para retomar nossa conversa sobre {curto} da {nome}. Conseguiu ver? Fico à disposição para qualquer dúvida.",
   valor: "Te explico de forma simples como isso funcionaria para a {nome}:\n\n" +
     "💰 Onde vocês ganham: {retorno}.\n📈 Resultado esperado: {resultado}.\n📱 Como vocês usam: {uso}.\n\n" +
-    "Uma conta rápida: {exemplo_retorno}{manutencao_frase}\n\nQuer que eu monte a proposta com escopo e prazo ({prazo})?",
+    "Uma conta rápida: {exemplo_retorno}{manutencao_frase}{exemplos}\n\nQuer que eu monte a proposta com escopo e prazo ({prazo})?",
 };
 const NOME_ETAPA = {
   abordagem: "Primeiro contato", follow1: "Lembrete 1", follow2: "Lembrete 2 (valor)", encerramento: "Encerramento",
@@ -341,6 +379,10 @@ function montarMensagem(l, etapa, analise, perfil = {}, oportunidade = null, con
     portfolio_frase2: perfil.portfolio ? ` Exemplos do meu trabalho: ${perfil.portfolio}.` : "",
     retorno: servico.retorno || "", resultado: servico.resultado || "", uso: servico.uso || "",
   };
+  const ex = exemplosPara(l, op, perfil);
+  vars.exemplos = ex.length
+    ? `\n\nPara vocês verem na prática, separei projetos parecidos que já desenvolvi:\n${ex.map((e) => `• ${e.nome}: ${linkCompleto(e.url)}`).join("\n")}`
+    : "";
   const r = retorno(l, { principal: op }, perfil, conta.ticket, conta.clientes || 2);
   vars.exemplo_retorno = `se isso trouxer só ${r.clientes} cliente${r.clientes > 1 ? "s" : ""} a mais por mês (ticket médio de ${fmtReais(r.ticket)}), ` +
     `são ${fmtReais(r.ganhoMes)} a mais por mês, e o investimento se paga em cerca de ${r.meses} ${r.meses > 1 ? "meses" : "mês"}.`;
@@ -476,5 +518,5 @@ window.Vendas = {
   SERVICOS, GRUPOS, OPORTUNIDADES, ROTEIRO_PADRAO, PROFISSAO_PADRAO, NOME_ETAPA, NOME_RESPOSTA, ICONE_RESPOSTA,
   contextoComparacao, analisar, montarMensagem, classificarResposta, ciclo, intervalos, proximaAcao,
   taxasReais, chanceFechamento, termometro, precoDe, faixaPreco, fmtReais, soRede, precisaAnalise, etapaChance,
-  planoMensal, retorno, ticketEstimado,
+  planoMensal, retorno, ticketEstimado, PORTFOLIO_PADRAO, exemplosPara, linkCompleto,
 };

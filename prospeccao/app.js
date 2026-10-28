@@ -591,6 +591,18 @@ function htmlOportunidades(l, a, escolhida) {
   }).join("");
 }
 
+// Projetos parecidos do portfólio, para mostrar na conversa ou na reunião.
+function htmlPortfolio(l, op) {
+  const ex = Vendas.exemplosPara(l, op, perfil());
+  const bloqueado = ex.some((e) => e.publico === false);
+  return `<h2>📁 Projetos para mostrar</h2>
+    ${ex.length ? ex.map((e) => `<a class="proj" href="${esc(Vendas.linkCompleto(e.url))}" target="_blank" rel="noopener">
+        <b>${esc(e.nome)}${e.publico === false ? " 🔒" : ""}</b><span>${esc(e.url)}</span></a>`).join("")
+      : `<p class="dica" style="margin:0">Nenhum projeto parecido cadastrado. Adicione em Ajustes → Portfólio.</p>`}
+    <p class="dica">Esses links entram sozinhos nas mensagens de dúvida, interesse e proposta de valor (não no primeiro contato).</p>
+    ${bloqueado ? `<p class="aviso" style="margin:8px 0 0">🔒 = o link ainda pede login da Vercel, e o cliente não consegue abrir. Libere o acesso público do projeto na Vercel antes de enviar.</p>` : ""}`;
+}
+
 // Proposta de valor: onde o dinheiro entra, resultado, como usar, conta de retorno e plano mensal.
 function htmlValor(l, a, op, conta) {
   const p = Vendas.precoDe(op.servico, perfil());
@@ -706,6 +718,7 @@ function abrirLead(id, opcoes = {}) {
       </div>
 
       ${a.principal ? `<div class="cartao" id="l-valor">${htmlValor(l, a, oport(), conta)}</div>` : ""}
+      <div class="cartao" id="l-portfolio">${htmlPortfolio(l, oport())}</div>
 
       <div class="grade2" style="margin-bottom:14px">
         ${l.tel_digitos ? `<a class="btn" id="l-ligar" href="tel:+${esc(l.tel_digitos)}">Ligar</a>` : ""}
@@ -758,6 +771,7 @@ function abrirLead(id, opcoes = {}) {
   const atualizarValor = () => {
     const box = $("#l-valor", dlg);
     if (box) box.innerHTML = htmlValor(l, a, oport(), conta);
+    $("#l-portfolio", dlg).innerHTML = htmlPortfolio(l, oport());
     if ($("#l-msg", dlg) && !etapa.startsWith("extra:")) $("#l-msg", dlg).value = msgDe(etapa);
   };
   $("#l-oports", dlg).onchange = (e) => {
@@ -1167,6 +1181,7 @@ function renderAjustes() {
   $("#a-roteiro").innerHTML = Object.keys(Vendas.ROTEIRO_PADRAO).map((e) => `
     <label class="campo" for="a-r-${e}">${Vendas.NOME_ETAPA[e]}</label>
     <textarea id="a-r-${e}" data-etapa="${e}" style="min-height:120px">${esc((pf.roteiro || {})[e] || Vendas.ROTEIRO_PADRAO[e])}</textarea>`).join("");
+  renderPortfolio(pf.portfolio_itens?.length ? pf.portfolio_itens : Vendas.PORTFOLIO_PADRAO);
   $("#a-ia-chave").value = c.ia_key || "";
   $("#a-ia-status").textContent = c.ia_key ? "IA ligada." : "IA desligada (sem custo).";
   try { $("#a-tema").value = localStorage.getItem("tema") || ""; } catch { /* sem armazenamento */ }
@@ -1199,6 +1214,31 @@ async function testarChave() {
   }
 }
 
+function renderPortfolio(itens) {
+  $("#a-portfolio").innerHTML = itens.map((it, i) => `
+    <div class="proj-edit" data-i="${i}">
+      <div class="grade2">
+        <input type="text" data-k="nome" value="${esc(it.nome)}" placeholder="Nome do projeto" aria-label="Nome do projeto">
+        <input type="text" data-k="url" value="${esc(it.url)}" placeholder="link" inputmode="url" aria-label="Link do projeto">
+      </div>
+      <input type="text" data-k="nichos" value="${esc(it.nichos)}" placeholder="Nichos parecidos, separados por vírgula" aria-label="Nichos" style="margin-top:6px">
+      <input type="text" data-k="servicos" value="${esc(it.servicos)}" placeholder="Serviços: site, landing, agendamento, crm, sistema, app" aria-label="Serviços" style="margin-top:6px">
+      <div class="linha-flex" style="margin-top:6px">
+        <label class="linha-flex" style="gap:8px; flex:2"><input type="checkbox" data-k="publico" ${it.publico !== false ? "checked" : ""} style="flex:none; width:20px; height:20px"> <span>Link aberto ao público</span></label>
+        <a class="btn peq" href="${esc(Vendas.linkCompleto(it.url || ""))}" target="_blank" rel="noopener" style="flex:none">Abrir</a>
+        <button class="btn peq perigo" data-remover-proj="${i}" style="flex:none">Remover</button>
+      </div>
+    </div>`).join("");
+}
+
+function lerPortfolio() {
+  return $$("#a-portfolio [data-i]").map((el) => ({
+    nome: $("[data-k=nome]", el).value.trim(), url: $("[data-k=url]", el).value.trim().replace(/^https?:\/\//, ""),
+    nichos: $("[data-k=nichos]", el).value.trim(), servicos: $("[data-k=servicos]", el).value.trim(),
+    publico: $("[data-k=publico]", el).checked,
+  })).filter((it) => it.nome && it.url);
+}
+
 function lerPerfil() {
   const pf = { ...(estado.config.perfil || {}) };
   for (const k of ["nome", "profissao", "marca", "portfolio", "prazo"]) pf[k] = $(`#a-p-${k}`).value.trim();
@@ -1213,6 +1253,7 @@ function lerPerfil() {
     if (ajuste.mmax != null || ajuste.mmin != null) ajuste.mmax = Math.max(ajuste.mmin ?? base.mmin, ajuste.mmax ?? base.mmax);
     if (Object.keys(ajuste).length) pf.precos[el.dataset.servico] = ajuste;
   }
+  pf.portfolio_itens = lerPortfolio();
   pf.roteiro = {};
   for (const ta of $$("#a-roteiro [data-etapa]")) {
     const v = ta.value.trim();
@@ -1363,6 +1404,14 @@ $("#p-hoje").addEventListener("click", (e) => {
   abrirLead(b.dataset.lead, { etapa: b.dataset.etapa });
 });
 $("#btn-ia-perguntar").addEventListener("click", perguntarIa);
+$("#btn-novo-proj").addEventListener("click", () => {
+  renderPortfolio([...lerPortfolio(), { nome: "Novo projeto", url: "", nichos: "", servicos: "site", publico: true }]);
+});
+$("#a-portfolio").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-remover-proj]"); if (!b) return;
+  const l = lerPortfolio(); l.splice(+b.dataset.removerProj, 1); renderPortfolio(l);
+});
+$("#btn-salvar-portfolio").addEventListener("click", () => salvarConfig({ perfil: lerPerfil() }, "Portfólio salvo."));
 $("#c-texto").addEventListener("input", (e) => { contatos.texto = e.target.value; renderContatos(); });
 $("#c-ordem").addEventListener("change", (e) => { contatos.ordem = e.target.value; renderContatos(); });
 $("#c-nichos").addEventListener("click", (e) => {

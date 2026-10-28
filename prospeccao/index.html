@@ -279,6 +279,12 @@ nav.abas button { position: relative; }
   .c-grade { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 12px; align-items: start; }
   .c-grade .contato { margin: 0; }
 }
+
+/* Portfólio */
+.proj { display: grid; gap: 2px; padding: 10px 12px; border: 1px solid var(--linha); border-radius: 10px; margin-bottom: 8px; text-decoration: none; color: var(--txt); background: var(--bg); }
+.proj span { font-size: 12px; color: var(--pri); word-break: break-all; }
+.proj-edit { border-top: 1px solid var(--linha); padding: 12px 0; }
+.proj-edit input[type=text] { min-height: 42px; padding: 8px 10px; font-size: 14px; }
 </style>
 </head>
 <body>
@@ -489,8 +495,18 @@ nav.abas button { position: relative; }
     </div>
 
     <div class="cartao">
+      <h2>📁 Portfólio (projetos para mostrar)</h2>
+      <p class="dica" style="margin-top:0">O app escolhe os 2 projetos mais parecidos com cada empresa (pelo nicho e pelo serviço) e coloca os links nas mensagens de dúvida, interesse e proposta de valor. Desmarque "aberto ao público" se o link pedir login.</p>
+      <div id="a-portfolio"></div>
+      <div class="grade2" style="margin-top:10px">
+        <button class="btn" id="btn-novo-proj">+ Adicionar projeto</button>
+        <button class="btn pri" id="btn-salvar-portfolio">Salvar portfólio</button>
+      </div>
+    </div>
+
+    <div class="cartao">
       <h2>Roteiro do ciclo de mensagens</h2>
-      <p class="dica" style="margin-top:0">Blocos trocados automaticamente pelo diagnóstico de cada empresa: {nome}, {cidade}, {categoria}, {elogio}, {apresentacao}, {problema}, {impacto}, {solucao}, {beneficio}, {curto}, {prazo}, {portfolio_frase}.</p>
+      <p class="dica" style="margin-top:0">Blocos trocados automaticamente pelo diagnóstico de cada empresa: {nome}, {cidade}, {categoria}, {elogio}, {apresentacao}, {problema}, {impacto}, {solucao}, {beneficio}, {curto}, {prazo}, {portfolio_frase}, {exemplos} (projetos parecidos do portfólio).</p>
       <div id="a-roteiro"></div>
       <div class="grade2" style="margin-top:14px">
         <button class="btn" id="btn-restaurar-roteiro">Restaurar padrão</button>
