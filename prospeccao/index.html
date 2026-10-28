@@ -254,6 +254,31 @@ nav.abas button { position: relative; }
 @media (min-width: 900px) and (hover: hover) {
   .lead:hover { border-color: var(--pri); }
 }
+
+/* Em contato */
+.contato { background: var(--card); border: 1px solid var(--linha); border-radius: 14px; padding: 14px; margin-bottom: 10px; box-shadow: var(--sombra); }
+.contato-cab { display: flex; gap: 12px; align-items: flex-start; }
+.contato-nome { flex: 1; min-width: 0; }
+.contato-nome h3 { margin: 0; font-size: 16px; }
+.contato-nome p { margin: 3px 0 0; font-size: 13px; color: var(--sub); }
+.contato-chance { text-align: right; flex: none; }
+.contato-chance b { display: block; font-size: 18px; }
+.previsao { font-size: 12px; font-weight: 700; }
+.previsao.sim { color: var(--g-boa); } .previsao.talvez { color: var(--amarelo); } .previsao.nao { color: var(--sub); }
+.contato-info { font-size: 13px; color: var(--sub); margin: 8px 0 0; }
+.contato .acoes { display: flex; gap: 8px; margin-top: 10px; }
+.contato .acoes .btn { flex: 1; min-height: 42px; font-size: 14px; }
+.msgs-prontas { display: grid; gap: 8px; margin-top: 12px; }
+.msg-pronta { text-align: left; border: 1px solid var(--linha); background: var(--bg); border-radius: 10px; padding: 10px 12px; cursor: pointer; display: grid; gap: 3px; }
+.msg-pronta b { font-size: 14px; }
+.msg-pronta span { font-size: 12px; color: var(--sub); }
+.msg-pronta.sugerida { border-color: var(--wa); }
+.grupo-titulo { font-size: 15px; margin: 18px 0 8px; text-transform: capitalize; }
+.grupo-titulo small { color: var(--sub); font-weight: 400; }
+@media (min-width: 900px) {
+  .c-grade { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 12px; align-items: start; }
+  .c-grade .contato { margin: 0; }
+}
 </style>
 </head>
 <body>
@@ -349,6 +374,21 @@ nav.abas button { position: relative; }
     <div class="aviso" id="f-busca-aviso" hidden></div>
     <div id="lista-leads"></div>
     <button class="btn cheio" id="btn-mais" hidden>Mostrar mais</button>
+  </section>
+
+  <!-- Em contato -->
+  <section id="tela-contatos" hidden>
+    <p class="dica" style="margin-top:0">Só quem você já abordou, separado por nicho ou por nome, com a chance de fechar e as mensagens prontas.</p>
+    <div class="resumo" id="c-resumo"></div>
+    <input id="c-texto" type="search" placeholder="Procurar pelo nome da empresa…" style="margin-bottom:10px">
+    <div class="chips" id="c-nichos" style="margin-bottom:10px"></div>
+    <select id="c-ordem" aria-label="Organizar por" style="margin-bottom:14px">
+      <option value="nicho">Separar por nicho</option>
+      <option value="nome">Nome (A–Z)</option>
+      <option value="chance">Maior chance de fechar</option>
+      <option value="recente">Contato mais recente</option>
+    </select>
+    <div id="c-lista"></div>
   </section>
 
   <!-- Painel -->
@@ -506,6 +546,8 @@ nav.abas button { position: relative; }
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>Buscar</button>
   <button data-tela="leads">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>Leads</button>
+  <button data-tela="contatos">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Contato</button>
   <button data-tela="painel">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 3v18h18"/><path d="M7 16v-5M12 16V8M17 16v-8"/></svg>Painel<span class="badge" id="badge-hoje" hidden></span></button>
   <button data-tela="ajustes">
