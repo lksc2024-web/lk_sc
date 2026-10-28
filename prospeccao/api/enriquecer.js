@@ -1,11 +1,12 @@
-// POST /api/enriquecer — visita o site de cada lead e procura e-mail, WhatsApp e redes sociais.
+// POST /api/enriquecer — visita o site de cada lead: procura e-mail, WhatsApp e redes sociais e
+// faz o raio-X do site (abre? celular? segurança? agendamento? anúncios?) para o diagnóstico.
 // Corpo: { sites: [{ id, site }] } (até 6 por chamada). Devolve: { resultados: { id: {...} } }
-import { acharRedes, autenticar, baixarHtml, extrairEmails, lerCorpo, linksContato, responder, whatsappEm } from "./_lib.js";
+import { acharRedes, autenticar, baixarHtml, baixarPagina, diagnosticar, extrairEmails, lerCorpo, linksContato, responder, whatsappEm } from "./_lib.js";
 
 const SO_REDE = ["instagram.com", "facebook.com", "wa.me", "whatsapp.com", "linktr.ee"];
 
 export async function enriquecerSite(site) {
-  const out = { email: "", whatsapp: "", instagram: "", facebook: "", linkedin: "" };
+  const out = { email: "", whatsapp: "", instagram: "", facebook: "", linkedin: "", diag: null };
   if (SO_REDE.some((h) => site.includes(h))) {
     // o "site" cadastrado no Google é na verdade uma rede social ou link de WhatsApp
     if (site.includes("instagram.com")) out.instagram = site;
@@ -13,7 +14,9 @@ export async function enriquecerSite(site) {
     out.whatsapp = whatsappEm(site);
     return out;
   }
-  const home = await baixarHtml(site);
+  const pagina = await baixarPagina(site);
+  out.diag = diagnosticar(pagina, site);
+  const home = pagina.html;
   if (!home) return out;
   Object.assign(out, acharRedes(home));
   out.whatsapp = whatsappEm(home);

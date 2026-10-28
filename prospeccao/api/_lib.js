@@ -159,17 +159,56 @@ export function urlPublica(url) {
   } catch { return null; }
 }
 
-export async function baixarHtml(url, ms = 8000) {
+// Baixa uma página e mede: { html, ok, ms, https, status }. ok=false quando o site não abre.
+export async function baixarPagina(url, ms = 8000) {
   const alvo = urlPublica(url);
-  if (!alvo) return "";
+  if (!alvo) return { html: "", ok: false, ms: 0, https: false, status: 0 };
   const ctl = new AbortController();
   const t = setTimeout(() => ctl.abort(), ms);
+  const inicio = Date.now();
   try {
     const r = await fetch(alvo, {
       signal: ctl.signal, redirect: "follow",
       headers: { "User-Agent": "Mozilla/5.0 (compatible; Prospeccao/1.0)", Accept: "text/html" },
     });
-    if (!r.ok || !(r.headers.get("content-type") || "").includes("html")) return "";
-    return (await r.text()).slice(0, 400000);
-  } catch { return ""; } finally { clearTimeout(t); }
+    const html = r.ok && (r.headers.get("content-type") || "").includes("html") ? (await r.text()).slice(0, 400000) : "";
+    return { html, ok: r.ok, ms: Date.now() - inicio, https: (r.url || alvo).startsWith("https:"), status: r.status };
+  } catch {
+    return { html: "", ok: false, ms: Date.now() - inicio, https: false, status: 0 };
+  } finally { clearTimeout(t); }
+}
+
+export async function baixarHtml(url, ms = 8000) {
+  return (await baixarPagina(url, ms)).html;
+}
+
+// Raio-X do site a partir do HTML: só sinais objetivos, que dá para citar na mensagem.
+const SINAIS = {
+  agendamento: /agend|reserv|marcar (?:consulta|horário|horario|visita)|calendly|doctoralia|booking|simplybook|trinks|avec\.app|agendor/i,
+  chat: /tawk\.to|jivosite|jivochat|zendesk|intercom|crisp\.chat|manychat|blip\.ai|octadesk|botpress|chatbot|tidio|kommo|rd-?station|huggy/i,
+  pixel: /fbq\(|connect\.facebook\.net|facebook\.com\/tr\?/i,
+  google_tag: /gtag\(|googletagmanager\.com|google-analytics\.com|googleadservices/i,
+  loja: /woocommerce|shopify|nuvemshop|lojaintegrada|tray\.com|vtex|add[-_]to[-_]cart|carrinho/i,
+  formulario: /<form[\s>]/i,
+};
+const PLATAFORMAS = [["Wix", /wix\.com|wixstatic/i], ["WordPress", /wp-content|wordpress/i], ["Squarespace", /squarespace/i],
+  ["Webflow", /webflow/i], ["Google Sites", /sites\.google/i], ["Linktree", /linktr\.ee/i]];
+
+export function diagnosticar(pagina, site) {
+  const h = pagina.html || "";
+  const d = {
+    abre: pagina.ok && !!h, https: pagina.https, ms: pagina.ms,
+    responsivo: /<meta[^>]+name=["']viewport["']/i.test(h),
+    titulo: (h.match(/<title[^>]*>([^<]{0,120})/i) || [])[1]?.trim() || "",
+    descricao: /<meta[^>]+name=["']description["'][^>]+content=["'][^"']{20,}/i.test(h),
+    whatsapp_site: !!whatsappEm(h) || /wa\.me|api\.whatsapp\.com/i.test(h),
+    plataforma: (PLATAFORMAS.find(([, rx]) => rx.test(h)) || [""])[0],
+  };
+  for (const [k, rx] of Object.entries(SINAIS)) d[k] = rx.test(h);
+  // ano mais recente perto do © no rodapé: site parado há anos é um bom gancho
+  const anos = [...h.matchAll(/(?:©|&copy;|copyright)[^<]{0,40}?((?:19|20)\d{2})(?:\s*[-–]\s*((?:19|20)\d{2}))?/gi)]
+    .flatMap((m) => [m[1], m[2]]).filter(Boolean).map(Number);
+  d.ano_rodape = anos.length ? Math.max(...anos) : 0;
+  d.dominio = host(site);
+  return d;
 }

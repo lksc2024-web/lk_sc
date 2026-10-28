@@ -1,5 +1,6 @@
 // Prospecção — app de celular. Dados no Supabase (só o dono acessa); buscas pela API oficial do
-// Google Places, via /api/buscar; e-mail e redes achados no site de cada empresa via /api/enriquecer.
+// Google Places, via /api/buscar; e-mail, redes e raio-X do site via /api/enriquecer. As regras de
+// venda (grupos, oportunidades, mensagens do ciclo, chance de fechamento) ficam em vendas.js.
 "use strict";
 
 const SUPABASE_URL = "https://bxjyxfoisqjkijxoeysu.supabase.co";
@@ -13,7 +14,7 @@ const TAMANHOS = {
 };
 const STATUS = [
   ["novo", "Novo"], ["contatado", "Contatado"], ["respondeu", "Respondeu"],
-  ["reuniao", "Reunião marcada"], ["fechado", "Fechou negócio"], ["descartado", "Descartado"],
+  ["reuniao", "Reunião / proposta"], ["fechado", "Fechou negócio"], ["descartado", "Descartado"],
 ];
 const NOME_STATUS = Object.fromEntries(STATUS);
 const TEMPLATES_PADRAO = [
@@ -37,9 +38,11 @@ const $$ = (s, el = document) => [...el.querySelectorAll(s)];
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const norm = (s) => String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
 
-const FILTRO_PADRAO = { status: "", texto: "", wa: false, email: false, site: "", nota: false, busca: "", ordem: "recentes" };
+const FILTRO_PADRAO = { status: "", texto: "", wa: false, email: false, grupo: "", nota: false, busca: "", ordem: "recentes" };
+const TELAS = { buscar: "Buscar empresas", leads: "Meus leads", painel: "Painel de vendas", ajustes: "Ajustes" };
 const estado = {
-  usuario: null, config: null, leads: [], buscas: [], municipios: null,
+  usuario: null, config: null, leads: [], buscas: [], municipios: null, medianas: {}, analisandoSites: false,
+  intervalos: null, taxas: {},
   cidade: null, tamanho: "padrao", buscando: false,
   filtro: null, // preenchido com FILTRO_PADRAO logo abaixo
   mostrar: POR_PAGINA,
@@ -56,10 +59,11 @@ function toast(msg) {
 }
 
 function irPara(tela) {
-  for (const s of ["buscar", "leads", "ajustes"]) $(`#tela-${s}`).hidden = s !== tela;
+  for (const s of Object.keys(TELAS)) $(`#tela-${s}`).hidden = s !== tela;
   $$("#abas button").forEach((b) => b.setAttribute("aria-current", b.dataset.tela === tela ? "page" : "false"));
-  $("#titulo").textContent = { buscar: "Buscar empresas", leads: "Meus leads", ajustes: "Ajustes" }[tela];
+  $("#titulo").textContent = TELAS[tela];
   if (tela === "leads") renderLeads();
+  if (tela === "painel") renderPainel();
   if (tela === "ajustes") renderAjustes();
   window.scrollTo(0, 0);
 }
@@ -110,12 +114,13 @@ async function iniciar(sessao) {
   $("#tela-login").hidden = logado;
   $("#abas").hidden = !logado;
   if (!logado) {
-    for (const s of ["buscar", "leads", "ajustes"]) $(`#tela-${s}`).hidden = true;
+    for (const s of Object.keys(TELAS)) $(`#tela-${s}`).hidden = true;
     $("#titulo").textContent = "Prospecção";
     return;
   }
   irPara("buscar");
   await Promise.all([carregarConfig(), carregarBuscas(), carregarLeads()]);
+  recalcular();
   renderBuscar();
 }
 
@@ -127,6 +132,7 @@ async function carregarConfig() {
     data = r.data;
   }
   estado.config = data || { google_key: "", templates: TEMPLATES_PADRAO, padrao: "apresentacao", auto_contatado: true };
+  estado.config.perfil ||= {};
   if (!estado.config.templates?.length) estado.config.templates = TEMPLATES_PADRAO;
   // Contas criadas antes da mensagem “Para quem já tem site” recebem ela uma vez.
   let jaOferecida = false;
@@ -153,6 +159,7 @@ async function carregarLeads() {
     if (data.length < 1000) break;
   }
   estado.leads = todos;
+  estado.medianas = Vendas.contextoComparacao(todos);
 }
 
 async function salvarLead(lead, mudancas) {
@@ -299,8 +306,10 @@ async function buscar(e) {
 
   if (!total) { fimBusca(trava, falhas ? ultimoErro : "Nenhuma empresa encontrada. Tente outro termo ou cidade.", true); return; }
   await enriquecer([...ids]);
-  const s = contarSites(estado.leads.filter((l) => ids.has(l.id)));
-  fimBusca(trava, `Pronto! ${total} empresas: ${s.com} com site e ${s.sem} sem site.`);
+  estado.medianas = Vendas.contextoComparacao(estado.leads);
+  recalcular();
+  const g = contarGrupos(estado.leads.filter((l) => ids.has(l.id)));
+  fimBusca(trava, `Pronto! ${total} empresas: ${g.sem} sem presença, ${g.melhorar} a melhorar e ${g.boa} com presença boa.`);
   estado.filtro = { ...estado.filtro, busca: busca.id, status: "" };
   estado.mostrar = POR_PAGINA;
   irPara("leads");
@@ -317,9 +326,9 @@ function fimBusca(trava, msg, fixo = false) {
   else toast(msg);
 }
 
-// Visita os sites para achar e-mail, WhatsApp e redes. Só preenche o que está vazio.
+// Visita os sites: e-mail, WhatsApp, redes e o raio-X do site. Só preenche o que está vazio.
 async function enriquecer(ids) {
-  const alvo = estado.leads.filter((l) => ids.includes(l.id) && l.site && !l.enriquecido);
+  const alvo = estado.leads.filter((l) => ids.includes(l.id) && l.site && (!l.enriquecido || Vendas.precisaAnalise(l)));
   if (!alvo.length) return;
   let feitos = 0;
   const lotes = [];
@@ -331,6 +340,7 @@ async function enriquecer(ids) {
         const { resultados } = await api("/api/enriquecer", { sites: lote.map((l) => ({ id: l.id, site: l.site })) });
         await Promise.all(lote.map((l) => {
           const r = resultados[l.id] || {}, m = { enriquecido: true };
+          if (r.diag) m.dados = { ...(l.dados || {}), diag: r.diag };
           if (r.email && !l.email) m.email = r.email;
           for (const k of ["instagram", "facebook", "linkedin"]) if (r[k] && !l[k]) m[k] = r[k];
           if (r.whatsapp && (!l.whatsapp || l.whatsapp_origem === "telefone")) { m.whatsapp = r.whatsapp; m.whatsapp_origem = "site"; }
@@ -338,8 +348,8 @@ async function enriquecer(ids) {
         }));
       } catch { /* segue com os próximos */ }
       feitos += lote.length;
-      progresso(feitos / alvo.length, `Procurando e-mail e redes nos sites: ${feitos} de ${alvo.length}`,
-        "Completando os contatos…");
+      progresso(feitos / alvo.length, `Analisando os sites (celular, segurança, agendamento, anúncios): ${feitos} de ${alvo.length}`,
+        "Fazendo o diagnóstico…");
     }
   };
   await Promise.all([trabalhar(), trabalhar()]);
@@ -351,34 +361,41 @@ function renderBuscar() {
   const el = $("#lista-buscas");
   if (!estado.buscas.length) { el.innerHTML = `<p class="dica" style="margin:0">Nenhuma busca ainda.</p>`; return; }
   el.innerHTML = estado.buscas.slice(0, 30).map((b) => {
-    const s = contarSites(estado.leads.filter((l) => (l.buscas || []).includes(b.id)));
+    const g = contarGrupos(estado.leads.filter((l) => (l.buscas || []).includes(b.id)));
     return `
     <button class="btn cheio" data-busca="${b.id}" style="justify-content:space-between; margin-bottom:8px; text-align:left; font-weight:400">
       <span><b>${esc(b.nichos.join(", "))}</b><br><small style="color:var(--sub)">${esc(b.bairro ? b.bairro + ", " : "")}${esc(b.cidade)} - ${b.uf} · ${new Date(b.criado_em).toLocaleDateString("pt-BR")}</small></span>
       <span style="flex:none; text-align:right">${b.total} <small style="color:var(--sub)">(${b.novos} novos)</small>
-        ${b.total ? `<br><small style="color:var(--sub)">${s.com} com site · ${s.sem} sem</small>` : ""}</span>
+        ${b.total ? `<br><small style="color:var(--sub)">🔴 ${g.sem} · 🟡 ${g.melhorar} · 🟢 ${g.boa}</small>` : ""}</span>
     </button>`;
   }).join("");
 }
 
 // ── Leads ──────────────────────────────────────────────────────────────────────
-// Perfil de Instagram/Facebook ou link de WhatsApp no lugar do site não conta como site.
-const temSite = (l) => !!l.site && !/instagram\.com|facebook\.com|linktr\.ee|wa\.me|whatsapp\.com/.test(l.site);
+const analise = (l) => Vendas.analisar(l, estado.medianas);
+const perfil = () => estado.config?.perfil || {};
 
-function contarSites(lista) {
-  const com = lista.filter(temSite).length;
-  return { com, sem: lista.length - com };
+function contarGrupos(lista) {
+  const g = { sem: 0, melhorar: 0, boa: 0, analisando: 0 };
+  for (const l of lista) g[analise(l).grupo]++;
+  return g;
 }
 
-function filtrados(ignorarSite = false) {
+function chanceDe(l, a = analise(l)) {
+  return Vendas.chanceFechamento(l, a, estado.taxas || {});
+}
+
+function filtrados(ignorarGrupo = false) {
   const f = estado.filtro, termo = norm(f.texto);
   let lista = estado.leads.filter((l) =>
     (!f.status || l.status === f.status) && (!f.wa || l.whatsapp) && (!f.email || l.email) &&
-    (ignorarSite || !f.site || (f.site === "com") === temSite(l)) && (!f.nota || l.nota >= 4.5) &&
+    (ignorarGrupo || !f.grupo || analise(l).grupo === f.grupo) && (!f.nota || l.nota >= 4.5) &&
     (!f.busca || (l.buscas || []).includes(f.busca)) &&
     (!termo || norm(`${l.nome} ${l.bairro} ${l.categoria} ${l.cidade} ${l.nicho}`).includes(termo)));
   const ord = {
     recentes: (a, b) => b.criado_em.localeCompare(a.criado_em),
+    potencial: (a, b) => analise(b).potencial - analise(a).potencial,
+    chance: (a, b) => chanceDe(b).pct - chanceDe(a).pct,
     avaliacoes: (a, b) => b.avaliacoes - a.avaliacoes,
     nota: (a, b) => b.nota - a.nota || b.avaliacoes - a.avaliacoes,
     nome: (a, b) => a.nome.localeCompare(b.nome),
@@ -388,30 +405,48 @@ function filtrados(ignorarSite = false) {
 
 function corStatus(s) { return `var(--s-${s})`; }
 
+function seloGrupo(g) {
+  const G = Vendas.GRUPOS[g];
+  return `<span class="selo-grupo" style="--cor:${G.cor}">${G.icone} ${G.nome}</span>`;
+}
+
 function cartaoLead(l) {
+  const a = analise(l), ch = chanceDe(l, a), prox = Vendas.proximaAcao(l, estado.intervalos);
   const selos = [];
   if (l.whatsapp) selos.push("WhatsApp");
   if (l.email) selos.push("E-mail");
   if (l.instagram) selos.push("Instagram");
-  selos.push(temSite(l) ? "Tem site" : "Sem site");
   if (l.fechado) selos.push("Fechado");
   const nota = l.nota ? `<span class="estrela">★</span> ${String(l.nota).replace(".", ",")} (${l.avaliacoes})` : "Sem avaliações";
+  const contatado = l.status !== "novo";
+  const medidor = contatado
+    ? `${Vendas.termometro(ch.pct).icone} Chance de fechar: <b>${ch.pct}%</b>`
+    : a.grupo === "analisando" ? "Analisando o site…" : `Potencial de abordagem: <b>${a.potencial}%</b>`;
+  const acaoBtn = prox?.acao === "responder" ? "Responder" : prox?.acao === "lembrete" ? "Enviar lembrete" : "WhatsApp";
   return `<article class="lead" data-id="${l.id}">
     <div class="cab" data-abrir>
       <div>
         <h3>${esc(l.nome)}</h3>
-        <div class="meta">${esc(l.categoria || l.nicho)}${l.bairro ? " · " + esc(l.bairro) : ""}</div>
-        <div class="meta">${nota}</div>
+        <div class="meta">${esc(l.categoria || l.nicho)}${l.bairro ? " · " + esc(l.bairro) : ""} · ${nota}</div>
       </div>
       <span class="status" style="--cor:${corStatus(l.status)}">${NOME_STATUS[l.status]}</span>
     </div>
-    ${selos.length ? `<div class="selos">${selos.map((s) => `<span class="selo">${s}</span>`).join("")}</div>` : ""}
+    <div class="selos">${seloGrupo(a.grupo)}${selos.map((s) => `<span class="selo">${s}</span>`).join("")}</div>
+    ${a.principal ? `<p class="oport">💡 ${esc(cap(blocoCurto(l, a)))}</p>` : ""}
+    <div class="medidor">${medidor}${prox?.urgente ? ` · <span class="urgente">${esc(prox.texto)} hoje</span>` : ""}</div>
     <div class="acoes">
-      <button class="btn wa" data-acao="wa" ${l.whatsapp ? "" : "disabled"}>WhatsApp</button>
+      <button class="btn wa" data-acao="wa" ${l.whatsapp ? "" : "disabled"}>${acaoBtn}</button>
       <a class="btn" data-acao="ligar" ${l.tel_digitos ? `href="tel:+${esc(l.tel_digitos)}"` : 'aria-disabled="true" style="opacity:.45"'}>Ligar</a>
       <button class="btn" data-abrir>Detalhes</button>
     </div>
   </article>`;
+}
+
+const cap = (t) => t ? t[0].toUpperCase() + t.slice(1) : "";
+// Frase curta da oportunidade principal, com os dados do lead já preenchidos.
+function blocoCurto(l, a) {
+  const p = Vendas.precoDe(a.principal.servico, perfil());
+  return `${Vendas.montarMensagem(l, "_curto", a, { roteiro: { _curto: "{curto}" } })} → ${p.nome}`;
 }
 
 function renderLeads() {
@@ -424,16 +459,21 @@ function renderLeads() {
   $("#f-status").innerHTML = [["", "Todos", todos.length], ...STATUS.map(([s, n]) => [s, n, conta(s)])]
     .map(([s, n, c]) => `<button class="chip" data-s="${s}" aria-pressed="${f.status === s}">${n}<small>${c}</small></button>`).join("");
   $$("#f-extra .chip").forEach((b) => b.setAttribute("aria-pressed", !!f[b.dataset.f]));
-  const base = filtrados(true), sites = contarSites(base);
-  $("#f-site").innerHTML = [["", "Com e sem site", base.length], ["com", "Com site", sites.com], ["sem", "Sem site", sites.sem]]
-    .map(([v, n, c]) => `<button class="chip" data-site="${v}" aria-pressed="${f.site === v}">${n}<small>${c}</small></button>`).join("");
+  const base = filtrados(true), g = contarGrupos(base);
+  $("#f-grupo").innerHTML = [["", "Todos os grupos", base.length], ["sem", "🔴 Sem presença", g.sem],
+    ["melhorar", "🟡 A melhorar", g.melhorar], ["boa", "🟢 Presença boa", g.boa],
+    ...(g.analisando ? [["analisando", "⏳ Analisando", g.analisando]] : [])]
+    .map(([v, n, c]) => `<button class="chip" data-grupo="${v}" aria-pressed="${f.grupo === v}">${n}<small>${c}</small></button>`).join("");
   $("#btn-limpar-filtros").hidden = Object.keys(FILTRO_PADRAO).every((k) => f[k] === FILTRO_PADRAO[k]);
+  const pendentes = todos.filter(Vendas.precisaAnalise).length;
+  $("#btn-analisar").hidden = !pendentes || estado.analisandoSites;
+  $("#btn-analisar").textContent = `Fazer o diagnóstico de ${pendentes} site${pendentes > 1 ? "s" : ""} pendente${pendentes > 1 ? "s" : ""}`;
   const busca = estado.buscas.find((b) => b.id === f.busca);
   $("#f-busca-aviso").hidden = !busca;
   if (busca) {
-    const daBusca = estado.leads.filter((l) => (l.buscas || []).includes(busca.id)), s = contarSites(daBusca);
-    $("#f-busca-aviso").innerHTML = `Busca “${esc(busca.nichos.join(", "))}” em ${esc(busca.cidade)}: ` +
-      `<b>${daBusca.length} empresas</b> — ${s.com} com site e ${s.sem} sem site. <a href="#" id="limpar-busca">Ver todos</a>`;
+    const daBusca = todos.filter((l) => (l.buscas || []).includes(busca.id)), gb = contarGrupos(daBusca);
+    $("#f-busca-aviso").innerHTML = `Busca “${esc(busca.nichos.join(", "))}” em ${esc(busca.cidade)}: <b>${daBusca.length} empresas</b> — ` +
+      `🔴 ${gb.sem} sem presença, 🟡 ${gb.melhorar} a melhorar, 🟢 ${gb.boa} com presença boa. <a href="#" id="limpar-busca">Ver todos</a>`;
   }
 
   const lista = filtrados();
@@ -443,53 +483,193 @@ function renderLeads() {
   $("#btn-mais").textContent = `Mostrar mais (${lista.length - estado.mostrar})`;
 }
 
-// ── Mensagens ──────────────────────────────────────────────────────────────────
+async function analisarPendentes() {
+  const ids = estado.leads.filter(Vendas.precisaAnalise).map((l) => l.id);
+  if (!ids.length) return;
+  estado.analisandoSites = true;
+  renderLeads();
+  toast(`Analisando ${ids.length} sites… pode continuar usando o app.`);
+  await enriquecer(ids);
+  estado.analisandoSites = false;
+  recalcular();
+  renderLeads();
+  toast("Diagnóstico pronto.");
+}
+
+// Estatísticas que dependem de todos os leads (intervalos dos lembretes e taxas reais por etapa).
+function recalcular() {
+  estado.intervalos = Vendas.intervalos(estado.leads);
+  estado.taxas = Vendas.taxasReais(estado.leads);
+  atualizarBadgeHoje();
+}
+
+// ── Mensagens livres (as "Mensagens extras" dos Ajustes) ─────────────────────────
 function preencher(texto, l) {
   const cat = (l.categoria || l.nicho || "empresas").toLowerCase();
   return texto.replaceAll("{nome}", l.nome).replaceAll("{cidade}", l.cidade || "sua cidade")
     .replaceAll("{bairro}", l.bairro || l.cidade || "").replaceAll("{categoria}", cat);
 }
 
-function templateSugerido(l) {
-  const ts = estado.config.templates;
-  if (["contatado", "respondeu", "reuniao"].includes(l.status)) return ts.find((t) => t.id === "followup") || ts[0];
-  const foco = ts.find((t) => t.id === (temSite(l) ? "com_site" : "sem_site"));
-  return foco || ts.find((t) => t.id === estado.config.padrao) || ts[0];
+// ── Ciclo de conversa ──────────────────────────────────────────────────────────
+// Etapa sugerida agora para o lead (primeiro contato, lembrete, resposta ao tipo de resposta...).
+function etapaSugerida(l) {
+  const prox = Vendas.proximaAcao(l, estado.intervalos);
+  if (prox) return prox.etapa;
+  const { respostas } = Vendas.ciclo(l);
+  return respostas.length ? respostas[respostas.length - 1].tipo : l.status === "novo" ? "abordagem" : "retomar";
 }
 
-async function enviarWhatsApp(l, texto, nomeTemplate) {
+async function enviarEtapa(l, etapa, texto, nome) {
   window.open(`https://wa.me/${l.whatsapp}?text=${encodeURIComponent(texto)}`, "_blank");
-  const extra = { ultimo_contato: new Date().toISOString() };
-  if (l.status === "novo" && estado.config.auto_contatado) extra.status = "contatado";
-  await registrar(l, "whatsapp", `WhatsApp enviado: ${nomeTemplate}`, extra);
+  const agora = new Date();
+  const c = Vendas.ciclo(l);
+  const envio = { t: agora.toISOString(), etapa, dow: agora.getDay(), h: agora.getHours(), txt: texto.slice(0, 1000) };
+  const dados = { ...(l.dados || {}), ciclo: { ...c, envios: [...c.envios, envio], encerrado: c.encerrado || etapa === "encerramento" } };
+  const extra = { dados, ultimo_contato: envio.t };
+  if (l.status === "novo" && estado.config.auto_contatado !== false) extra.status = "contatado";
+  await registrar(l, "whatsapp", `WhatsApp enviado: ${nome || Vendas.NOME_ETAPA[etapa] || etapa}`, extra);
+  recalcular();
   if (!$("#tela-leads").hidden) renderLeads();
+  if (!$("#tela-painel").hidden) renderPainel();
+}
+
+async function registrarResposta(l, tipo, txt) {
+  const c = Vendas.ciclo(l);
+  const resp = { t: new Date().toISOString(), tipo, txt: (txt || "").slice(0, 1000) };
+  const dados = { ...(l.dados || {}), ciclo: { ...c, respostas: [...c.respostas, resp] } };
+  const extra = { dados };
+  if (!["fechado", "descartado"].includes(l.status)) extra.status = tipo === "aprovacao" ? "reuniao" : "respondeu";
+  await registrar(l, "resposta", `Cliente respondeu (${Vendas.NOME_RESPOSTA[tipo]})${txt ? `: “${txt.slice(0, 200)}”` : ""}`, extra);
+  recalcular();
+  renderLeads();
 }
 
 // ── Ficha do lead ──────────────────────────────────────────────────────────────
-function abrirLead(id, focoWhats = false) {
+const ETAPAS_MSG = ["abordagem", "follow1", "follow2", "encerramento", "rejeicao", "atencao", "desejo", "aprovacao", "retomar"];
+
+function itemDiag(ok, txt) {
+  return `<li class="${ok ? "ok" : "falta"}"><span aria-hidden="true">${ok ? "✓" : "✗"}</span> ${txt}</li>`;
+}
+
+function htmlDiagnostico(l, a) {
+  const d = l.dados?.diag;
+  const linhas = [];
+  if (!l.site) linhas.push(itemDiag(false, "Não tem site"));
+  else if (Vendas.soRede(l.site)) linhas.push(itemDiag(false, "O link do Google leva só para rede social"));
+  else if (!d) linhas.push(`<li>⏳ Site ainda não analisado</li>`);
+  else if (!d.abre) linhas.push(itemDiag(false, "O site não abriu"));
+  else {
+    linhas.push(itemDiag(true, `Site abre (${(d.ms / 1000).toFixed(1).replace(".", ",")} s)`));
+    linhas.push(itemDiag(d.responsivo, "Adaptado ao celular"));
+    linhas.push(itemDiag(d.https, "Seguro (cadeado https)"));
+    linhas.push(itemDiag(d.ms <= 4000, "Abre rápido"));
+    linhas.push(itemDiag(d.whatsapp_site, "Botão de WhatsApp no site"));
+    linhas.push(itemDiag(d.agendamento, "Agendamento ou reserva online"));
+    linhas.push(itemDiag(d.chat, "Atendimento automático / chat"));
+    linhas.push(itemDiag(d.pixel || d.google_tag, "Medição de anúncios (Pixel/Google)"));
+    if (d.ano_rodape) linhas.push(itemDiag(d.ano_rodape >= new Date().getFullYear() - 1, `Rodapé atualizado (${d.ano_rodape})`));
+    if (d.plataforma) linhas.push(`<li>ℹ️ Feito em ${esc(d.plataforma)}</li>`);
+  }
+  const med = a.ctx?.mediana;
+  if (l.avaliacoes || med) linhas.push(itemDiag(!med || l.avaliacoes >= med * 0.4, `${l.avaliacoes} avaliações no Google${med ? ` (média da região: ${med})` : ""}`));
+  return `<ul class="diag">${linhas.join("")}</ul>`;
+}
+
+function htmlOportunidades(l, a, escolhida) {
+  if (!a.oportunidades.length) return `<p class="dica" style="margin:0">Aguardando o diagnóstico do site.</p>`;
+  return a.oportunidades.slice(0, 5).map((o) => {
+    const p = Vendas.precoDe(o.servico, perfil());
+    return `<label class="oport-item">
+      <input type="radio" name="l-oport" value="${o.id}" ${o.id === escolhida ? "checked" : ""}>
+      <span><b>${esc(p.nome)}</b> — ${esc(Vendas.montarMensagem(l, "_c", a, { roteiro: { _c: "{curto}" } }, o))}<br>
+      <small>💰 Sugestão de valor: ${Vendas.faixaPreco(p)} · prazo ${esc(perfil().prazo || p.prazo)}</small></span>
+    </label>`;
+  }).join("");
+}
+
+function contextoIa(l, a, etapa) {
+  const c = Vendas.ciclo(l);
+  return {
+    perfil: { nome: perfil().nome, marca: perfil().marca, portfolio: perfil().portfolio, prazo: perfil().prazo },
+    precos: Object.fromEntries(Object.keys(Vendas.SERVICOS).map((k) => { const p = Vendas.precoDe(k, perfil()); return [p.nome, Vendas.faixaPreco(p)]; })),
+    lead: { nome: l.nome, categoria: l.categoria, cidade: l.cidade, bairro: l.bairro, nota: l.nota, avaliacoes: l.avaliacoes,
+      site: l.site || "não tem", grupo: Vendas.GRUPOS[a.grupo].nome, diagnostico_site: l.dados?.diag || null },
+    oportunidades: a.oportunidades.slice(0, 4).map((o) => ({ servico: Vendas.precoDe(o.servico).nome, observado: Vendas.montarMensagem(l, "_p", a, { roteiro: { _p: "{problema}" } }, o) })),
+    etapa_atual: Vendas.NOME_ETAPA[etapa] || etapa,
+    conversa: [...c.envios.map((e) => ({ t: e.t, de: "vendedor", texto: e.txt })), ...c.respostas.map((r) => ({ t: r.t, de: "cliente", tipo: r.tipo, texto: r.txt }))]
+      .sort((x, y) => x.t.localeCompare(y.t)).slice(-12),
+  };
+}
+
+function abrirLead(id, opcoes = {}) {
   const l = estado.leads.find((x) => x.id === id);
   if (!l) return;
-  const dlg = $("#folha-lead"), t = templateSugerido(l);
+  const a = analise(l), ch = chanceDe(l, a), prox = Vendas.proximaAcao(l, estado.intervalos);
+  const dlg = $("#folha-lead");
+  let etapa = opcoes.etapa || etapaSugerida(l);
+  let oportId = opcoes.oport || a.principal?.id;
+  const oport = () => a.oportunidades.find((o) => o.id === oportId) || a.principal;
+  const msgDe = (et) => et.startsWith("extra:")
+    ? preencher(estado.config.templates.find((t) => t.id === et.slice(6))?.texto || "", l)
+    : Vendas.montarMensagem(l, et, a, perfil(), oport());
   const linha = (rotulo, valor) => valor ? `<div><dt>${rotulo}</dt><dd>${valor}</dd></div>` : "";
   const link = (url, txt) => `<a href="${esc(url)}" target="_blank" rel="noopener">${esc(txt || url)}</a>`;
   const curto = (url) => url.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "");
+  const termo = Vendas.termometro(ch.pct);
+  const c = Vendas.ciclo(l);
+  const temIa = !!estado.config.ia_key;
+  const p = a.principal ? Vendas.precoDe(oport().servico, perfil()) : null;
+
   dlg.innerHTML = `
     <div class="barra">
       <h2>${esc(l.nome)}<br><small style="font-weight:400; color:var(--sub); font-size:14px">${esc(l.categoria)}${l.nota ? ` · <span class="estrela">★</span> ${String(l.nota).replace(".", ",")} (${l.avaliacoes})` : ""}</small></h2>
       <button class="fechar" data-fechar aria-label="Fechar">×</button>
     </div>
     <div class="corpo">
-      <label class="campo" for="l-status" style="margin-top:0">Etapa</label>
-      <select id="l-status">${STATUS.map(([s, n]) => `<option value="${s}" ${s === l.status ? "selected" : ""}>${n}</option>`).join("")}</select>
+      <div class="resumo-lead">
+        <div>${seloGrupo(a.grupo)}</div>
+        <div class="kpis-lead">
+          <div><b>${a.potencial}%</b><span>potencial de abordagem</span></div>
+          <div><b>${termo.icone} ${ch.pct}%</b><span>chance de fechar (${termo.nome.toLowerCase()}${ch.fonte ? ", " + ch.fonte : ""})</span></div>
+        </div>
+        ${prox ? `<p class="proximo ${prox.urgente ? "urgente" : ""}">Próximo passo: <b>${esc(prox.texto)}</b> ${prox.acao === "abordar" ? "(primeiro contato)" : prox.urgente ? "— agora" : `em ${prox.quando.toLocaleDateString("pt-BR")}`}</p>` : ""}
+      </div>
 
-      <div class="cartao" style="margin-top:14px">
-        <h2>Mensagem de WhatsApp</h2>
+      <div class="cartao">
+        <h2>Mensagem</h2>
         ${l.whatsapp ? `
-          <select id="l-template">${estado.config.templates.map((x) => `<option value="${esc(x.id)}" ${x.id === t.id ? "selected" : ""}>${esc(x.nome)}</option>`).join("")}</select>
-          <textarea id="l-msg" style="margin-top:8px">${esc(preencher(t.texto, l))}</textarea>
-          <button class="btn wa cheio" id="l-enviar" style="margin-top:8px">Abrir no WhatsApp</button>
+          <label class="campo" for="l-etapa" style="margin-top:0">Etapa do ciclo</label>
+          <select id="l-etapa">
+            ${ETAPAS_MSG.map((e) => `<option value="${e}" ${e === etapa ? "selected" : ""}>${Vendas.NOME_ETAPA[e]}</option>`).join("")}
+            ${estado.config.templates.map((t) => `<option value="extra:${esc(t.id)}">Minha mensagem: ${esc(t.nome)}</option>`).join("")}
+          </select>
+          <textarea id="l-msg" style="margin-top:8px; min-height:170px">${esc(msgDe(etapa))}</textarea>
+          <div class="grade2" style="margin-top:8px">
+            <button class="btn wa" id="l-enviar">Abrir no WhatsApp</button>
+            <button class="btn" id="l-ia-msg" ${temIa ? "" : "hidden"}>✨ Reescrever com IA</button>
+          </div>
+          <p class="dica" id="l-ia-status"></p>
           ${l.whatsapp_origem === "telefone" ? `<p class="dica">Número de celular do Google; confirme se é WhatsApp.</p>` : ""}`
-        : `<p class="dica" style="margin:0">Sem WhatsApp encontrado${l.tel_tipo === "fixo" ? " (o telefone é fixo)" : ""}.</p>`}
+        : `<p class="dica" style="margin:0">Sem WhatsApp encontrado${l.tel_tipo === "fixo" ? " (o telefone é fixo: ligue)" : ""}.</p>`}
+      </div>
+
+      <div class="cartao">
+        <h2>O cliente respondeu?</h2>
+        <textarea id="l-resposta" placeholder="Cole aqui a resposta dele (opcional): o app sugere o tipo e prepara a próxima mensagem"></textarea>
+        <div class="tipos-resposta" role="group" aria-label="Tipo de resposta">
+          ${["rejeicao", "atencao", "desejo", "aprovacao"].map((t) => `<button class="btn" data-tipo="${t}">${Vendas.ICONE_RESPOSTA[t]} ${Vendas.NOME_RESPOSTA[t]}</button>`).join("")}
+        </div>
+        <p class="dica" id="l-sugestao-tipo"></p>
+        <button class="btn cheio" id="l-ia-resp" style="margin-top:6px" ${temIa ? "" : "hidden"}>✨ Analisar a resposta com IA</button>
+        ${c.respostas.length ? `<p class="dica">Respostas registradas: ${c.respostas.map((r) => Vendas.ICONE_RESPOSTA[r.tipo]).join(" ")}</p>` : ""}
+      </div>
+
+      <div class="cartao">
+        <h2>Diagnóstico</h2>
+        ${htmlDiagnostico(l, a)}
+        <h2 style="margin-top:16px">O que oferecer</h2>
+        <div id="l-oports">${htmlOportunidades(l, a, oportId)}</div>
+        ${p ? `<p class="dica">A mensagem usa a oportunidade marcada. Os valores são só para você (edite a tabela em Ajustes).</p>` : ""}
       </div>
 
       <div class="grade2" style="margin-bottom:14px">
@@ -500,7 +680,9 @@ function abrirLead(id, focoWhats = false) {
       </div>
 
       <div class="cartao">
-        <dl class="info" style="margin:0">
+        <label class="campo" for="l-status" style="margin-top:0">Etapa do funil</label>
+        <select id="l-status">${STATUS.map(([s, n]) => `<option value="${s}" ${s === l.status ? "selected" : ""}>${n}</option>`).join("")}</select>
+        <dl class="info" style="margin:14px 0 0">
           ${linha("Telefone", esc(l.telefone))}
           ${linha("WhatsApp", l.whatsapp ? esc(l.whatsapp.replace(/^55/, "")) : "")}
           ${linha("E-mail", esc(l.email))}
@@ -524,38 +706,248 @@ function abrirLead(id, focoWhats = false) {
       <button class="btn cheio perigo" id="l-excluir">Excluir lead</button>
     </div>`;
 
+  const reabrir = (extra = {}) => abrirLead(l.id, { etapa, oport: oportId, ...extra });
   $("#l-status", dlg).onchange = async (e) => {
     const s = e.target.value;
     await registrar(l, "status", `Etapa: ${NOME_STATUS[s]}`, { status: s });
-    renderLeads();
+    recalcular(); renderLeads(); reabrir();
   };
-  const sel = $("#l-template", dlg);
-  if (sel) {
-    sel.onchange = () => {
-      const x = estado.config.templates.find((y) => y.id === sel.value);
-      $("#l-msg", dlg).value = preencher(x.texto, l);
-    };
+  const selEtapa = $("#l-etapa", dlg);
+  if (selEtapa) {
+    selEtapa.onchange = () => { etapa = selEtapa.value; $("#l-msg", dlg).value = msgDe(etapa); };
     $("#l-enviar", dlg).onclick = () => {
-      const x = estado.config.templates.find((y) => y.id === sel.value);
-      enviarWhatsApp(l, $("#l-msg", dlg).value, x?.nome || "mensagem").then(() => abrirLead(l.id));
+      const nome = etapa.startsWith("extra:") ? estado.config.templates.find((t) => t.id === etapa.slice(6))?.nome : null;
+      enviarEtapa(l, etapa.startsWith("extra:") ? "extra" : etapa, $("#l-msg", dlg).value, nome).then(() => abrirLead(l.id));
     };
   }
+  $("#l-oports", dlg).onchange = (e) => {
+    if (e.target.name !== "l-oport") return;
+    oportId = e.target.value;
+    if ($("#l-msg", dlg) && !etapa.startsWith("extra:")) $("#l-msg", dlg).value = msgDe(etapa);
+  };
+  const campoResp = $("#l-resposta", dlg);
+  campoResp.oninput = () => {
+    const t = Vendas.classificarResposta(campoResp.value);
+    $$("[data-tipo]", dlg).forEach((b) => b.classList.toggle("sugerido", b.dataset.tipo === t));
+    $("#l-sugestao-tipo", dlg).textContent = t ? `Parece ${Vendas.NOME_RESPOSTA[t].toLowerCase()}. Toque no tipo para confirmar.` : "";
+  };
+  $$("[data-tipo]", dlg).forEach((b) => (b.onclick = async () => {
+    await registrarResposta(l, b.dataset.tipo, campoResp.value.trim());
+    abrirLead(l.id, { etapa: b.dataset.tipo, oport: oportId });
+    toast("Resposta registrada. A próxima mensagem já está pronta.");
+  }));
+
+  const statusIa = $("#l-ia-status", dlg);
+  const btnIaMsg = $("#l-ia-msg", dlg);
+  if (btnIaMsg) btnIaMsg.onclick = async () => {
+    statusIa.textContent = "A IA está escrevendo…"; btnIaMsg.disabled = true;
+    try {
+      const r = await api("/api/ia", { tarefa: "mensagem", contexto: contextoIa(l, a, etapa), texto: $("#l-msg", dlg).value });
+      $("#l-msg", dlg).value = r.mensagem;
+      statusIa.textContent = `${r.explicacao}${r.valor_sugerido ? ` · 💰 ${r.valor_sugerido}` : ""}`;
+    } catch (err) { statusIa.textContent = err.message; }
+    btnIaMsg.disabled = false;
+  };
+  $("#l-ia-resp", dlg).onclick = async () => {
+    const txt = campoResp.value.trim();
+    if (!txt) { toast("Cole a resposta do cliente primeiro."); return; }
+    const st = $("#l-sugestao-tipo", dlg);
+    st.textContent = "A IA está analisando…";
+    try {
+      const r = await api("/api/ia", { tarefa: "classificar", contexto: contextoIa(l, a, etapa), texto: txt });
+      if (r.tipo_resposta === "nenhum") { st.textContent = r.explicacao; return; }
+      await registrarResposta(l, r.tipo_resposta, txt);
+      abrirLead(l.id, { etapa: r.tipo_resposta, oport: oportId });
+      $("#l-msg", dlg) && ($("#l-msg", dlg).value = r.mensagem);
+      $("#l-ia-status", dlg) && ($("#l-ia-status", dlg).textContent = `IA: ${Vendas.NOME_RESPOSTA[r.tipo_resposta]} — ${r.explicacao}${r.valor_sugerido ? ` · 💰 ${r.valor_sugerido}` : ""}`);
+    } catch (err) { st.textContent = err.message; }
+  };
   const ligar = $("#l-ligar", dlg);
   if (ligar) ligar.onclick = () => registrar(l, "ligacao", "Ligação feita", { ultimo_contato: new Date().toISOString() });
   $("#l-add-nota", dlg).onclick = async () => {
     const txt = $("#l-nota", dlg).value.trim();
     if (!txt) return;
     await registrar(l, "nota", txt);
-    abrirLead(l.id);
+    reabrir();
   };
   $("#l-excluir", dlg).onclick = async () => {
     if (!confirm(`Excluir “${l.nome}”?`)) return;
     await sb.from("leads").delete().eq("id", l.id);
     estado.leads = estado.leads.filter((x) => x.id !== l.id);
-    dlg.close(); renderLeads();
+    dlg.close(); recalcular(); renderLeads();
   };
   if (!dlg.open) dlg.showModal();
-  if (focoWhats) $("#l-msg", dlg)?.focus();
+}
+
+// ── Painel de vendas ───────────────────────────────────────────────────────────
+function fazerHoje() {
+  const itens = [];
+  for (const l of estado.leads) {
+    const p = Vendas.proximaAcao(l, estado.intervalos);
+    if (!p || !l.whatsapp) continue;
+    if (p.acao === "responder") itens.push({ l, p, ordem: 0 });
+    else if (p.acao === "lembrete" && p.urgente) itens.push({ l, p, ordem: 1 });
+  }
+  // completa com os melhores leads ainda não abordados
+  const novos = estado.leads.filter((l) => l.status === "novo" && l.whatsapp && analise(l).grupo !== "analisando")
+    .sort((a, b) => analise(b).potencial - analise(a).potencial).slice(0, 10);
+  for (const l of novos) itens.push({ l, p: { texto: "Abordar", etapa: "abordagem" }, ordem: 2 });
+  return itens.sort((a, b) => a.ordem - b.ordem);
+}
+
+function atualizarBadgeHoje() {
+  if (!estado.leads.length && !estado.intervalos) return;
+  estado.intervalos ||= Vendas.intervalos(estado.leads);
+  const n = fazerHoje().filter((i) => i.ordem < 2).length;
+  const b = $("#badge-hoje");
+  b.hidden = !n; b.textContent = n;
+}
+
+const pct = (a, b) => (b ? Math.round((a / b) * 100) : 0);
+
+function renderPainel() {
+  recalcular();
+  const L = estado.leads;
+  const abordados = L.filter((l) => Vendas.ciclo(l).envios.length);
+  const responderam = abordados.filter((l) => Vendas.ciclo(l).respostas.length);
+  const interessados = L.filter((l) => Vendas.ciclo(l).respostas.some((r) => ["desejo", "aprovacao"].includes(r.tipo)));
+  const proposta = L.filter((l) => ["reuniao", "fechado"].includes(l.status));
+  const fechados = L.filter((l) => l.status === "fechado");
+  const emNegociacao = L.filter((l) => ["respondeu", "reuniao"].includes(l.status) &&
+    Vendas.ciclo(l).respostas.some((r) => ["desejo", "aprovacao"].includes(r.tipo)));
+  const valor = emNegociacao.reduce((s, l) => {
+    const a = analise(l); if (!a.principal) return s;
+    const p = Vendas.precoDe(a.principal.servico, perfil()); return s + (p.min + p.max) / 2;
+  }, 0);
+
+  // Fazer hoje
+  const hoje = fazerHoje();
+  $("#p-hoje").innerHTML = hoje.length ? hoje.slice(0, 15).map(({ l, p, ordem }) => `
+    <button class="linha-hoje" data-lead="${l.id}" data-etapa="${p.etapa}">
+      <span class="tag-hoje t${ordem}">${ordem === 0 ? "Responder" : ordem === 1 ? "Lembrete" : "Abordar"}</span>
+      <span class="nome-hoje"><b>${esc(l.nome)}</b><small>${esc(p.texto)} · ${Vendas.GRUPOS[analise(l).grupo].icone} ${esc(l.categoria || l.nicho)}</small></span>
+      <span class="pct-hoje">${ordem === 2 ? analise(l).potencial + "%" : chanceDe(l).pct + "%"}</span>
+    </button>`).join("") : `<p class="dica" style="margin:0">Nada pendente. Faça uma busca para encontrar novos leads.</p>`;
+
+  // Indicadores
+  $("#p-kpis").innerHTML = `
+    <div><b>${abordados.length}</b><span>abordados</span></div>
+    <div><b>${pct(responderam.length, abordados.length)}%</b><span>responderam</span></div>
+    <div><b>${interessados.length}</b><span>interessados</span></div>
+    <div><b>${fechados.length}</b><span>fechados</span></div>
+    <div><b>${pct(fechados.length, abordados.length)}%</b><span>de fechamento</span></div>
+    <div><b>${Vendas.fmtReais(Math.round(valor))}</b><span>em negociação</span></div>`;
+
+  // Funil
+  const etapas = [["Encontrados", L.length], ["Abordados", abordados.length], ["Responderam", responderam.length],
+    ["Interessados", interessados.length], ["Reunião / proposta", proposta.length], ["Fechados", fechados.length]];
+  const max = Math.max(1, L.length);
+  $("#p-funil").innerHTML = etapas.map(([n, v], i) => `
+    <div class="barra-linha" title="${n}: ${v}">
+      <span class="barra-rot">${n}</span>
+      <span class="barra-trilho"><span class="barra-val" style="width:${Math.max(v ? 2 : 0, (v / max) * 100)}%"></span></span>
+      <span class="barra-num">${v}${i > 0 ? ` <small>${pct(v, etapas[i - 1][1])}%</small>` : ""}</span>
+    </div>`).join("");
+
+  // Por grupo
+  const linhasGrupo = ["sem", "melhorar", "boa"].map((g) => {
+    const ls = L.filter((l) => analise(l).grupo === g), ab = ls.filter((l) => Vendas.ciclo(l).envios.length);
+    const rs = ab.filter((l) => Vendas.ciclo(l).respostas.length), fe = ls.filter((l) => l.status === "fechado");
+    return `<tr><td>${Vendas.GRUPOS[g].icone} ${Vendas.GRUPOS[g].nome}</td><td>${ls.length}</td><td>${ab.length}</td><td>${pct(rs.length, ab.length)}%</td><td>${pct(fe.length, ab.length)}%</td></tr>`;
+  }).join("");
+  $("#p-grupos").innerHTML = `<table class="tabela"><thead><tr><th>Grupo</th><th>Leads</th><th>Abordados</th><th>Resposta</th><th>Fechamento</th></tr></thead><tbody>${linhasGrupo}</tbody></table>`;
+
+  // Por nicho: onde há mais oportunidade e mais resposta
+  const nichos = {};
+  for (const l of L) (nichos[l.nicho || "—"] ||= []).push(l);
+  const linhasNicho = Object.entries(nichos).sort((a, b) => b[1].length - a[1].length).slice(0, 10).map(([n, ls]) => {
+    const g = contarGrupos(ls), ab = ls.filter((l) => Vendas.ciclo(l).envios.length), rs = ab.filter((l) => Vendas.ciclo(l).respostas.length);
+    return `<tr><td>${esc(n)}</td><td>${ls.length}</td><td>${pct(g.sem + g.melhorar, ls.length - g.analisando)}%</td><td>${ab.length ? pct(rs.length, ab.length) + "%" : "—"}</td></tr>`;
+  }).join("");
+  $("#p-nichos").innerHTML = linhasNicho ? `<table class="tabela"><thead><tr><th>Nicho</th><th>Leads</th><th>Com oportunidade</th><th>Resposta</th></tr></thead><tbody>${linhasNicho}</tbody></table>`
+    : `<p class="dica" style="margin:0">Sem dados ainda.</p>`;
+
+  renderHorarios();
+  const it = estado.intervalos;
+  $("#p-intervalos").innerHTML = `Lembrete 1 após <b>${it.follow1} dia${it.follow1 > 1 ? "s" : ""}</b>, lembrete 2 após mais <b>${it.follow2}</b>, encerramento após mais <b>${it.encerramento}</b>. ` +
+    (it.fonte === "seus dados"
+      ? `Calculado com as suas ${it.amostra} primeiras respostas: 80% chegaram em até ${it.p80.toFixed(1).replace(".", ",")} dias.`
+      : `Usando o padrão de mercado (cadência 3-7-7). Com 10 respostas registradas (você tem ${it.amostra}), o app passa a usar o tempo real de resposta dos seus clientes.`);
+  $("#p-ia").hidden = !estado.config.ia_key;
+  $("#p-ia-off").hidden = !!estado.config.ia_key;
+}
+
+// Mapa de calor: taxa de resposta por dia da semana e faixa de horário em que a mensagem foi enviada.
+const FAIXAS = [[7, 9, "7–9h"], [9, 11, "9–11h"], [11, 13, "11–13h"], [13, 15, "13–15h"], [15, 17, "15–17h"], [17, 19, "17–19h"], [19, 22, "19–22h"]];
+const DIAS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+
+function renderHorarios() {
+  const cel = {};
+  let total = 0;
+  for (const l of estado.leads) {
+    const { envios, respostas } = Vendas.ciclo(l);
+    envios.forEach((e, i) => {
+      if (!["abordagem", "follow1", "follow2"].includes(e.etapa)) return;
+      const f = FAIXAS.findIndex(([a, b]) => e.h >= a && e.h < b);
+      if (f < 0) return;
+      const ate = envios[i + 1]?.t || "9999";
+      const respondeu = respostas.some((r) => r.t > e.t && r.t < ate);
+      const k = `${e.dow}-${f}`;
+      cel[k] ||= { n: 0, r: 0 };
+      cel[k].n++; if (respondeu) cel[k].r++;
+      total++;
+    });
+  }
+  const ordemDias = [1, 2, 3, 4, 5, 6, 0];
+  let html = `<div class="mapa" role="table" aria-label="Taxa de resposta por dia e horário de envio"><div role="row" class="mapa-cab"><span></span>${FAIXAS.map((f) => `<span role="columnheader">${f[2]}</span>`).join("")}</div>`;
+  for (const d of ordemDias) {
+    html += `<div role="row"><span role="rowheader" class="mapa-dia">${DIAS[d]}</span>`;
+    FAIXAS.forEach((_, f) => {
+      const c = cel[`${d}-${f}`];
+      const taxa = c ? c.r / c.n : null;
+      const nivel = taxa == null ? "sem-dado" : `n${Math.min(4, Math.floor(taxa * 5))}`;
+      html += `<span role="cell" class="mapa-cel ${nivel}" title="${DIAS[d]} ${FAIXAS[f][2]}: ${c ? `${c.r} de ${c.n} responderam (${Math.round(taxa * 100)}%)` : "sem envios"}">${c ? Math.round(taxa * 100) + "%" : ""}</span>`;
+    });
+    html += `</div>`;
+  }
+  html += `</div>`;
+  $("#p-horarios").innerHTML = total >= 20 ? html
+    : `<p class="dica" style="margin:0">Aparece depois de 20 mensagens enviadas pelo app (você tem ${total}). Até lá, use a referência de mercado abaixo.</p>${total ? html : ""}`;
+}
+
+// Referência de mercado (estudos públicos; aproximado, não é tempo real). Faixas = horários fortes.
+const REFERENCIA = [
+  { canal: "WhatsApp (prospecção B2B)", faixas: [[9, 12], [14, 18]], nota: "horário comercial" },
+  { canal: "Instagram (feed)", faixas: [[9, 10], [19, 21]], nota: "pico às 20h" },
+  { canal: "Instagram Reels", faixas: [[19, 21]], nota: "noite supera a manhã" },
+  { canal: "TikTok", faixas: [[18, 24]], nota: "29% do uso entre 20h e 0h" },
+  { canal: "YouTube (vídeos longos)", faixas: [[9, 11], [12, 15]], nota: "domingo de manhã" },
+  { canal: "YouTube Shorts", faixas: [[16, 19]], nota: "fim de tarde" },
+];
+
+function renderReferencia() {
+  const horas = Array.from({ length: 18 }, (_, i) => i + 6); // 6h às 23h
+  $("#p-referencia").innerHTML = `<div class="ref">
+    <div class="ref-linha ref-cab"><span></span><span class="ref-horas">${horas.map((h) => `<i>${h % 3 === 0 ? h + "h" : ""}</i>`).join("")}</span></div>
+    ${REFERENCIA.map((r) => `<div class="ref-linha" title="${r.canal}: ${r.faixas.map(([a, b]) => `${a}h–${b}h`).join(", ")} (${r.nota})">
+      <span class="ref-canal">${r.canal}<small>${r.nota}</small></span>
+      <span class="ref-horas">${horas.map((h) => `<i class="${r.faixas.some(([a, b]) => h >= a && h < b) ? "on" : ""}"></i>`).join("")}</span>
+    </div>`).join("")}
+  </div>`;
+}
+
+async function perguntarIa() {
+  const txt = $("#p-ia-pergunta").value.trim();
+  if (!txt) return;
+  const out = $("#p-ia-resposta");
+  out.textContent = "Pensando…";
+  try {
+    const r = await api("/api/ia", { tarefa: "pergunta", contexto: {
+      perfil: perfil(), resumo: { leads: estado.leads.length, grupos: contarGrupos(estado.leads),
+        abordados: estado.leads.filter((l) => Vendas.ciclo(l).envios.length).length,
+        fechados: estado.leads.filter((l) => l.status === "fechado").length } }, texto: txt });
+    out.textContent = r.mensagem;
+  } catch (err) { out.textContent = err.message; }
 }
 
 // ── Exportar planilha (CSV que abre no Excel e no Google Planilhas) ─────────────
@@ -565,10 +957,20 @@ function exportar() {
   const cols = [["nome", "Nome"], ["categoria", "Categoria"], ["telefone", "Telefone"], ["whatsapp", "WhatsApp"],
     ["email", "E-mail"], ["site", "Site"], ["instagram", "Instagram"], ["facebook", "Facebook"], ["endereco", "Endereço"],
     ["bairro", "Bairro"], ["cidade", "Cidade"], ["uf", "UF"], ["nota", "Nota"], ["avaliacoes", "Avaliações"],
-    ["status", "Etapa"], ["maps", "Google Maps"]];
+    ["status", "Etapa"], ["grupo", "Grupo"], ["oportunidade", "Oportunidade"], ["valor", "Valor sugerido"],
+    ["chance", "Chance de fechar"], ["maps", "Google Maps"]];
   const cel = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
-  const linhas = [cols.map((c) => cel(c[1])).join(";"),
-    ...lista.map((l) => cols.map(([k]) => cel(k === "status" ? NOME_STATUS[l.status] : k === "nota" ? String(l.nota).replace(".", ",") : l[k])).join(";"))];
+  const valor = (l, k) => {
+    const a = analise(l);
+    if (k === "status") return NOME_STATUS[l.status];
+    if (k === "nota") return String(l.nota).replace(".", ",");
+    if (k === "grupo") return Vendas.GRUPOS[a.grupo].nome;
+    if (k === "oportunidade") return a.principal ? Vendas.precoDe(a.principal.servico, perfil()).nome : "";
+    if (k === "valor") return a.principal ? Vendas.faixaPreco(Vendas.precoDe(a.principal.servico, perfil())) : "";
+    if (k === "chance") return chanceDe(l, a).pct + "%";
+    return l[k];
+  };
+  const linhas = [cols.map((c) => cel(c[1])).join(";"), ...lista.map((l) => cols.map(([k]) => cel(valor(l, k))).join(";"))];
   const blob = new Blob(["﻿" + linhas.join("\r\n")], { type: "text/csv;charset=utf-8" });
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
@@ -596,6 +998,19 @@ function renderAjustes() {
       </div>
     </div>`).join("");
   $("#a-auto").checked = c.auto_contatado !== false;
+  const pf = c.perfil || {};
+  for (const k of ["nome", "marca", "portfolio", "prazo"]) $(`#a-p-${k}`).value = pf[k] || "";
+  $("#a-precos").innerHTML = Object.entries(Vendas.SERVICOS).map(([id]) => {
+    const p = Vendas.precoDe(id, pf);
+    return `<div class="preco-linha" data-servico="${id}"><span>${esc(p.nome)}${p.mensal ? " <small>(por mês)</small>" : ""}</span>
+      <input type="number" inputmode="numeric" min="0" step="100" data-k="min" value="${p.min}" aria-label="${esc(p.nome)}: valor mínimo">
+      <input type="number" inputmode="numeric" min="0" step="100" data-k="max" value="${p.max}" aria-label="${esc(p.nome)}: valor máximo"></div>`;
+  }).join("");
+  $("#a-roteiro").innerHTML = Object.keys(Vendas.ROTEIRO_PADRAO).map((e) => `
+    <label class="campo" for="a-r-${e}">${Vendas.NOME_ETAPA[e]}</label>
+    <textarea id="a-r-${e}" data-etapa="${e}" style="min-height:120px">${esc((pf.roteiro || {})[e] || Vendas.ROTEIRO_PADRAO[e])}</textarea>`).join("");
+  $("#a-ia-chave").value = c.ia_key || "";
+  $("#a-ia-status").textContent = c.ia_key ? "IA ligada." : "IA desligada (sem custo).";
   try { $("#a-tema").value = localStorage.getItem("tema") || ""; } catch { /* sem armazenamento */ }
 }
 
@@ -624,6 +1039,23 @@ async function testarChave() {
   } catch (err) {
     st.textContent = err.message;
   }
+}
+
+function lerPerfil() {
+  const pf = { ...(estado.config.perfil || {}) };
+  for (const k of ["nome", "marca", "portfolio", "prazo"]) pf[k] = $(`#a-p-${k}`).value.trim();
+  pf.precos = {};
+  for (const el of $$("#a-precos [data-servico]")) {
+    const min = +$("[data-k=min]", el).value || 0, max = +$("[data-k=max]", el).value || 0;
+    const base = Vendas.SERVICOS[el.dataset.servico];
+    if (min !== base.min || max !== base.max) pf.precos[el.dataset.servico] = { min, max: Math.max(min, max) };
+  }
+  pf.roteiro = {};
+  for (const ta of $$("#a-roteiro [data-etapa]")) {
+    const v = ta.value.trim();
+    if (v && v !== Vendas.ROTEIRO_PADRAO[ta.dataset.etapa]) pf.roteiro[ta.dataset.etapa] = v;
+  }
+  return pf;
 }
 
 // ── Eventos ────────────────────────────────────────────────────────────────────
@@ -682,10 +1114,11 @@ $("#f-extra").addEventListener("click", (e) => {
   const b = e.target.closest("[data-f]"); if (!b) return;
   estado.filtro[b.dataset.f] = !estado.filtro[b.dataset.f]; estado.mostrar = POR_PAGINA; renderLeads();
 });
-$("#f-site").addEventListener("click", (e) => {
-  const b = e.target.closest("[data-site]"); if (!b) return;
-  estado.filtro.site = b.dataset.site; estado.mostrar = POR_PAGINA; renderLeads();
+$("#f-grupo").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-grupo]"); if (!b) return;
+  estado.filtro.grupo = b.dataset.grupo; estado.mostrar = POR_PAGINA; renderLeads();
 });
+$("#btn-analisar").addEventListener("click", analisarPendentes);
 $("#f-ordem").addEventListener("change", (e) => { estado.filtro.ordem = e.target.value; renderLeads(); });
 $("#f-busca-aviso").addEventListener("click", (e) => {
   if (e.target.id === "limpar-busca") { e.preventDefault(); estado.filtro.busca = ""; renderLeads(); }
@@ -697,8 +1130,11 @@ $("#lista-leads").addEventListener("click", (e) => {
   const l = estado.leads.find((x) => x.id === card.dataset.id);
   const acao = e.target.closest("[data-acao]");
   if (acao?.dataset.acao === "wa") {
-    const t = templateSugerido(l);
-    enviarWhatsApp(l, preencher(t.texto, l), t.nome);
+    // resposta do cliente pede leitura: abre a ficha; o resto envia a mensagem da etapa na hora
+    const prox = Vendas.proximaAcao(l, estado.intervalos);
+    if (prox?.acao === "responder" || analise(l).grupo === "analisando") { abrirLead(l.id); return; }
+    const etapa = etapaSugerida(l);
+    enviarEtapa(l, etapa, Vendas.montarMensagem(l, etapa, analise(l), perfil()));
   } else if (acao?.dataset.acao === "ligar") {
     if (l.tel_digitos) registrar(l, "ligacao", "Ligação feita", { ultimo_contato: new Date().toISOString() });
   } else if (e.target.closest("[data-abrir]")) {
@@ -740,6 +1176,31 @@ $("#a-tema").addEventListener("change", (e) => {
   aplicarTema(e.target.value);
 });
 $("#btn-sair").addEventListener("click", () => sb.auth.signOut());
+$("#btn-salvar-perfil").addEventListener("click", () => salvarConfig({ perfil: lerPerfil() }, "Perfil e preços salvos."));
+$("#btn-salvar-roteiro").addEventListener("click", () => salvarConfig({ perfil: lerPerfil() }, "Roteiro salvo."));
+$("#btn-restaurar-roteiro").addEventListener("click", () => {
+  if (!confirm("Voltar todas as mensagens do ciclo para o texto padrão?")) return;
+  salvarConfig({ perfil: { ...lerPerfil(), roteiro: {} } }, "Roteiro padrão restaurado.").then(renderAjustes);
+});
+$("#btn-salvar-ia").addEventListener("click", () => {
+  const ia_key = $("#a-ia-chave").value.trim();
+  salvarConfig({ ia_key }, ia_key ? "IA ligada." : "IA desligada.").then(renderAjustes);
+});
+$("#btn-testar-ia").addEventListener("click", async () => {
+  const ia_key = $("#a-ia-chave").value.trim();
+  if (ia_key !== estado.config.ia_key) await salvarConfig({ ia_key }, "Chave salva.");
+  $("#a-ia-status").textContent = "Testando…";
+  try {
+    const r = await api("/api/ia", { tarefa: "pergunta", contexto: {}, texto: "Responda só: IA funcionando." });
+    $("#a-ia-status").textContent = `Funcionou: ${r.mensagem}`;
+  } catch (err) { $("#a-ia-status").textContent = err.message; }
+});
+$("#p-hoje").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-lead]"); if (!b) return;
+  abrirLead(b.dataset.lead, { etapa: b.dataset.etapa });
+});
+$("#btn-ia-perguntar").addEventListener("click", perguntarIa);
+renderReferencia();
 
 // ── Início ─────────────────────────────────────────────────────────────────────
 let sessaoAtual;

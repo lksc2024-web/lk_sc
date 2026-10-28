@@ -148,6 +148,74 @@ details.guia li { margin-bottom: 8px; }
 .linha-flex > * { flex: 1; }
 .tela-login { max-width: 420px; margin: 8vh auto 0; }
 .logo { width: 72px; height: 72px; border-radius: 18px; display: block; margin: 0 auto 12px; }
+
+/* Grupos de presença digital (sempre com ícone + texto, nunca só a cor) */
+:root { --g-sem: #d03b3b; --g-melhorar: #b7791f; --g-boa: #15803d; --mapa-0: #e2f0ec; --mapa-1: #a8d5c8; --mapa-2: #5fae98; --mapa-3: #23826a; --mapa-4: #0f5f4f; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --g-sem: #f87171; --g-melhorar: #f5c542; --g-boa: #4ade80; --mapa-0: #16302a; --mapa-1: #1d4d40; --mapa-2: #237060; --mapa-3: #2f9a80; --mapa-4: #3fb59a; } }
+:root[data-theme="dark"] { --g-sem: #f87171; --g-melhorar: #f5c542; --g-boa: #4ade80; --mapa-0: #16302a; --mapa-1: #1d4d40; --mapa-2: #237060; --mapa-3: #2f9a80; --mapa-4: #3fb59a; }
+.selo-grupo { font-size: 12px; font-weight: 700; border-radius: 6px; padding: 2px 8px; border: 1px solid var(--cor); color: var(--txt); }
+.oport { margin: 10px 0 0; font-size: 14px; }
+.medidor { font-size: 13px; color: var(--sub); margin-top: 6px; }
+.medidor b { color: var(--txt); }
+.urgente { color: var(--perigo); font-weight: 700; }
+.resumo-lead { margin-bottom: 14px; }
+.kpis-lead { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+.kpis-lead div, .kpis div { background: var(--card); border: 1px solid var(--linha); border-radius: 12px; padding: 10px; text-align: center; }
+.kpis-lead b, .kpis b { display: block; font-size: 20px; }
+.kpis-lead span, .kpis span { font-size: 12px; color: var(--sub); }
+.kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 14px; }
+.proximo { font-size: 14px; margin: 10px 0 0; padding: 10px 12px; border-radius: 10px; background: var(--pri-suave); }
+.proximo.urgente { background: transparent; border: 1px solid var(--perigo); }
+.tipos-resposta { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
+.tipos-resposta .btn { min-height: 44px; font-size: 14px; padding: 0 8px; }
+.tipos-resposta .btn.sugerido { outline: 2px solid var(--pri); background: var(--pri-suave); }
+.diag { list-style: none; padding: 0; margin: 0; display: grid; gap: 6px; font-size: 14px; }
+.diag li span { display: inline-block; width: 18px; font-weight: 700; }
+.diag li.ok span { color: var(--g-boa); }
+.diag li.falta span { color: var(--perigo); }
+.oport-item { display: flex; gap: 10px; align-items: flex-start; padding: 10px 0; border-top: 1px solid var(--linha); font-size: 14px; cursor: pointer; }
+.oport-item input { width: 20px; height: 20px; flex: none; margin-top: 2px; }
+.oport-item small { color: var(--sub); }
+.linha-hoje { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; background: none; border: 0;
+  border-top: 1px solid var(--linha); padding: 10px 0; cursor: pointer; min-height: 56px; }
+.nome-hoje { flex: 1; min-width: 0; }
+.nome-hoje b, .nome-hoje small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nome-hoje small { color: var(--sub); font-size: 12px; }
+.tag-hoje { font-size: 11px; font-weight: 700; border-radius: 6px; padding: 3px 7px; flex: none; width: 74px; text-align: center; border: 1px solid; }
+.tag-hoje.t0 { color: var(--perigo); }
+.tag-hoje.t1 { color: var(--amarelo); }
+.tag-hoje.t2 { color: var(--pri); }
+.pct-hoje { font-weight: 700; flex: none; }
+.barra-linha { display: grid; grid-template-columns: 110px 1fr 70px; gap: 8px; align-items: center; margin-bottom: 8px; font-size: 14px; }
+.barra-trilho { height: 14px; background: var(--bg); border-radius: 4px; overflow: hidden; }
+.barra-val { display: block; height: 100%; background: var(--pri); border-radius: 0 4px 4px 0; }
+.barra-num { text-align: right; font-variant-numeric: tabular-nums; }
+.barra-num small { color: var(--sub); }
+.rolagem { overflow-x: auto; }
+.tabela { width: 100%; border-collapse: collapse; font-size: 14px; }
+.tabela th { text-align: left; color: var(--sub); font-weight: 600; font-size: 12px; padding: 6px 6px 6px 0; }
+.tabela td { border-top: 1px solid var(--linha); padding: 8px 6px 8px 0; font-variant-numeric: tabular-nums; }
+.mapa { display: grid; gap: 3px; min-width: 330px; font-size: 11px; }
+.mapa > div { display: grid; grid-template-columns: 34px repeat(7, 1fr); gap: 3px; }
+.mapa-cab span { color: var(--sub); text-align: center; }
+.mapa-dia { color: var(--sub); align-self: center; }
+.mapa-cel { height: 30px; border-radius: 4px; display: grid; place-items: center; font-weight: 600; }
+.mapa-cel.sem-dado { background: var(--bg); }
+.mapa-cel.n0 { background: var(--mapa-0); } .mapa-cel.n1 { background: var(--mapa-1); }
+.mapa-cel.n2 { background: var(--mapa-2); color: #fff; } .mapa-cel.n3 { background: var(--mapa-3); color: #fff; } .mapa-cel.n4 { background: var(--mapa-4); color: #fff; }
+.ref { min-width: 340px; font-size: 12px; }
+.ref-linha { display: grid; grid-template-columns: 120px 1fr; gap: 8px; align-items: center; margin-bottom: 8px; }
+.ref-canal small { display: block; color: var(--sub); font-size: 11px; }
+.ref-horas { display: grid; grid-template-columns: repeat(18, 1fr); gap: 2px; }
+.ref-horas i { height: 16px; background: var(--bg); border-radius: 2px; font-style: normal; }
+.ref-horas i.on { background: var(--pri); }
+.ref-cab .ref-horas i { background: none; height: auto; color: var(--sub); font-size: 10px; }
+.preco-linha { display: grid; grid-template-columns: 1fr 92px 92px; gap: 6px; align-items: center; margin-bottom: 6px; font-size: 14px; }
+.preco-linha input { min-height: 40px; padding: 6px 8px; }
+.resposta-ia { white-space: pre-wrap; font-size: 15px; }
+nav.abas button { position: relative; }
+.badge { position: absolute; top: 6px; left: 55%; background: var(--perigo); color: #fff; border-radius: 999px; font-size: 11px;
+  min-width: 18px; height: 18px; line-height: 18px; padding: 0 5px; font-weight: 700; }
 </style>
 </head>
 <body>
@@ -220,7 +288,7 @@ details.guia li { margin-bottom: 8px; }
     <div class="resumo" id="resumo"></div>
     <input id="f-texto" type="search" placeholder="Procurar por nome, bairro, categoria…" style="margin-bottom:10px">
     <div class="chips" id="f-status" style="margin-bottom:8px"></div>
-    <div class="chips" id="f-site" style="margin-bottom:8px"></div>
+    <div class="chips" id="f-grupo" style="margin-bottom:8px"></div>
     <div class="chips" id="f-extra" style="margin-bottom:12px">
       <button class="chip" data-f="wa" aria-pressed="false">Com WhatsApp</button>
       <button class="chip" data-f="email" aria-pressed="false">Com e-mail</button>
@@ -229,6 +297,8 @@ details.guia li { margin-bottom: 8px; }
     <div class="linha-flex" style="margin-bottom:12px">
       <select id="f-ordem" aria-label="Ordenar">
         <option value="recentes">Mais recentes</option>
+        <option value="potencial">Maior potencial de abordagem</option>
+        <option value="chance">Maior chance de fechar</option>
         <option value="avaliacoes">Mais avaliações</option>
         <option value="nota">Maior nota</option>
         <option value="nome">Nome (A–Z)</option>
@@ -236,9 +306,55 @@ details.guia li { margin-bottom: 8px; }
       <button class="btn" id="btn-exportar" style="flex:none">Planilha</button>
     </div>
     <button class="btn cheio" id="btn-limpar-filtros" style="margin-bottom:12px" hidden>✕ Limpar filtros</button>
+    <button class="btn cheio" id="btn-analisar" style="margin-bottom:12px" hidden></button>
     <div class="aviso" id="f-busca-aviso" hidden></div>
     <div id="lista-leads"></div>
     <button class="btn cheio" id="btn-mais" hidden>Mostrar mais</button>
+  </section>
+
+  <!-- Painel -->
+  <section id="tela-painel" hidden>
+    <div class="cartao">
+      <h2>Fazer hoje</h2>
+      <p class="dica" style="margin-top:0">Primeiro quem respondeu, depois os lembretes vencidos e os melhores leads para abordar.</p>
+      <div id="p-hoje"></div>
+    </div>
+    <div class="kpis" id="p-kpis"></div>
+    <div class="cartao">
+      <h2>Funil de vendas</h2>
+      <div id="p-funil"></div>
+      <p class="dica">O % ao lado de cada número é a conversão em relação à etapa anterior.</p>
+    </div>
+    <div class="cartao">
+      <h2>Resultado por grupo</h2>
+      <div class="rolagem" id="p-grupos"></div>
+    </div>
+    <div class="cartao">
+      <h2>Nichos com mais oportunidade</h2>
+      <div class="rolagem" id="p-nichos"></div>
+      <p class="dica">“Com oportunidade” = sem presença digital ou com presença a melhorar.</p>
+    </div>
+    <div class="cartao">
+      <h2>Seus melhores horários</h2>
+      <p class="dica" style="margin-top:0">Taxa de resposta pelo dia e horário em que você enviou a mensagem. Quanto mais escuro, melhor.</p>
+      <div class="rolagem" id="p-horarios"></div>
+    </div>
+    <div class="cartao">
+      <h2>Tempo dos lembretes</h2>
+      <p class="dica" style="margin:0" id="p-intervalos"></p>
+    </div>
+    <div class="cartao">
+      <h2>Referência de mercado: quando as pessoas estão online</h2>
+      <p class="dica" style="margin-top:0">Faixas de maior atividade no Brasil segundo estudos públicos (Metricool, Buffer, Opinion Box, Sprout Social). É uma média geral, não tempo real: os seus horários acima valem mais.</p>
+      <div class="rolagem" id="p-referencia"></div>
+    </div>
+    <div class="cartao" id="p-ia" hidden>
+      <h2>✨ Pergunte à IA</h2>
+      <textarea id="p-ia-pergunta" placeholder="ex.: como responder quem diz que já tem sobrinho que faz site?"></textarea>
+      <button class="btn pri cheio" id="btn-ia-perguntar" style="margin-top:8px">Perguntar</button>
+      <p id="p-ia-resposta" class="resposta-ia"></p>
+    </div>
+    <div class="aviso" id="p-ia-off">✨ Quer uma IA para escrever e analisar mensagens? Ative em <a href="#" data-ir="ajustes">Ajustes → Assistente de IA</a>.</div>
   </section>
 
   <!-- Ajustes -->
@@ -274,8 +390,52 @@ details.guia li { margin-bottom: 8px; }
     </div>
 
     <div class="cartao">
-      <h2>Mensagens de WhatsApp</h2>
-      <p class="dica" style="margin-top:0">Use {nome}, {cidade}, {bairro} e {categoria}: são trocados pelos dados da empresa.</p>
+      <h2>Seu perfil (aparece nas mensagens)</h2>
+      <p class="dica" style="margin-top:0">Passa confiança: quem é você, um link com trabalhos reais e o prazo. Deixe em branco o que não quiser mostrar.</p>
+      <label class="campo" for="a-p-nome">Seu nome</label>
+      <input id="a-p-nome" type="text" placeholder="ex.: Lucas">
+      <label class="campo" for="a-p-marca">Sua marca ou empresa</label>
+      <input id="a-p-marca" type="text" placeholder="ex.: LK Digital">
+      <label class="campo" for="a-p-portfolio">Link do portfólio</label>
+      <input id="a-p-portfolio" type="text" inputmode="url" placeholder="ex.: lkdigital.com.br/trabalhos">
+      <label class="campo" for="a-p-prazo">Prazo padrão de entrega <span style="font-weight:400">(opcional)</span></label>
+      <input id="a-p-prazo" type="text" placeholder="em branco = prazo de cada serviço na tabela">
+      <h2 style="margin-top:20px">Tabela de preços (só você vê)</h2>
+      <p class="dica" style="margin-top:0">Valores mínimo e máximo em reais. São estimativas de mercado: ajuste para a sua realidade.</p>
+      <div id="a-precos"></div>
+      <button class="btn pri cheio" id="btn-salvar-perfil" style="margin-top:14px">Salvar perfil e preços</button>
+    </div>
+
+    <div class="cartao">
+      <h2>Roteiro do ciclo de mensagens</h2>
+      <p class="dica" style="margin-top:0">Blocos trocados automaticamente pelo diagnóstico de cada empresa: {nome}, {cidade}, {categoria}, {elogio}, {apresentacao}, {problema}, {impacto}, {solucao}, {beneficio}, {curto}, {prazo}, {portfolio_frase}.</p>
+      <div id="a-roteiro"></div>
+      <div class="grade2" style="margin-top:14px">
+        <button class="btn" id="btn-restaurar-roteiro">Restaurar padrão</button>
+        <button class="btn pri" id="btn-salvar-roteiro">Salvar roteiro</button>
+      </div>
+    </div>
+
+    <div class="cartao">
+      <h2>✨ Assistente de IA (opcional)</h2>
+      <p class="dica" style="margin-top:0">Com a IA ligada, você pode reescrever mensagens, analisar respostas dos clientes e tirar dúvidas de vendas. Usa a sua conta da Anthropic (Claude): custa alguns centavos por uso, cobrados por eles. Sem a chave, o app funciona normalmente pelas regras, sem custo.</p>
+      <label class="campo" for="a-ia-chave">Chave da API da Anthropic</label>
+      <input id="a-ia-chave" type="password" autocomplete="off" placeholder="sk-ant-…">
+      <div class="grade2" style="margin-top:10px">
+        <button class="btn pri" id="btn-salvar-ia">Salvar</button>
+        <button class="btn" id="btn-testar-ia">Testar</button>
+      </div>
+      <p class="dica" id="a-ia-status"></p>
+      <details class="guia"><summary>Como criar a chave</summary><ol>
+        <li>Abra <a href="https://console.anthropic.com/" target="_blank" rel="noopener">console.anthropic.com</a> e crie uma conta.</li>
+        <li>Em <b>Billing</b>, adicione créditos (ex.: US$ 5 rendem muitas mensagens).</li>
+        <li>Em <b>API Keys</b>, toque em <b>Create Key</b>, copie e cole acima.</li>
+      </ol></details>
+    </div>
+
+    <div class="cartao">
+      <h2>Mensagens extras</h2>
+      <p class="dica" style="margin-top:0">Mensagens livres, que aparecem na ficha como “Minha mensagem”. Use {nome}, {cidade}, {bairro} e {categoria}.</p>
       <div id="a-templates"></div>
       <button class="btn cheio" id="btn-novo-template" style="margin-top:6px">+ Nova mensagem</button>
       <label class="linha-flex" style="margin-top:14px; gap:12px">
@@ -304,6 +464,8 @@ details.guia li { margin-bottom: 8px; }
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>Buscar</button>
   <button data-tela="leads">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>Leads</button>
+  <button data-tela="painel">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 3v18h18"/><path d="M7 16v-5M12 16V8M17 16v-8"/></svg>Painel<span class="badge" id="badge-hoje" hidden></span></button>
   <button data-tela="ajustes">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg>Ajustes</button>
 </nav>
@@ -312,6 +474,7 @@ details.guia li { margin-bottom: 8px; }
 <div class="toast" id="toast" hidden></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="/vendas.js"></script>
 <script src="/app.js"></script>
 </body>
 </html>
