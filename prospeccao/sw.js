@@ -1,6 +1,6 @@
 // Service worker: deixa o app instalável e abre mesmo com sinal fraco.
 // Rede primeiro (para pegar atualizações); cache só como reserva. /api nunca é guardado.
-const CACHE = "prospeccao-v4";
+const CACHE = "prospeccao-v5";
 const BASICO = ["/", "/app.js", "/vendas.js", "/manifest.webmanifest", "/icone-192.png"];
 
 self.addEventListener("install", (e) => {

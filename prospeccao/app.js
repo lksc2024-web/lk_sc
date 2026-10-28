@@ -358,6 +358,7 @@ async function enriquecer(ids) {
 
 function renderBuscar() {
   $("#aviso-chave").hidden = !!estado.config?.google_key;
+  renderBuscarAgora();
   atualizarCusto();
   const el = $("#lista-buscas");
   if (!estado.buscas.length) { el.innerHTML = `<p class="dica" style="margin:0">Nenhuma busca ainda.</p>`; return; }
@@ -501,6 +502,7 @@ async function analisarPendentes() {
 
 // Estatísticas que dependem de todos os leads (intervalos dos lembretes e taxas reais por etapa).
 function recalcular() {
+  estado.cacheHora = null;
   estado.intervalos = Vendas.intervalos(estado.leads);
   estado.taxas = Vendas.taxasReais(estado.leads);
   atualizarBadgeHoje();
@@ -936,6 +938,14 @@ function renderContatos() {
 }
 
 // ── Painel de vendas ───────────────────────────────────────────────────────────
+// Cache curto: a análise de nichos × horário é usada no painel, no "Fazer hoje" e na busca.
+// Zerado em recalcular(), quando os leads ou os envios mudam.
+function horaNichos() {
+  const k = `${new Date().getHours()}-${estado.leads.length}`;
+  if (estado.cacheHora?.k !== k) estado.cacheHora = { k, v: Vendas.melhoresNichosAgora(estado.leads) };
+  return estado.cacheHora.v;
+}
+
 function fazerHoje() {
   const itens = [];
   for (const l of estado.leads) {
@@ -945,9 +955,13 @@ function fazerHoje() {
     else if (p.acao === "lembrete" && p.urgente) itens.push({ l, p, ordem: 1 });
   }
   // completa com os melhores leads ainda não abordados
+  // completa com os melhores leads ainda não abordados; os nichos em bom horário agora sobem na lista
+  const agora = horaNichos();
+  const bomAgora = new Set(agora.seus.filter((n) => n.agoraBom).map((n) => n.nicho));
+  const peso = (l) => analise(l).potencial * (bomAgora.has(l.nicho || "—") ? 1.3 : 1);
   const novos = estado.leads.filter((l) => l.status === "novo" && l.whatsapp && analise(l).grupo !== "analisando")
-    .sort((a, b) => analise(b).potencial - analise(a).potencial).slice(0, 10);
-  for (const l of novos) itens.push({ l, p: { texto: "Abordar", etapa: "abordagem" }, ordem: 2 });
+    .sort((a, b) => peso(b) - peso(a)).slice(0, 10);
+  for (const l of novos) itens.push({ l, p: { texto: bomAgora.has(l.nicho || "—") ? `Abordar · ⏰ bom horário para ${l.nicho}` : "Abordar", etapa: "abordagem" }, ordem: 2 });
   return itens.sort((a, b) => a.ordem - b.ordem);
 }
 
@@ -1034,6 +1048,7 @@ function renderPainel() {
     : `<p class="dica" style="margin:0">Sem dados ainda.</p>`;
 
   renderHorarios();
+  renderNichoHora();
   const it = estado.intervalos;
   $("#p-intervalos").innerHTML = `Lembrete 1 após <b>${it.follow1} dia${it.follow1 > 1 ? "s" : ""}</b>, lembrete 2 após mais <b>${it.follow2}</b>, encerramento após mais <b>${it.encerramento}</b>. ` +
     (it.fonte === "seus dados"
@@ -1044,7 +1059,6 @@ function renderPainel() {
 }
 
 // Mapa de calor: taxa de resposta por dia da semana e faixa de horário em que a mensagem foi enviada.
-const FAIXAS = [[7, 9, "7–9h"], [9, 11, "9–11h"], [11, 13, "11–13h"], [13, 15, "13–15h"], [15, 17, "15–17h"], [17, 19, "17–19h"], [19, 22, "19–22h"]];
 const DIAS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 
 function renderHorarios() {
@@ -1079,6 +1093,52 @@ function renderHorarios() {
   html += `</div>`;
   $("#p-horarios").innerHTML = total >= 20 ? html
     : `<p class="dica" style="margin:0">Aparece depois de 20 mensagens enviadas pelo app (você tem ${total}). Até lá, use a referência de mercado abaixo.</p>${total ? html : ""}`;
+}
+
+// Nichos × horário: chance de resposta por nicho em cada faixa (referência de mercado + os seus envios).
+function linhaAgora(a) {
+  if (a.faixa < 0) return `<p class="dica" style="margin:0">Agora (${a.hora}h) está fora do horário comercial. Programe as abordagens para amanhã, a partir das 7h.</p>`;
+  const top = a.seus.filter((n) => n.novos).slice(0, 3);
+  const ideias = a.ideias.filter((r) => !r.buscado);
+  return `<p class="agora"><b>Agora · ${DIAS[a.dow]} ${a.rotulo}</b></p>` +
+    (top.length ? `<div class="agora-lista">${top.map((n) => `
+      <button class="linha-hoje" data-nicho="${esc(n.nicho)}">
+        <span class="tag-hoje ${n.agoraBom ? "t2" : n.taxa < 0.1 ? "t0" : "t1"}">${n.agoraBom ? "Bom agora" : n.taxa < 0.1 ? "Evite agora" : "Ok"}</span>
+        <span class="nome-hoje"><b>${esc(n.nicho)}</b><small>${n.novos} lead${n.novos > 1 ? "s" : ""} novo${n.novos > 1 ? "s" : ""} com WhatsApp · ${esc(n.nota)} · melhor: ${n.melhor}</small></span>
+        <span class="pct-hoje" title="${n.fonte === "estimativa" ? "Estimativa de mercado" : `Com ${n.n} envios seus nesta faixa`}">${Math.round(n.taxa * 100)}%</span>
+      </button>`).join("")}</div>`
+      : `<p class="dica" style="margin:0 0 4px">Sem leads novos para abordar neste horário.</p>`) +
+    (ideias.length ? `<p class="dica" style="margin:10px 0 6px">${top.length ? "Outros nichos com bom horário agora, para buscar:" : "Nichos com bom horário agora, para buscar:"}</p>
+      <div class="chips quebra">${ideias.slice(0, 4).map((r) =>
+      `<button class="chip" data-buscar-nicho="${esc(r.exemplos[0])}" title="${esc(r.tipo)}: ${esc(r.nota)}">🔍 ${esc(r.exemplos[0])} <small>${esc(r.nota)}</small></button>`).join("")}</div>` : "");
+}
+
+function renderNichoHora() {
+  const a = horaNichos(), dados = Vendas.desempenhoNichos(estado.leads);
+  let nichos = a.seus.length ? a.seus.map((n) => n.nicho) : [];
+  nichos = [...new Set(nichos)].sort((x, y) => estado.leads.filter((l) => (l.nicho || "—") === y).length - estado.leads.filter((l) => (l.nicho || "—") === x).length).slice(0, 10);
+  const linhas = nichos.length ? nichos : Vendas.ROTINA_NICHO.slice(0, 8).map((r) => r.exemplos[0]);
+  let html = `<div class="mapa mapa-nicho" role="table" aria-label="Chance de resposta por nicho e horário"><div role="row" class="mapa-cab"><span></span>${FAIXAS.map((f, i) => `<span role="columnheader"${i === a.faixa ? ' class="agora-col"' : ""}>${f[2]}</span>`).join("")}</div>`;
+  for (const n of linhas) {
+    html += `<div role="row"><span role="rowheader" class="mapa-dia" title="${esc(Vendas.rotinaDe(n).tipo)}: ${esc(Vendas.rotinaDe(n).nota)}">${esc(n)}</span>`;
+    FAIXAS.forEach((_, f) => {
+      const c = Vendas.notaNichoFaixa(n, f, dados);
+      const nivel = `n${Math.min(4, Math.floor(c.taxa / 0.075))}`;
+      const titulo = c.n ? `${c.n} envios seus: ${Math.round(c.taxa * 100)}% de resposta estimada${c.interesse != null ? `, ${Math.round(c.interesse * 100)}% com interesse` : ""}` : "estimativa de mercado (sem envios seus)";
+      html += `<span role="cell" class="mapa-cel ${nivel}${c.n ? "" : " est"}${f === a.faixa ? " agora-cel" : ""}" title="${esc(n)} ${FAIXAS[f][2]}: ${titulo}">${Math.round(c.taxa * 100)}%</span>`;
+    });
+    html += `</div>`;
+  }
+  html += `</div>`;
+  const seus = Object.values(dados).reduce((s, fx) => s + Object.values(fx).reduce((t, c) => t + c.n, 0), 0);
+  $("#p-nicho-agora").innerHTML = linhaAgora(a);
+  $("#p-nicho-hora").innerHTML = html + `<p class="dica">${nichos.length ? "" : "Exemplo com nichos comuns: faça buscas para ver os seus. "}Células esmaecidas são estimativa pela rotina do setor; as cheias já usam os seus envios (${seus} até agora). A coluna destacada é o horário de agora.</p>`;
+}
+
+function renderBuscarAgora() {
+  const a = horaNichos(), el = $("#b-agora");
+  el.hidden = a.faixa < 0 || (!a.seus.some((n) => n.novos) && !a.ideias.length);
+  if (!el.hidden) $("#b-agora-corpo").innerHTML = linhaAgora(a);
 }
 
 // Referência de mercado (estudos públicos; aproximado, não é tempo real). Faixas = horários fortes.
@@ -1399,6 +1459,27 @@ $("#btn-testar-ia").addEventListener("click", async () => {
     $("#a-ia-status").textContent = `Funcionou: ${r.mensagem}`;
   } catch (err) { $("#a-ia-status").textContent = err.message; }
 });
+// Sugestões por horário: abrir os leads novos do nicho ou preencher a busca com uma ideia.
+function cliqueNichoHora(e) {
+  const n = e.target.closest("[data-nicho]");
+  if (n) {
+    estado.filtro = { ...FILTRO_PADRAO, texto: n.dataset.nicho, status: "novo", wa: true };
+    estado.mostrar = POR_PAGINA;
+    $("#f-texto").value = n.dataset.nicho;
+    irPara("leads");
+    return;
+  }
+  const b = e.target.closest("[data-buscar-nicho]");
+  if (b) {
+    irPara("buscar");
+    $("#b-nichos").value = b.dataset.buscarNicho;
+    atualizarCusto();
+    $("#b-cidade").focus();
+  }
+}
+$("#p-nicho-agora").addEventListener("click", cliqueNichoHora);
+$("#b-agora-corpo").addEventListener("click", cliqueNichoHora);
+
 $("#p-hoje").addEventListener("click", (e) => {
   const b = e.target.closest("[data-lead]"); if (!b) return;
   abrirLead(b.dataset.lead, { etapa: b.dataset.etapa });

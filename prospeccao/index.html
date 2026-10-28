@@ -204,6 +204,16 @@ details.guia li { margin-bottom: 8px; }
 .mapa-cel.sem-dado { background: var(--bg); }
 .mapa-cel.n0 { background: var(--mapa-0); } .mapa-cel.n1 { background: var(--mapa-1); }
 .mapa-cel.n2 { background: var(--mapa-2); color: #fff; } .mapa-cel.n3 { background: var(--mapa-3); color: #fff; } .mapa-cel.n4 { background: var(--mapa-4); color: #fff; }
+.mapa-nicho { min-width: 420px; }
+.mapa-nicho > div { grid-template-columns: 96px repeat(7, 1fr); }
+.mapa-nicho .mapa-dia { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mapa-cel.est { opacity: .55; font-weight: 500; }
+.chips.quebra { flex-wrap: wrap; overflow: visible; }
+.chips.quebra .chip small { opacity: .65; }
+.mapa-cel.agora-cel { box-shadow: 0 0 0 2px var(--pri); }
+.mapa-cab .agora-col { color: var(--pri); font-weight: 700; }
+.agora { margin: 0 0 8px; }
+.agora-lista { margin-bottom: 4px; }
 .ref { min-width: 340px; font-size: 12px; }
 .ref-linha { display: grid; grid-template-columns: 120px 1fr; gap: 8px; align-items: center; margin-bottom: 8px; }
 .ref-canal small { display: block; color: var(--sub); font-size: 11px; }
@@ -337,6 +347,12 @@ nav.abas button { position: relative; }
       </div>
     </form>
 
+    <div class="cartao" id="b-agora" hidden>
+      <h2>⏰ Bom para abordar agora</h2>
+      <p class="dica" style="margin-top:0">Nichos em que o dono costuma ter tempo para ler o WhatsApp neste horário. Toque para ver os leads ou para buscar.</p>
+      <div id="b-agora-corpo"></div>
+    </div>
+
     <div class="aviso" id="b-erro" role="alert" style="color:var(--perigo)" hidden></div>
 
     <div class="cartao" id="painel-progresso" hidden>
@@ -418,6 +434,12 @@ nav.abas button { position: relative; }
       <h2>Nichos com mais oportunidade</h2>
       <div class="rolagem" id="p-nichos"></div>
       <p class="dica">“Com oportunidade” = sem presença digital ou com presença a melhorar.</p>
+    </div>
+    <div class="cartao">
+      <h2>Melhores nichos por horário</h2>
+      <p class="dica" style="margin-top:0">Chance de resposta de cada nicho em cada faixa de horário. Começa com a rotina típica de cada setor e vai se ajustando aos seus envios e respostas.</p>
+      <div id="p-nicho-agora"></div>
+      <div class="rolagem" id="p-nicho-hora"></div>
     </div>
     <div class="cartao">
       <h2>Seus melhores horários</h2>

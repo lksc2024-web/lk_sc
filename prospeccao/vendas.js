@@ -514,7 +514,104 @@ function termometro(pct) {
   return { nome: "Frio", icone: "❄️" };
 }
 
+// ── Nichos × horário ──────────────────────────────────────────────────────────
+// Faixas de envio usadas no painel (início, fim, rótulo).
+const FAIXAS = [[7, 9, "7–9h"], [9, 11, "9–11h"], [11, 13, "11–13h"], [13, 15, "13–15h"], [15, 17, "15–17h"], [17, 19, "17–19h"], [19, 22, "19–22h"]];
+function faixaDe(h) { return FAIXAS.findIndex(([a, b]) => h >= a && h < b); }
+
+// Referência de mercado: quando o dono de cada tipo de negócio costuma ter tempo para ler o WhatsApp.
+// Estimativa pela rotina de cada setor (picos de movimento ficam em "evitar"). Os seus dados substituem isto.
+const ROTINA_NICHO = [
+  { tipo: "Restaurantes e bares", re: /restaurante|lanchonete|pizzaria|hamburg|bar\b|boteco|churrasc|sushi|japon|marmit|delivery|comida|bistr/i,
+    bons: [[14, 17]], evitar: [[11, 14], [18, 22]], dias: [2, 3, 4], nota: "entre o almoço e o jantar", exemplos: ["restaurante", "pizzaria", "hamburgueria"] },
+  { tipo: "Padarias e cafés", re: /padaria|panific|caf[eé]|confeit|doceria|a[cç]a[ií]|sorvet/i,
+    bons: [[9, 11], [14, 16]], evitar: [[6, 9], [17, 19]], dias: [2, 3, 4], nota: "depois do pico da manhã", exemplos: ["padaria", "cafeteria", "confeitaria"] },
+  { tipo: "Saúde", re: /dent|odonto|cl[ií]nica|m[eé]dic|fisio|psic|nutri|fono|laborat|ortoped|dermat|oftalm/i,
+    bons: [[7, 9], [12, 14], [18, 20]], evitar: [[9, 12], [14, 18]], dias: [1, 2, 3, 4, 5], nota: "antes, no almoço ou depois das consultas", exemplos: ["dentista", "clínica", "fisioterapia"] },
+  { tipo: "Beleza", re: /sal[aã]o|cabele|barbe|est[eé]tica|manicure|unha|depila|sobrancel|c[ií]lio|spa\b|massag|maquia/i,
+    bons: [[9, 11], [13, 15]], evitar: [[17, 20]], dias: [2, 3, 4], nota: "manhã e começo da tarde; sábado é dia cheio", exemplos: ["salão de beleza", "barbearia", "estética"] },
+  { tipo: "Academias e estúdios", re: /academia|pilates|crossfit|personal|funcional|yoga|dan[cç]a|luta|muay|jiu/i,
+    bons: [[9, 12], [14, 16]], evitar: [[6, 9], [17, 21]], dias: [1, 2, 3, 4, 5], nota: "fora dos horários de treino", exemplos: ["academia", "pilates", "crossfit"] },
+  { tipo: "Pet", re: /pet|veterin|banho e tosa|tosa|agropet/i,
+    bons: [[9, 11], [14, 17]], evitar: [[17, 19]], dias: [1, 2, 3, 4, 5], nota: "horário comercial calmo", exemplos: ["pet shop", "clínica veterinária", "banho e tosa"] },
+  { tipo: "Imobiliário", re: /imobili|corretor|im[oó]ve|incorpora|loteament/i,
+    bons: [[9, 12], [14, 16]], evitar: [[17, 20]], dias: [1, 2, 3, 4], nota: "manhã; fim de tarde é de visitas", exemplos: ["imobiliária", "corretor de imóveis"] },
+  { tipo: "Escritórios", re: /advoca|advogad|contab|contador|arquitet|engenh|consult|despachan|seguro|cart[oó]rio|ag[eê]ncia/i,
+    bons: [[9, 11], [14, 17]], evitar: [[12, 14]], dias: [2, 3, 4], nota: "horário comercial, fora do almoço", exemplos: ["advogado", "contabilidade", "arquitetura"] },
+  { tipo: "Automotivo", re: /oficina|mec[aâ]nic|autope|lava.?jato|lava.?r[aá]pido|funilar|auto.?escola|concession|pneu|moto|ve[ií]cul|carro/i,
+    bons: [[7, 9], [12, 14], [17, 19]], evitar: [[9, 12], [14, 17]], dias: [1, 2, 3, 4, 5], nota: "antes de abrir, no almoço e ao fechar", exemplos: ["oficina mecânica", "lava-jato", "autopeças"] },
+  { tipo: "Obras e serviços", re: /constru|reforma|marcen|vidra[cç]|serralh|eletric|encanad|pintor|gesso|ar.condicionado|dedetiz|limpeza|chaveiro/i,
+    bons: [[7, 9], [12, 14], [18, 20]], evitar: [[9, 12], [14, 18]], dias: [1, 2, 3, 4, 5], nota: "o dono está em campo durante o dia", exemplos: ["marcenaria", "vidraçaria", "material de construção"] },
+  { tipo: "Lojas", re: /loja|boutique|moda|roupa|cal[cç]ad|[oó]tica|papelaria|m[oó]veis|decora|presente|joalher|perfum|cosm[eé]t|farm[aá]cia|mercado|floricult/i,
+    bons: [[9, 11], [14, 16]], evitar: [[17, 19]], dias: [1, 2, 3, 4], nota: "antes do movimento da tarde", exemplos: ["loja de roupas", "ótica", "loja de móveis"] },
+  { tipo: "Educação", re: /escola|col[eé]gio|curso|idioma|ingl[eê]s|refor[cç]o|creche|faculdade|treinamento/i,
+    bons: [[9, 11], [14, 16]], evitar: [[7, 8], [17, 19]], dias: [1, 2, 3, 4], nota: "fora da entrada e saída de alunos", exemplos: ["escola", "curso de idiomas", "escola infantil"] },
+  { tipo: "Eventos", re: /buffet|festa|evento|fot[oó]graf|filmag|cerimonial|decora[cç][aã]o de festa|dj\b|sal[aã]o de festa/i,
+    bons: [[10, 12], [14, 17]], evitar: [], dias: [1, 2, 3], nota: "começo da semana; fim de semana é de evento", exemplos: ["buffet", "fotógrafo", "salão de festas"] },
+];
+const ROTINA_GERAL = { tipo: "Outros", bons: [[9, 12], [14, 18]], evitar: [[12, 14]], dias: [1, 2, 3, 4, 5], nota: "horário comercial", exemplos: [] };
+
+function rotinaDe(nicho) { return ROTINA_NICHO.find((r) => r.re.test(semAcento(nicho)) || r.re.test(nicho || "")) || ROTINA_GERAL; }
+const sobrepoe = (faixas, a, b) => faixas.some(([x, y]) => x < b && y > a);
+// 0 a 1: quanto a faixa combina com a rotina do nicho (referência, sem dados seus).
+function encaixeReferencia(rotina, f, dow = null) {
+  const [a, b] = FAIXAS[f];
+  let s = sobrepoe(rotina.bons, a, b) ? 1 : sobrepoe(rotina.evitar, a, b) ? 0.25 : 0.55;
+  if (dow != null && rotina.dias && !rotina.dias.includes(dow)) s *= dow === 0 || dow === 6 ? 0.4 : 0.8;
+  return s;
+}
+
+// Envios de abordagem/lembrete por nicho e faixa: n = enviados, r = responderam, i = mostraram interesse.
+function desempenhoNichos(leads) {
+  const por = {};
+  for (const l of leads) {
+    const { envios, respostas } = ciclo(l);
+    envios.forEach((e, k) => {
+      if (!["abordagem", "follow1", "follow2"].includes(e.etapa)) return;
+      const f = faixaDe(e.h); if (f < 0) return;
+      const ate = envios[k + 1]?.t || "9999";
+      const rs = respostas.filter((r) => r.t > e.t && r.t < ate);
+      const c = ((por[l.nicho || "—"] ||= {})[f] ||= { n: 0, r: 0, i: 0 });
+      c.n++; if (rs.length) c.r++; if (rs.some((r) => ["desejo", "aprovacao"].includes(r.tipo))) c.i++;
+    });
+  }
+  return por;
+}
+
+// Chance estimada de resposta de um nicho numa faixa: mistura a referência de mercado com os seus envios
+// (quanto mais envios seus, menos a referência pesa).
+const TAXA_REF = 0.3, PESO_REF = 5;
+function notaNichoFaixa(nicho, f, dados, dow = null) {
+  const c = dados?.[nicho]?.[f];
+  const prior = TAXA_REF * encaixeReferencia(rotinaDe(nicho), f, dow);
+  if (!c?.n) return { taxa: prior, interesse: null, n: 0, fonte: "estimativa" };
+  return { taxa: (c.r + PESO_REF * prior) / (c.n + PESO_REF), interesse: c.i / c.n, n: c.n, fonte: c.n >= PESO_REF ? "seus dados" : "misto" };
+}
+
+// Melhores nichos para abordar numa hora: os nichos que você já buscou (com leads novos esperando)
+// e, para ideias de busca, os tipos de negócio cuja rotina combina com o horário.
+function melhoresNichosAgora(leads, quando = new Date()) {
+  const h = quando.getHours(), dow = quando.getDay(), f = faixaDe(h);
+  const dados = desempenhoNichos(leads);
+  const nichos = {};
+  for (const l of leads) {
+    const n = (nichos[l.nicho || "—"] ||= { nicho: l.nicho || "—", leads: 0, novos: 0 });
+    n.leads++; if (l.status === "novo" && l.whatsapp) n.novos++;
+  }
+  const seus = f < 0 ? [] : Object.values(nichos).map((n) => {
+    const nota = notaNichoFaixa(n.nicho, f, dados, dow), rot = rotinaDe(n.nicho);
+    const taxas = FAIXAS.map((_, i) => notaNichoFaixa(n.nicho, i, dados, dow).taxa), topo = Math.max(...taxas);
+    const melhores = FAIXAS.filter((_, i) => taxas[i] >= topo * 0.95).map((x) => x[2]).slice(0, 3);
+    return { ...n, ...nota, tipo: rot.tipo, nota: rot.nota, melhor: melhores.join(", "), agoraBom: nota.taxa >= Math.min(topo * 0.95, TAXA_REF * 0.9) };
+  }).sort((a, b) => b.taxa - a.taxa || b.novos - a.novos);
+  const buscados = new Set(Object.keys(nichos).map((n) => rotinaDe(n).tipo));
+  const ideias = f < 0 ? [] : ROTINA_NICHO.map((r) => ({ tipo: r.tipo, nota: r.nota, exemplos: r.exemplos, encaixe: encaixeReferencia(r, f, dow), buscado: buscados.has(r.tipo) }))
+    .filter((r) => r.encaixe >= 0.8).sort((a, b) => b.encaixe - a.encaixe || a.buscado - b.buscado);
+  return { hora: h, dow, faixa: f, rotulo: f < 0 ? null : FAIXAS[f][2], seus, ideias };
+}
+
 window.Vendas = {
+  FAIXAS, faixaDe, ROTINA_NICHO, rotinaDe, encaixeReferencia, desempenhoNichos, notaNichoFaixa, melhoresNichosAgora,
   SERVICOS, GRUPOS, OPORTUNIDADES, ROTEIRO_PADRAO, PROFISSAO_PADRAO, NOME_ETAPA, NOME_RESPOSTA, ICONE_RESPOSTA,
   contextoComparacao, analisar, montarMensagem, classificarResposta, ciclo, intervalos, proximaAcao,
   taxasReais, chanceFechamento, termometro, precoDe, faixaPreco, fmtReais, soRede, precisaAnalise, etapaChance,
