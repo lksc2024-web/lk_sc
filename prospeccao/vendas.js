@@ -77,22 +77,22 @@ function ticketEstimado(l) {
 }
 
 // Portfólio: projetos já construídos, com os nichos e serviços que eles exemplificam.
-// publico=false: o link ainda pede login da Vercel (proteção de deploy ligada) e o cliente não abre.
+// publico=false: o link pede login (proteção de deploy) e o cliente não abre; o app avisa com 🔒.
 const PORTFOLIO_PADRAO = [
   { nome: "Simões Imobiliária", url: "simoes-imobiliaria.vercel.app", nichos: "imobiliária, imóveis, corretor", servicos: "site, landing, crm", publico: true },
   { nome: "Mirante Imóveis", url: "mirante-imoveis-beta.vercel.app", nichos: "imobiliária, imóveis, corretor", servicos: "site, landing", publico: true },
-  { nome: "M Gameiro Imóveis", url: "m-gameiro-imoveis.vercel.app", nichos: "imobiliária, imóveis, corretor", servicos: "site", publico: false },
+  { nome: "M Gameiro Imóveis", url: "m-gameiro-imoveis.vercel.app", nichos: "imobiliária, imóveis, corretor", servicos: "site", publico: true },
   { nome: "T&T Burger", url: "t-t-burger-website-redesign.vercel.app", nichos: "hamburgueria, restaurante, lanchonete, delivery, bar", servicos: "site, landing", publico: true },
   { nome: "Mr Burdog", url: "mr-burdog-website-rebuild.vercel.app", nichos: "restaurante, lanchonete, hamburgueria, cachorro-quente, food truck", servicos: "site, landing", publico: true },
   { nome: "Vértice (sistema de gestão)", url: "vertice-gestao.vercel.app", nichos: "", servicos: "sistema, crm, app", publico: true },
-  { nome: "RL Studio Pilates", url: "missao-pilates.vercel.app", nichos: "pilates, estúdio, academia, fisioterapia, clínica, salão, pet shop, banho e tosa", servicos: "agendamento, site", publico: false },
-  { nome: "FeelMov Premium Studio", url: "feelmov-premium-preview.vercel.app", nichos: "personal, academia, estúdio, treino, crossfit", servicos: "site, agendamento", publico: false },
-  { nome: "Academia TR Fit", url: "academia-tr-fit.vercel.app", nichos: "academia, crossfit, treino", servicos: "site", publico: false },
-  { nome: "Dra. Gabriela Reis (odontologia)", url: "gabriela-reis.vercel.app", nichos: "dentista, odonto, clínica, médico, estética, consultório, psicólogo, nutricionista, advogado", servicos: "site, agendamento", publico: false },
-  { nome: "Âmbar (loja virtual)", url: "loja-ambar-previa.vercel.app", nichos: "loja, perfumaria, calçados, bijuteria, moda, pet shop, presentes, cosméticos", servicos: "landing, site, app", publico: false },
-  { nome: "Mini Chic (moda)", url: "minichic-ceu-de-areia.vercel.app", nichos: "moda, roupas, boutique, loja", servicos: "site, landing", publico: false },
-  { nome: "FM Arquitetura", url: "fm-arquitetura-premium.vercel.app", nichos: "arquitetura, interiores, design, engenharia, decoração, marcenaria", servicos: "site", publico: false },
-  { nome: "Orla Superesportivos", url: "orla-superesportivos.vercel.app", nichos: "carros, veículos, concessionária, automóveis, motos", servicos: "site", publico: false },
+  { nome: "RL Studio Pilates", url: "missao-pilates.vercel.app", nichos: "pilates, estúdio, academia, fisioterapia, clínica, salão, pet shop, banho e tosa", servicos: "agendamento, site", publico: true },
+  { nome: "FeelMov Premium Studio", url: "feelmov-premium-preview.vercel.app", nichos: "personal, academia, estúdio, treino, crossfit", servicos: "site, agendamento", publico: true },
+  { nome: "Academia TR Fit", url: "academia-tr-fit.vercel.app", nichos: "academia, crossfit, treino", servicos: "site", publico: true },
+  { nome: "Dra. Gabriela Reis (odontologia)", url: "gabriela-reis.vercel.app", nichos: "dentista, odonto, clínica, médico, estética, consultório, psicólogo, nutricionista, advogado", servicos: "site, agendamento", publico: true },
+  { nome: "Âmbar (loja virtual)", url: "loja-ambar-previa.vercel.app", nichos: "loja, perfumaria, calçados, bijuteria, moda, pet shop, presentes, cosméticos", servicos: "landing, site, app", publico: true },
+  { nome: "Mini Chic (moda)", url: "minichic-ceu-de-areia.vercel.app", nichos: "moda, roupas, boutique, loja", servicos: "site, landing", publico: true },
+  { nome: "FM Arquitetura", url: "fm-arquitetura-premium.vercel.app", nichos: "arquitetura, interiores, design, engenharia, decoração, marcenaria", servicos: "site", publico: true },
+  { nome: "Orla Superesportivos", url: "orla-superesportivos.vercel.app", nichos: "carros, veículos, concessionária, automóveis, motos", servicos: "site", publico: true },
   { nome: "Alvora (indústria de café)", url: "alvora-industria-cafe.vercel.app", nichos: "café, cafeteria, indústria, alimentos, distribuidora", servicos: "site", publico: true },
 ];
 
