@@ -118,7 +118,7 @@ const OPORTUNIDADES = [
     beneficio: "com o site no ar de novo, todo cliente que chega pelo Google encontra vocês na hora" },
   { id: "sem_site", grupo: "presenca", servico: "site", peso: 20,
     quando: (l) => !l.site,
-    problema: "não encontrei um site da {nome}: no Google aparecem só o endereço e o telefone",
+    problema: "não encontrei um site da {nome}, e no Google aparecem só o endereço e o telefone",
     impacto: "Quem procura {categoria} {em_cidade} e quer ver serviços, fotos e como agendar acaba escolhendo quem mostra isso",
     solucao: "sites profissionais, rápidos e feitos para o celular, com botão de WhatsApp", curto: "um site para a {nome}",
     beneficio: "um site bem feito transforma quem pesquisa no Google em cliente chamando no WhatsApp" },
@@ -275,11 +275,12 @@ function retorno(l, a, perfil = {}, ticket = null, clientes = 2) {
 }
 
 // ── Mensagens do ciclo (modulares: cada {bloco} vem do diagnóstico do lead) ────────
+const PROFISSAO_PADRAO = "desenvolvedor e trabalho com presença digital para empresas: sites, aplicativos, sistemas e soluções com inteligência artificial";
 const ROTEIRO_PADRAO = {
   abordagem: "Olá, tudo bem? {apresentacao}\n\n{elogio} Dei uma olhada na presença digital de vocês: {problema}. " +
     "{impacto}.\n\nEu desenvolvo {solucao} para {categorias}{portfolio_frase}\n\n" +
     "Posso te mandar um diagnóstico gratuito da {nome}, sem compromisso? Se não fizer sentido agora, é só me avisar que não volto a mandar mensagem.",
-  follow1: "Oi! Passando só para saber se você viu minha mensagem sobre {curto}. O diagnóstico é gratuito e leva 2 minutos para ler. Quer que eu te mande?",
+  follow1: "Oi! {de_novo}Passando só para saber se você viu minha mensagem sobre {curto}. O diagnóstico é gratuito e leva 2 minutos para ler. Quer que eu te mande?",
   follow2: "Olá! Uma última ideia para a {nome}: {beneficio}. Se quiser, preparo uma prévia de como ficaria, sem custo nenhum. Posso?",
   encerramento: "Vou parar por aqui para não incomodar. Se em algum momento quiserem melhorar {curto}, é só me chamar. Sucesso para a {nome}!",
   rejeicao: "Entendo, obrigado por responder! Só para eu entender melhor: vocês já têm alguém cuidando disso ou não é prioridade agora? " +
@@ -289,7 +290,7 @@ const ROTEIRO_PADRAO = {
   desejo: "Que ótimo! Vou preparar a prévia da {nome}. Para acertar em cheio, me conta: hoje a maioria dos clientes chega por onde (Instagram, Google, indicação)? " +
     "E prefere que eu apresente numa chamada rápida de 15 minutos ou mando tudo por aqui?",
   aprovacao: "Perfeito, vamos nessa! Vou te enviar a proposta com escopo, prazo ({prazo}) e valores. Qual o melhor e-mail e o nome do responsável? Assim que aprovar, já começo.",
-  retomar: "Oi! Passando para retomar nossa conversa sobre {curto} da {nome}. Conseguiu ver? Fico à disposição para qualquer dúvida.",
+  retomar: "Oi! {de_novo}Passando para retomar nossa conversa sobre {curto} da {nome}. Conseguiu ver? Fico à disposição para qualquer dúvida.",
   valor: "Te explico de forma simples como isso funcionaria para a {nome}:\n\n" +
     "💰 Onde vocês ganham: {retorno}.\n📈 Resultado esperado: {resultado}.\n📱 Como vocês usam: {uso}.\n\n" +
     "Uma conta rápida: {exemplo_retorno}{manutencao_frase}\n\nQuer que eu monte a proposta com escopo e prazo ({prazo})?",
@@ -327,9 +328,14 @@ function montarMensagem(l, etapa, analise, perfil = {}, oportunidade = null, con
   const elogio = l.nota >= 4.5 && l.avaliacoes >= 20
     ? `Vi a ${l.nome} no Google, nota ${fmtNota(l.nota)} com ${l.avaliacoes} avaliações. Parabéns pelo trabalho!`
     : `Encontrei a ${l.nome} pesquisando ${base.categoria} ${base.em_cidade}.`;
-  const apres = perfil.nome ? `Aqui é ${perfil.nome}${perfil.marca ? `, da ${perfil.marca}` : ""}.` : "";
+  // Quem está falando: nome, o que faz e a marca. Sem isso a abordagem parece golpe.
+  const profissao = perfil.profissao || PROFISSAO_PADRAO;
+  const apres = perfil.nome
+    ? `Meu nome é ${perfil.nome}, sou ${profissao}${perfil.marca ? `, aqui na ${perfil.marca}` : ""}.`
+    : `Sou ${profissao}${perfil.marca ? `, aqui na ${perfil.marca}` : ""}.`;
+  const deNovo = perfil.nome ? `Aqui é ${perfil.nome} de novo, o desenvolvedor que te mandou mensagem. ` : "";
   const vars = {
-    ...base, apresentacao: apres, elogio, problema: bloco(op.problema), impacto: bloco(op.impacto), solucao: bloco(op.solucao),
+    ...base, apresentacao: apres, de_novo: deNovo, elogio, problema: bloco(op.problema), impacto: bloco(op.impacto), solucao: bloco(op.solucao),
     beneficio: bloco(op.beneficio), curto: bloco(op.curto), prazo: perfil.prazo || servico.prazo,
     portfolio_frase: perfil.portfolio ? `. Alguns trabalhos estão aqui: ${perfil.portfolio}` : ", sempre com escopo e prazo combinados antes de começar.",
     portfolio_frase2: perfil.portfolio ? ` Exemplos do meu trabalho: ${perfil.portfolio}.` : "",
@@ -467,7 +473,7 @@ function termometro(pct) {
 }
 
 window.Vendas = {
-  SERVICOS, GRUPOS, OPORTUNIDADES, ROTEIRO_PADRAO, NOME_ETAPA, NOME_RESPOSTA, ICONE_RESPOSTA,
+  SERVICOS, GRUPOS, OPORTUNIDADES, ROTEIRO_PADRAO, PROFISSAO_PADRAO, NOME_ETAPA, NOME_RESPOSTA, ICONE_RESPOSTA,
   contextoComparacao, analisar, montarMensagem, classificarResposta, ciclo, intervalos, proximaAcao,
   taxasReais, chanceFechamento, termometro, precoDe, faixaPreco, fmtReais, soRede, precisaAnalise, etapaChance,
   planoMensal, retorno, ticketEstimado,

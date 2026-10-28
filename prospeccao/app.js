@@ -673,6 +673,7 @@ function abrirLead(id, opcoes = {}) {
             ${ETAPAS_MSG.map((e) => `<option value="${e}" ${e === etapa ? "selected" : ""}>${Vendas.NOME_ETAPA[e]}</option>`).join("")}
             ${estado.config.templates.map((t) => `<option value="extra:${esc(t.id)}">Minha mensagem: ${esc(t.nome)}</option>`).join("")}
           </select>
+          ${perfil().nome ? "" : `<p class="aviso" style="margin:8px 0 0">Para a mensagem dizer quem você é, preencha seu nome em <a href="#" data-ir="ajustes">Ajustes → Seu perfil</a>.</p>`}
           <textarea id="l-msg" style="margin-top:8px; min-height:170px">${esc(msgDe(etapa))}</textarea>
           <div class="grade2" style="margin-top:8px">
             <button class="btn wa" id="l-enviar">Abrir no WhatsApp</button>
@@ -1060,7 +1061,8 @@ function renderAjustes() {
     </div>`).join("");
   $("#a-auto").checked = c.auto_contatado !== false;
   const pf = c.perfil || {};
-  for (const k of ["nome", "marca", "portfolio", "prazo"]) $(`#a-p-${k}`).value = pf[k] || "";
+  for (const k of ["nome", "profissao", "marca", "portfolio", "prazo"]) $(`#a-p-${k}`).value = pf[k] || "";
+  $("#a-p-profissao").placeholder = Vendas.PROFISSAO_PADRAO;
   $("#a-precos").innerHTML = Object.entries(Vendas.SERVICOS).map(([id]) => {
     const p = Vendas.precoDe(id, pf);
     return `<div class="preco-bloco" data-servico="${id}"><b>${esc(p.nome)}</b>
@@ -1108,7 +1110,7 @@ async function testarChave() {
 
 function lerPerfil() {
   const pf = { ...(estado.config.perfil || {}) };
-  for (const k of ["nome", "marca", "portfolio", "prazo"]) pf[k] = $(`#a-p-${k}`).value.trim();
+  for (const k of ["nome", "profissao", "marca", "portfolio", "prazo"]) pf[k] = $(`#a-p-${k}`).value.trim();
   pf.precos = {};
   for (const el of $$("#a-precos [data-servico]")) {
     const base = Vendas.SERVICOS[el.dataset.servico], ajuste = {};

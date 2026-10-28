@@ -225,6 +225,35 @@ details.guia li { margin-bottom: 8px; }
 nav.abas button { position: relative; }
 .badge { position: absolute; top: 6px; left: 55%; background: var(--perigo); color: #fff; border-radius: 999px; font-size: 11px;
   min-width: 18px; height: 18px; line-height: 18px; padding: 0 5px; font-weight: 700; }
+
+/* Computador e iPad: navegação na lateral, conteúdo mais largo e listas em colunas */
+@media (min-width: 900px) {
+  body { padding-bottom: 0; }
+  body:has(#abas:not([hidden])) { padding-left: 220px; }
+  header.topo { padding-left: 28px; }
+  nav.abas { top: 0; bottom: 0; right: auto; width: 220px; flex-direction: column; justify-content: flex-start; gap: 4px;
+    padding: 84px 12px 12px; border-top: 0; border-right: 1px solid var(--linha); z-index: 4; }
+  nav.abas button { flex: none; flex-direction: row; justify-content: flex-start; gap: 12px; font-size: 15px; padding: 12px 14px;
+    min-height: 48px; border-radius: 10px; }
+  nav.abas button[aria-current="page"] { background: var(--pri-suave); }
+  .badge { position: static; margin-left: auto; }
+  main { max-width: 1180px; padding: 24px 28px; }
+  #tela-buscar:not([hidden]) { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0 18px; align-items: start; }
+  #tela-buscar > .aviso { grid-column: 1 / -1; }
+  #lista-leads { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 12px; }
+  #lista-leads .lead { margin: 0; }
+  #lista-leads .vazio { grid-column: 1 / -1; }
+  #tela-painel:not([hidden]) { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0 18px; align-items: start; }
+  #tela-painel > .kpis, #tela-painel > .aviso { grid-column: 1 / -1; }
+  #tela-painel > .kpis { order: -1; }
+  .kpis { grid-template-columns: repeat(5, 1fr); }
+  #tela-ajustes:not([hidden]) { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0 18px; align-items: start; }
+  #tela-ajustes > .btn, #tela-ajustes > p { grid-column: 1 / -1; }
+  .toast { left: calc(220px + 16px); }
+}
+@media (min-width: 900px) and (hover: hover) {
+  .lead:hover { border-color: var(--pri); }
+}
 </style>
 </head>
 <body>
@@ -401,9 +430,12 @@ nav.abas button { position: relative; }
 
     <div class="cartao">
       <h2>Seu perfil (aparece nas mensagens)</h2>
-      <p class="dica" style="margin-top:0">Passa confiança: quem é você, um link com trabalhos reais e o prazo. Deixe em branco o que não quiser mostrar.</p>
+      <p class="dica" style="margin-top:0">A primeira mensagem sempre diz quem você é e com o que trabalha, para não parecer golpe. Um link com trabalhos reais passa ainda mais confiança.</p>
       <label class="campo" for="a-p-nome">Seu nome</label>
-      <input id="a-p-nome" type="text" placeholder="ex.: Lucas">
+      <input id="a-p-nome" type="text" placeholder="ex.: Luca">
+      <label class="campo" for="a-p-profissao">O que você faz <span style="font-weight:400">(aparece logo depois do seu nome)</span></label>
+      <textarea id="a-p-profissao" style="min-height:72px"></textarea>
+      <p class="dica">Em branco, usa o texto padrão mostrado no campo.</p>
       <label class="campo" for="a-p-marca">Sua marca ou empresa</label>
       <input id="a-p-marca" type="text" placeholder="ex.: LK Digital">
       <label class="campo" for="a-p-portfolio">Link do portfólio</label>
@@ -465,7 +497,7 @@ nav.abas button { position: relative; }
     </div>
 
     <button class="btn cheio perigo" id="btn-sair">Sair da conta</button>
-    <p class="dica" style="text-align:center; margin-top:18px">Dica: no Chrome, toque em ⋮ → <b>Adicionar à tela inicial</b> para usar como app.</p>
+    <p class="dica" style="text-align:center; margin-top:18px">Funciona no celular, no iPad e no computador: é só abrir <b>prospeccao-lk.vercel.app</b> no navegador e entrar com o mesmo e-mail e senha. No celular, toque em ⋮ → <b>Adicionar à tela inicial</b> para usar como app.</p>
   </section>
 </main>
 
