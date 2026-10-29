@@ -55,6 +55,8 @@ var ICON = {
   clientes: '<svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.5 3.4-5.5 6.5-5.5s5.7 2 6.5 5.5"/><path d="M16 4.5a3.5 3.5 0 010 7M18 14.8c1.8.7 3 2.5 3.5 5.2"/></svg>',
   mensagens: '<svg viewBox="0 0 24 24"><path d="M4 5h16v11H8l-4 4V5z"/><path d="M8 9h8M8 12.5h5"/></svg>',
   conexoes: '<svg viewBox="0 0 24 24"><path d="M9 7V3M15 7V3"/><path d="M6 7h12v4a6 6 0 01-12 0V7z"/><path d="M12 17v4"/></svg>',
+  agenda: '<svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/><path d="M8 14h3"/></svg>',
+  mic: '<svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0013 0M12 17.5V21M8.5 21h7"/></svg>',
   mais: '<svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>',
   mais_: '<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>',
   wa: '<svg viewBox="0 0 24 24"><path d="M4 20l1.3-4A8 8 0 1112 20a8 8 0 01-3.9-1L4 20z"/></svg>',
@@ -73,7 +75,7 @@ var OBJETIVOS = { prospeccao: "Prospecção", captacao: "Captação", retomada: 
 /* ───────────── estado ───────────── */
 var S = {
   user: null, cfg: null, perfil: {},
-  projetos: [], metricas: [], vendas: [], clientes: [], leads: [], links: [], cliques: [], modelos: [], disparos: [],
+  projetos: [], metricas: [], vendas: [], clientes: [], leads: [], links: [], cliques: [], modelos: [], disparos: [], agenda: [],
   dias: 30, view: "geral", status: {}, statusEm: null,
   filtro: { ptipo: "negocio", pbusca: "", lnicho: "", lbusca: "", lmodo: "kanban", cst: "", cbusca: "" },
   camp: { publico: "lead", nicho: "", st: ["novo"], modelo: "", feitos: {} },
@@ -107,7 +109,7 @@ $("#btn-sair").addEventListener("click", function () { sb.auth.signOut(); });
 var iniciado = false;
 sb.auth.onAuthStateChange(function (ev, sessao) {
   if (sessao && sessao.user) { if (!iniciado || ev === "SIGNED_IN" && (!S.user || S.user.id !== sessao.user.id)) entrar(sessao.user); }
-  else { iniciado = false; S.user = null; matarGraficos(); mostrarLogin(); }
+  else { iniciado = false; S.user = null; matarGraficos(); $("#fab-voz").hidden = true; mostrarLogin(); }
 });
 
 async function entrar(user) {
@@ -121,6 +123,8 @@ async function entrar(user) {
   var h = (location.hash || "").replace("#", "");
   ir(VIEWS.some(function (v) { return v[0] === h; }) ? h : "geral");
   ouvirAoVivo();
+  $("#fab-voz").hidden = false;
+  resumoDoDia(); checarLembretes();
 }
 
 /* ───────────── dados ───────────── */
@@ -137,14 +141,15 @@ async function carregarTudo() {
     sb.from("links").select("*").order("criado_em"),
     sb.from("cliques").select("link_id,projeto_id,canal,criado_em").gte("criado_em", addDias(hoje(), -120)),
     sb.from("modelos").select("*").order("criado_em"),
-    sb.from("disparos").select("*").gte("criado_em", addDias(hoje(), -120))
+    sb.from("disparos").select("*").gte("criado_em", addDias(hoje(), -120)),
+    sb.from("agenda").select("*").or("status.eq.pendente,quando.gte." + addDias(hoje(), -60)).order("quando")
   ]);
   q.forEach(function (r) { if (r.error) throw r.error; });
   S.cfg = q[0].data;
   if (!S.cfg) { var c = await sb.from("central_config").insert({}).select().single(); if (c.error) throw c.error; S.cfg = c.data; }
   S.perfil = (q[1].data && q[1].data.perfil) || {};
   S.projetos = q[2].data || []; S.metricas = q[3].data || []; S.vendas = q[4].data || []; S.clientes = q[5].data || [];
-  S.leads = q[6].data || []; S.links = q[7].data || []; S.cliques = q[8].data || []; S.modelos = q[9].data || []; S.disparos = q[10].data || [];
+  S.leads = q[6].data || []; S.links = q[7].data || []; S.cliques = q[8].data || []; S.modelos = q[9].data || []; S.disparos = q[10].data || []; S.agenda = q[11].data || [];
   $("#side-nome").textContent = S.perfil.nome ? "Olá, " + S.perfil.nome : (S.user.email || "");
 }
 function ouvirAoVivo() {
@@ -229,6 +234,7 @@ var VIEWS = [
   ["projetos", "Projetos e serviços", "Projetos", "Negócio"],
   ["hospedagens", "Hospedagens", "Sites", "Negócio"],
   ["investir", "Investimento", "Investir", "Negócio"],
+  ["agenda", "Agenda", "Agenda", "Relacionamento"],
   ["prospeccao", "Prospecção e leads", "Leads", "Relacionamento"],
   ["clientes", "Clientes", "Clientes", "Relacionamento"],
   ["mensagens", "Mensagens", "Mensagens", "Relacionamento"],
@@ -238,24 +244,25 @@ function montarMenu() {
   var grp = "", h = "";
   VIEWS.forEach(function (v) {
     if (v[3] && v[3] !== grp) { grp = v[3]; h += '<div class="grp">' + grp + "</div>"; }
-    var badge = v[0] === "prospeccao" ? S.leads.filter(function (l) { return l.status === "novo"; }).length : v[0] === "clientes" ? S.clientes.filter(function (c) { return c.status === "retomar"; }).length : 0;
+    var gA = v[0] === "agenda" ? agGrupos() : null;
+    var badge = gA ? gA.atrasados.length + gA.hoje.length : v[0] === "prospeccao" ? S.leads.filter(function (l) { return l.status === "novo"; }).length : v[0] === "clientes" ? S.clientes.filter(function (c) { return c.status === "retomar"; }).length : 0;
     h += '<button type="button" data-v="' + v[0] + '">' + ICON[v[0]] + v[1] + (badge ? '<span class="badge">' + badge + "</span>" : "") + "</button>";
   });
   $("#menu").innerHTML = h;
-  var bot = ["geral", "projetos", "prospeccao", "clientes"];
+  var bot = ["geral", "agenda", "prospeccao", "clientes"];
   $("#bottom").innerHTML = bot.map(function (id) { var v = VIEWS.find(function (x) { return x[0] === id; }); return '<button type="button" data-v="' + id + '">' + ICON[id] + "<span>" + v[2] + "</span></button>"; }).join("") + '<button type="button" id="bot-mais">' + ICON.mais + "<span>Mais</span></button>";
   marcarMenu();
 }
 function marcarMenu() {
   $$("[data-v]").forEach(function (b) { if (b.dataset.v === S.view) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current"); });
-  var bm = $("#bot-mais"); if (bm) { if (["hospedagens", "investir", "mensagens", "conexoes"].indexOf(S.view) >= 0) bm.setAttribute("aria-current", "page"); else bm.removeAttribute("aria-current"); }
+  var bm = $("#bot-mais"); if (bm) { if (["projetos", "hospedagens", "investir", "mensagens", "conexoes"].indexOf(S.view) >= 0) bm.setAttribute("aria-current", "page"); else bm.removeAttribute("aria-current"); }
 }
 document.addEventListener("click", function (e) {
   var b = e.target.closest("[data-v]"); if (b && !b.closest(".modal")) { ir(b.dataset.v); return; }
   if (e.target.closest("#bot-mais")) abrirMais();
 });
 function abrirMais() {
-  modal("Mais", '<div class="cl">' + ["hospedagens", "mensagens", "investir", "conexoes"].map(function (id) { var v = VIEWS.find(function (x) { return x[0] === id; }); return '<button type="button" class="btn" style="justify-content:flex-start;padding:12px" data-ir="' + id + '">' + ICON[id] + v[1] + "</button>"; }).join("") +
+  modal("Mais", '<div class="cl">' + ["projetos", "hospedagens", "mensagens", "investir", "conexoes"].map(function (id) { var v = VIEWS.find(function (x) { return x[0] === id; }); return '<button type="button" class="btn" style="justify-content:flex-start;padding:12px" data-ir="' + id + '">' + ICON[id] + v[1] + "</button>"; }).join("") +
     '<button type="button" class="btn danger" style="justify-content:flex-start;padding:12px" id="m-sair">Sair da conta</button></div>', function (box) {
     $$("[data-ir]", box).forEach(function (b) { b.onclick = function () { fecharModal(); ir(b.dataset.ir); }; });
     $("#m-sair", box).onclick = function () { fecharModal(); sb.auth.signOut(); };
@@ -279,7 +286,7 @@ function render() {
   $("#seg-dias").hidden = !usaPeriodo;
   $("#btn-custom").hidden = S.view !== "geral";
   acaoTopo(null);
-  var fn = { geral: vGeral, projetos: vProjetos, hospedagens: vHospedagens, investir: vInvestir, prospeccao: vProspeccao, clientes: vClientes, mensagens: vMensagens, conexoes: vConexoes }[S.view];
+  var fn = { geral: vGeral, projetos: vProjetos, hospedagens: vHospedagens, investir: vInvestir, prospeccao: vProspeccao, clientes: vClientes, mensagens: vMensagens, conexoes: vConexoes, agenda: vAgenda }[S.view];
   try { fn($("#conteudo")); } catch (e) { console.error(e); $("#conteudo").innerHTML = '<div class="card vazio"><b>Algo deu errado nesta tela.</b>Recarregue a página. Se continuar, me avise.</div>'; }
 }
 
@@ -316,6 +323,7 @@ function opcoes(extra) {
 /* ═════════════ VISÃO GERAL ═════════════ */
 var WIDGETS = [
   { id: "kpis", nome: "Indicadores principais", w: "w-full" },
+  { id: "agenda", nome: "Agenda de hoje e retomadas", w: "w-full" },
   { id: "hero", nome: "Receita x investimento em 3D", w: "w-2" },
   { id: "feed", nome: "Acontecendo agora", w: "w-1" },
   { id: "decisoes", nome: "Onde investir e onde cortar", w: "w-2" },
@@ -327,7 +335,7 @@ var WIDGETS = [
 ];
 function layout() {
   var l = (S.cfg && S.cfg.layout) || {}; var ordem = Array.isArray(l.ordem) ? l.ordem.slice() : WIDGETS.map(function (w) { return w.id; });
-  WIDGETS.forEach(function (w) { if (ordem.indexOf(w.id) < 0) ordem.push(w.id); });
+  WIDGETS.forEach(function (w) { if (ordem.indexOf(w.id) < 0) { if (w.id === "agenda") { var ik = ordem.indexOf("kpis"); ordem.splice(ik >= 0 ? ik + 1 : 0, 0, w.id); } else ordem.push(w.id); } });
   ordem = ordem.filter(function (id) { return WIDGETS.some(function (w) { return w.id === id; }); });
   return { ordem: ordem, off: Array.isArray(l.off) ? l.off : ["receita"] };
 }
@@ -350,7 +358,7 @@ function vGeral(box) {
     var w = WIDGETS.find(function (x) { return x.id === id; });
     return id === "kpis" ? '<div class="w-full" id="w-kpis"></div>' : '<div class="card ' + w.w + (id === "hero" ? " hero3d" : "") + '" id="w-' + id + '"></div>';
   }).join("") + "</div>";
-  var fns = { kpis: wKpis, hero: wHero, feed: wFeed, decisoes: wDecisoes, metas: wMetas, crm: wCrm, ranking: wRanking, hosp: wHosp, receita: wReceita };
+  var fns = { agenda: wAgenda, kpis: wKpis, hero: wHero, feed: wFeed, decisoes: wDecisoes, metas: wMetas, crm: wCrm, ranking: wRanking, hosp: wHosp, receita: wReceita };
   l.ordem.forEach(function (id) { var el = $("#w-" + id); if (el) fns[id](el); });
 }
 function wKpis(el) {
@@ -895,7 +903,374 @@ function vConexoes(box) {
   $("#cx-sair").onclick = function () { sb.auth.signOut(); };
 }
 
+/* ═════════════ AGENDA ═════════════ */
+var TIPO_AG = { reuniao: ["Reunião", "info"], retomada: ["Retomada", "warn"], tarefa: ["Tarefa", "dados"] };
+function agPend() { return S.agenda.filter(function (a) { return a.status === "pendente"; }).sort(function (a, b) { return a.quando < b.quando ? -1 : 1; }); }
+function fimDoDia(d) { var x = new Date(d); x.setHours(23, 59, 59, 999); return x; }
+function inicioDoDia(d) { var x = new Date(d); x.setHours(0, 0, 0, 0); return x; }
+function agGrupos() {
+  var agora = new Date(), hj0 = inicioDoDia(agora), hj1 = fimDoDia(agora);
+  var g = { atrasados: [], hoje: [], proximos: [] };
+  agPend().forEach(function (a) { var q = new Date(a.quando); if (q < hj0 || (q < agora && q <= hj1 && agora - q > 3600000)) g.atrasados.push(a); else if (q <= hj1) g.hoje.push(a); else g.proximos.push(a); });
+  return g;
+}
+function alvoDe(a) {
+  if (a.lead_id) { var l = S.leads.find(function (x) { return x.id === a.lead_id; }); if (l) return { tipo: "lead", obj: l, nome: l.nome }; }
+  if (a.cliente_id) { var c = S.clientes.find(function (x) { return x.id === a.cliente_id; }); if (c) return { tipo: "cliente", obj: c, nome: c.nome || c.empresa }; }
+  if (a.projeto_id) { var p = S.projetos.find(function (x) { return x.id === a.projeto_id; }); if (p) return { tipo: "projeto", obj: p, nome: p.nome }; }
+  return null;
+}
+function hora(ts) { return new Date(ts).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }); }
+function diaLongo(ts) {
+  var d = inicioDoDia(new Date(ts)), h = inicioDoDia(new Date()), dif = Math.round((d - h) / 864e5);
+  if (dif === 0) return "Hoje"; if (dif === 1) return "Amanhã"; if (dif === -1) return "Ontem";
+  return new Date(ts).toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "short" }).replace(/^./, function (c) { return c.toUpperCase(); });
+}
+function linkGoogleAgenda(a) {
+  var al = alvoDe(a), ini = new Date(a.quando), fim = new Date(ini.getTime() + (a.duracao_min || 60) * 60000);
+  var f = function (d) { return d.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, ""); };
+  var titulo = (TIPO_AG[a.tipo] ? TIPO_AG[a.tipo][0] : "Compromisso") + (al ? " · " + al.nome : "") + (a.titulo && (!al || a.titulo.indexOf(al.nome) < 0) ? " · " + a.titulo : "");
+  return "https://calendar.google.com/calendar/render?action=TEMPLATE&text=" + encodeURIComponent(titulo) + "&dates=" + f(ini) + "/" + f(fim) + "&details=" + encodeURIComponent((a.obs || "") + (a.valor ? "\nValor: " + brl(a.valor) : "") + "\n\nCriado pela Central");
+}
+var DISPENSADAS = (function () { try { return JSON.parse(localStorage.getItem("central-dispensadas") || "{}"); } catch (e) { return {}; } })();
+function dispensar(id) { DISPENSADAS[id] = Date.now(); try { localStorage.setItem("central-dispensadas", JSON.stringify(DISPENSADAS)); } catch (e) {} }
+function sugestoes() {
+  var out = [], agora = Date.now(), D = 864e5;
+  var comPend = {}; agPend().forEach(function (a) { if (a.lead_id) comPend[a.lead_id] = 1; if (a.cliente_id) comPend[a.cliente_id] = 1; });
+  var ok = function (id) { return !comPend[id] && !(DISPENSADAS[id] && agora - DISPENSADAS[id] < 7 * D); };
+  S.leads.forEach(function (l) {
+    if (!ok(l.id)) return;
+    var dias = l.ultimo_contato ? Math.floor((agora - new Date(l.ultimo_contato)) / D) : null;
+    if (l.status === "contatado" && dias != null && dias >= 3) out.push({ id: l.id, tipo: "lead", obj: l, nome: l.nome, motivo: "Sem resposta há " + dias + " dias", peso: 2 });
+    else if (l.status === "respondeu" && (dias == null || dias >= 1)) out.push({ id: l.id, tipo: "lead", obj: l, nome: l.nome, motivo: "Respondeu e está esperando retorno", peso: 4 });
+    else if (l.status === "reuniao") out.push({ id: l.id, tipo: "lead", obj: l, nome: l.nome, motivo: "Em reunião, mas sem data marcada", peso: 3 });
+  });
+  S.clientes.forEach(function (c) {
+    if (!ok(c.id)) return;
+    var ref = c.ultimo_contato || c.criado_em, dias = Math.floor((agora - new Date(ref)) / D);
+    if (c.status === "retomar") out.push({ id: c.id, tipo: "cliente", obj: c, nome: c.nome || c.empresa, motivo: c.origem === "kiwify" ? "Carrinho abandonado ou compra parada" : "Marcado para retomar", peso: 3 });
+    else if ((c.status === "ativo" || c.status === "recorrente") && dias >= 30) out.push({ id: c.id, tipo: "cliente", obj: c, nome: c.nome || c.empresa, motivo: "Sem contato há " + dias + " dias", peso: 1 });
+  });
+  return out.sort(function (a, b) { return b.peso - a.peso; });
+}
+async function criarAgenda(d) {
+  var r = await sb.from("agenda").insert(d).select().single();
+  if (r.error) { erro(r.error); return null; }
+  S.agenda.push(r.data); return r.data;
+}
+async function mudarAgenda(a, mud) {
+  var r = await sb.from("agenda").update(mud).eq("id", a.id).select().single();
+  if (r.error) { erro(r.error); return null; }
+  S.agenda = S.agenda.map(function (x) { return x.id === a.id ? r.data : x; }); return r.data;
+}
+function itemAgenda(a, atrasado) {
+  var al = alvoDe(a), t = TIPO_AG[a.tipo] || ["Compromisso", "dados"];
+  return '<div class="ag-item' + (atrasado ? " atrasado" : "") + '" data-ag="' + a.id + '"><div class="ag-hora num">' + hora(a.quando) + '</div><div class="ag-txt"><div class="ag-top"><span class="tag t-' + t[1] + '">' + t[0] + "</span>" + (atrasado ? '<span class="sub down">' + diaLongo(a.quando) + "</span>" : "") + "</div><b>" + esc(al ? al.nome : (a.titulo || "Sem título")) + "</b>" + (a.titulo && al ? '<span class="sub">' + esc(a.titulo) + "</span>" : "") + (a.obs ? '<span class="sub ag-obs">' + esc(a.obs.slice(0, 140)) + "</span>" : "") + (a.valor ? '<span class="sub">Valor ' + brl(a.valor, 0) + "</span>" : "") + '</div><div class="ag-acoes"><button class="btn sm" type="button" data-feito="' + a.id + '" aria-label="Marcar como feito">✓ Feito</button><button class="btn sm ghost" type="button" data-adiar="' + a.id + '">Adiar 1 dia</button>' + (al && al.tipo !== "projeto" ? '<button class="btn sm ghost" type="button" data-abrir="' + a.id + '">' + ICON.wa + "Mensagem</button>" : "") + '<a class="btn sm ghost" href="' + esc(linkGoogleAgenda(a)) + '" target="_blank" rel="noopener">Google Agenda</a><button class="btn sm ghost" type="button" data-ed-ag="' + a.id + '" aria-label="Editar">Editar</button></div></div>';
+}
+function ligarItensAgenda(box) {
+  $$("[data-feito]", box).forEach(function (b) { b.onclick = async function () { var a = S.agenda.find(function (x) { return x.id === b.dataset.feito; }); if (a && await mudarAgenda(a, { status: "feito", concluido_em: new Date().toISOString() })) { toast("Feito."); render(); montarMenu(); } }; });
+  $$("[data-adiar]", box).forEach(function (b) { b.onclick = async function () { var a = S.agenda.find(function (x) { return x.id === b.dataset.adiar; }); if (!a) return; var q = new Date(a.quando); var base = q < new Date() ? new Date() : q; base.setDate(base.getDate() + 1); base.setHours(q.getHours(), q.getMinutes(), 0, 0); if (await mudarAgenda(a, { quando: base.toISOString() })) { toast("Adiado para " + diaLongo(base).toLowerCase() + "."); render(); montarMenu(); } }; });
+  $$("[data-abrir]", box).forEach(function (b) { b.onclick = function () { var a = S.agenda.find(function (x) { return x.id === b.dataset.abrir; }); var al = a && alvoDe(a); if (!al) return; if (al.tipo === "lead") abrirLead(al.obj.id); else abrirCliente(al.obj.id); }; });
+  $$("[data-ed-ag]", box).forEach(function (b) { b.onclick = function () { formAgenda(S.agenda.find(function (x) { return x.id === b.dataset.edAg; })); }; });
+}
+function vAgenda(box) {
+  acaoTopo("Novo compromisso", function () { formAgenda(); });
+  var g = agGrupos(), sug = sugestoes();
+  var sete = g.proximos.filter(function (a) { return new Date(a.quando) - new Date() < 7 * 864e5; }).length;
+  var perm = "Notification" in window ? Notification.permission : "indisponivel";
+  box.innerHTML = '<div class="kpis"><div class="kpi"><span class="l">Atrasados</span><span class="v num ' + (g.atrasados.length ? "down" : "") + '">' + g.atrasados.length + '</span><span class="d flat">resolva primeiro</span></div><div class="kpi"><span class="l">Hoje</span><span class="v num">' + g.hoje.length + '</span><span class="d flat">' + (g.hoje[0] ? "próximo às " + hora(g.hoje[0].quando) : "dia livre") + '</span></div><div class="kpi"><span class="l">Próximos 7 dias</span><span class="v num">' + sete + '</span><span class="d flat">reuniões, retomadas e tarefas</span></div><div class="kpi"><span class="l">Retomadas sugeridas</span><span class="v num">' + sug.length + '</span><span class="d flat">leads e clientes parados</span></div></div>' +
+    (perm === "default" ? '<div class="card aviso-card"><div><b>Ative os avisos no celular</b><p class="sub">A Central avisa 15 minutos antes de cada compromisso enquanto estiver aberta ou instalada. Para lembrete garantido com o app fechado, use o botão Google Agenda em cada item.</p></div><button class="btn pri" type="button" id="ag-perm">Ativar avisos</button></div>' : "") +
+    '<div class="det"><div style="display:grid;gap:16px;align-content:start">' +
+    (g.atrasados.length ? '<div class="card"><div class="card-h"><div><h2 class="down">Atrasados</h2><p>Passaram do horário e não foram marcados como feitos</p></div></div><div class="ag-lista">' + g.atrasados.map(function (a) { return itemAgenda(a, true); }).join("") + "</div></div>" : "") +
+    '<div class="card"><div class="card-h"><div><h2>Hoje</h2><p>' + new Date().toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long" }) + "</p></div></div>" + (g.hoje.length ? '<div class="ag-lista">' + g.hoje.map(function (a) { return itemAgenda(a); }).join("") + "</div>" : '<div class="vazio">Nada marcado para hoje. Fale no microfone para agendar.</div>') + "</div>" +
+    '<div class="card"><div class="card-h"><div><h2>Próximos dias</h2></div></div>' + (g.proximos.length ? (function () { var html = "", dia = ""; g.proximos.slice(0, 60).forEach(function (a) { var dl = diaLongo(a.quando); if (dl !== dia) { dia = dl; html += '<div class="ag-dia">' + esc(dl) + "</div>"; } html += itemAgenda(a); }); return '<div class="ag-lista">' + html + "</div>"; })() : '<div class="vazio">Nenhum compromisso futuro.</div>') + "</div></div>" +
+    '<div class="card" style="align-self:start"><div class="card-h"><div><h2>Retomadas sugeridas</h2><p>Quem está parado e merece um contato</p></div></div>' + (sug.length ? '<div class="ag-lista">' + sug.slice(0, 40).map(function (s) {
+      return '<div class="sug" data-sug="' + s.id + '"><div><b>' + esc(s.nome) + '</b><span class="sub">' + (s.tipo === "lead" ? "Lead · " : "Cliente · ") + esc(s.motivo) + '</span></div><div class="ag-acoes"><button class="btn sm" type="button" data-sg-ag="' + s.id + '">Agendar amanhã</button><button class="btn sm wa" type="button" data-sg-msg="' + s.id + '">' + ICON.wa + 'Falar agora</button><button class="btn sm ghost" type="button" data-sg-x="' + s.id + '">Ignorar</button></div></div>'; }).join("") + "</div>" : '<div class="vazio">Ninguém parado. Bom trabalho.</div>') + "</div></div>";
+  ligarItensAgenda(box);
+  var bp = $("#ag-perm"); if (bp) bp.onclick = function () { Notification.requestPermission().then(function (p) { toast(p === "granted" ? "Avisos ativados." : "Avisos não foram permitidos."); render(); }); };
+  $$("[data-sg-ag]", box).forEach(function (b) { b.onclick = async function () { var s = sug.find(function (x) { return x.id === b.dataset.sgAg; }); var q = new Date(); q.setDate(q.getDate() + 1); q.setHours(10, 0, 0, 0); var d = { tipo: s.tipo === "lead" && s.obj.status === "reuniao" ? "reuniao" : "retomada", titulo: s.motivo, quando: q.toISOString(), origem: "sugestao" }; d[s.tipo === "lead" ? "lead_id" : "cliente_id"] = s.id; if (await criarAgenda(d)) { toast("Agendado para amanhã às 10h."); render(); montarMenu(); } }; });
+  $$("[data-sg-msg]", box).forEach(function (b) { b.onclick = function () { var s = sug.find(function (x) { return x.id === b.dataset.sgMsg; }); if (s.tipo === "lead") abrirLead(s.id); else abrirCliente(s.id); }; });
+  $$("[data-sg-x]", box).forEach(function (b) { b.onclick = function () { dispensar(b.dataset.sgX); toast("Ignorado por 7 dias."); render(); }; });
+}
+function valorDataLocal(d) { var x = new Date(d); return x.getFullYear() + "-" + pad(x.getMonth() + 1) + "-" + pad(x.getDate()) + "T" + pad(x.getHours()) + ":" + pad(x.getMinutes()); }
+function opcoesAlvo(sel) {
+  var h = '<option value="">Sem vínculo</option><optgroup label="Leads">' + S.leads.slice().sort(function (a, b) { return a.nome.localeCompare(b.nome); }).map(function (l) { return '<option value="lead:' + l.id + '"' + (sel === "lead:" + l.id ? " selected" : "") + ">" + esc(l.nome) + "</option>"; }).join("") + '</optgroup><optgroup label="Clientes">' + S.clientes.map(function (c) { return '<option value="cliente:' + c.id + '"' + (sel === "cliente:" + c.id ? " selected" : "") + ">" + esc(c.nome || c.empresa) + "</option>"; }).join("") + '</optgroup><optgroup label="Projetos">' + projetosNegocio().map(function (p) { return '<option value="projeto:' + p.id + '"' + (sel === "projeto:" + p.id ? " selected" : "") + ">" + esc(p.nome) + "</option>"; }).join("") + "</optgroup>";
+  return h;
+}
+function formAgenda(a) {
+  var q = new Date(); q.setDate(q.getDate() + 1); q.setHours(10, 0, 0, 0);
+  a = a || { tipo: "reuniao", quando: q.toISOString(), duracao_min: 60 };
+  var sel = a.lead_id ? "lead:" + a.lead_id : a.cliente_id ? "cliente:" + a.cliente_id : a.projeto_id ? "projeto:" + a.projeto_id : "";
+  modal(a.id ? "Editar compromisso" : "Novo compromisso", '<form class="form" novalidate><div class="f"><label for="fa-tipo">Tipo</label><select class="inp" id="fa-tipo">' + Object.keys(TIPO_AG).map(function (t) { return '<option value="' + t + '"' + (a.tipo === t ? " selected" : "") + ">" + TIPO_AG[t][0] + "</option>"; }).join("") + '</select></div><div class="f"><label for="fa-q">Quando</label><input class="inp" id="fa-q" type="datetime-local" value="' + valorDataLocal(a.quando) + '"></div>' +
+    '<div class="f full"><label for="fa-alvo">Com quem</label><select class="inp" id="fa-alvo">' + opcoesAlvo(sel) + '</select></div><div class="f full"><label for="fa-tit">Assunto</label><input class="inp" id="fa-tit" value="' + esc(a.titulo || "") + '" placeholder="Ex.: Apresentar proposta do site"></div>' +
+    '<div class="f"><label for="fa-dur">Duração (min)</label><input class="inp" id="fa-dur" type="number" min="5" step="5" value="' + (a.duracao_min || 60) + '"></div><div class="f"><label for="fa-val">Valor em jogo (R$)</label><input class="inp" id="fa-val" type="number" min="0" step="0.01" value="' + (a.valor || "") + '"></div>' +
+    '<div class="f full"><label for="fa-obs">Anotações</label><textarea class="inp" id="fa-obs" style="min-height:80px">' + esc(a.obs || "") + "</textarea></div></form>" +
+    '<div class="acoes">' + (a.id ? '<button class="btn danger esq" type="button" id="fa-del">Cancelar compromisso</button>' : "") + '<button class="btn" type="button" data-fechar>Fechar</button><button class="btn pri" type="button" id="fa-ok">Salvar</button></div>', function (bx) {
+    $("#fa-ok", bx).onclick = async function () {
+      var al = $("#fa-alvo", bx).value.split(":"), qv = $("#fa-q", bx).value;
+      if (!qv) { toast("Escolha dia e hora."); return; }
+      var d = { tipo: $("#fa-tipo", bx).value, quando: new Date(qv).toISOString(), titulo: $("#fa-tit", bx).value.trim(), duracao_min: n($("#fa-dur", bx).value) || 60, valor: n($("#fa-val", bx).value), obs: $("#fa-obs", bx).value, lead_id: al[0] === "lead" ? al[1] : null, cliente_id: al[0] === "cliente" ? al[1] : null, projeto_id: al[0] === "projeto" ? al[1] : null };
+      var ok = a.id ? await mudarAgenda(a, d) : await criarAgenda(d);
+      if (ok) { fecharModal(); toast("Compromisso salvo."); render(); montarMenu(); }
+    };
+    var del = $("#fa-del", bx);
+    if (del) del.onclick = async function () { if (await mudarAgenda(a, { status: "cancelado" })) { fecharModal(); toast("Compromisso cancelado."); render(); montarMenu(); } };
+  });
+}
+function wAgenda(el) {
+  var g = agGrupos(), sug = sugestoes(), lista = g.atrasados.concat(g.hoje).slice(0, 6);
+  el.innerHTML = '<div class="card-h"><div><h2>Agenda de hoje</h2><p>' + (g.atrasados.length ? '<span class="down">' + g.atrasados.length + " atrasados</span> · " : "") + g.hoje.length + " hoje · " + sug.length + ' retomadas sugeridas</p></div><button class="btn sm" type="button" data-v="agenda">Abrir</button></div>' +
+    (lista.length ? '<div class="ag-lista compacta">' + lista.map(function (a) { var al = alvoDe(a), t = TIPO_AG[a.tipo]; var atr = g.atrasados.indexOf(a) >= 0; return '<div class="ag-mini' + (atr ? " atrasado" : "") + '"><span class="num">' + (atr ? curta(diaDe(a.quando)) : hora(a.quando)) + '</span><span class="tag t-' + t[1] + '">' + t[0] + "</span><b>" + esc(al ? al.nome : a.titulo) + "</b></div>"; }).join("") + "</div>" : '<div class="vazio">Nada para hoje. ' + (sug.length ? sug.length + " contatos esperando retomada." : "") + "</div>");
+}
+
+/* ───────────── lembretes ───────────── */
+var AVISADOS = (function () { try { return JSON.parse(localStorage.getItem("central-avisados") || "{}"); } catch (e) { return {}; } })();
+function avisar(titulo, corpo, tag) {
+  toast(titulo + " · " + corpo);
+  if (!("Notification" in window) || Notification.permission !== "granted") return;
+  var op = { body: corpo, icon: "/icone-192.png", badge: "/icone-192.png", tag: tag, renotify: true };
+  if (navigator.serviceWorker && navigator.serviceWorker.ready) navigator.serviceWorker.ready.then(function (r) { r.showNotification(titulo, op); }).catch(function () { try { new Notification(titulo, op); } catch (e) {} });
+  else { try { new Notification(titulo, op); } catch (e) {} }
+}
+function checarLembretes() {
+  if (!S.user) return;
+  var agora = Date.now();
+  agPend().forEach(function (a) {
+    var q = new Date(a.quando).getTime(), chave = a.id + "@" + a.quando;
+    if (AVISADOS[chave]) return;
+    if (q - agora <= 15 * 60000 && q - agora > -10 * 60000) {
+      AVISADOS[chave] = agora;
+      var al = alvoDe(a), t = TIPO_AG[a.tipo] ? TIPO_AG[a.tipo][0] : "Compromisso";
+      avisar(t + (q > agora ? " às " + hora(a.quando) : " agora"), (al ? al.nome : a.titulo) + (a.titulo && al ? " · " + a.titulo : ""), a.id);
+    }
+  });
+  Object.keys(AVISADOS).forEach(function (k) { if (agora - AVISADOS[k] > 3 * 864e5) delete AVISADOS[k]; });
+  try { localStorage.setItem("central-avisados", JSON.stringify(AVISADOS)); } catch (e) {}
+}
+function resumoDoDia() {
+  var chave = "central-resumo-" + hoje(); try { if (localStorage.getItem(chave)) return; localStorage.setItem(chave, "1"); } catch (e) {}
+  var g = agGrupos(), sug = sugestoes().length;
+  if (g.atrasados.length || g.hoje.length || sug) setTimeout(function () { toast("Hoje: " + g.hoje.length + (g.hoje.length === 1 ? " compromisso" : " compromissos") + (g.atrasados.length ? ", " + g.atrasados.length + (g.atrasados.length === 1 ? " atrasado" : " atrasados") : "") + (sug ? " e " + sug + (sug === 1 ? " retomada sugerida" : " retomadas sugeridas") : "") + "."); }, 1500);
+}
+
+/* ═════════════ ASSISTENTE DE VOZ (gratuito, por regras) ═════════════ */
+function norm(s) { return String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9$:,./\s-]/g, " ").replace(/\s+/g, " ").trim(); }
+var STOP = { de: 1, da: 1, do: 1, das: 1, dos: 1, e: 1, a: 1, o: 1, as: 1, os: 1, em: 1, na: 1, no: 1, com: 1, para: 1, pra: 1, ltda: 1, me: 1, eireli: 1, the: 1, and: 1 };
+function radical(t) { return t.length > 3 && /s$/.test(t) ? t.replace(/(oes|aes|ais|eis|s)$/, function (x) { return x === "oes" || x === "aes" ? "ao" : x === "ais" ? "al" : x === "eis" ? "el" : ""; }) : t; }
+function tokensNome(s) { return norm(s).split(" ").filter(function (t) { return t.length >= 3 && !STOP[t]; }).map(radical); }
+function candidatos(texto) {
+  var nt = norm(texto), tn = " " + nt + " ", toks = {}; nt.split(" ").forEach(function (t) { toks[t] = 1; toks[radical(t)] = 1; });
+  var melhor = {};
+  function testar(tipo, obj, nome) {
+    if (!nome) return; var ts = tokensNome(nome); if (!ts.length) return;
+    var hit = ts.filter(function (t) { return toks[t]; }).length; if (!hit) return;
+    var sc = hit / ts.length, full = norm(nome);
+    if (full.length >= 4 && tn.indexOf(" " + full + " ") >= 0) sc = Math.max(sc, 1.2);
+    if (tipo === "cliente" && /\bcliente\b/.test(nt)) sc += 0.15;
+    if (tipo === "lead" && /\blead\b/.test(nt)) sc += 0.15;
+    if (tipo === "projeto" && /\b(projeto|produto|kit|pack|curso|venda|vendi)\b/.test(nt)) sc += 0.1;
+    var k = tipo + ":" + obj.id;
+    if (!melhor[k] || melhor[k].sc < sc) melhor[k] = { tipo: tipo, obj: obj, nome: nome, sc: sc, hit: hit };
+  }
+  S.leads.forEach(function (l) { testar("lead", l, l.nome); });
+  S.clientes.forEach(function (c) { testar("cliente", c, c.nome); if (c.empresa && c.empresa !== c.nome) testar("cliente", c, c.empresa); });
+  projetosNegocio().forEach(function (p) { testar("projeto", p, p.nome); });
+  return Object.keys(melhor).map(function (k) { return melhor[k]; }).filter(function (o) { return o.sc >= 0.5; }).sort(function (a, b) { return (b.sc - a.sc) || (b.hit - a.hit); }).slice(0, 8);
+}
+var NUMPAL = { um: 1, uma: 1, dois: 2, duas: 2, tres: 3, quatro: 4, cinco: 5, seis: 6, sete: 7, oito: 8, nove: 9, dez: 10, quinze: 15, trinta: 30 };
+function numero(s) { return /^\d+$/.test(s) ? +s : (NUMPAL[s] || 1); }
+function somaDias(d, q) { var x = new Date(d); x.setDate(x.getDate() + q); return x; }
+function extrairData(texto) {
+  var t = norm(texto), agora = new Date(), base = inicioDoDia(agora), d = null, m;
+  var DOW = { domingo: 0, segunda: 1, terca: 2, quarta: 3, quinta: 4, sexta: 5, sabado: 6 };
+  var MES = { janeiro: 0, fevereiro: 1, marco: 2, abril: 3, maio: 4, junho: 5, julho: 6, agosto: 7, setembro: 8, outubro: 9, novembro: 10, dezembro: 11 };
+  if (/\bdepois de amanha\b/.test(t)) d = somaDias(base, 2);
+  else if (/\bamanha\b/.test(t)) d = somaDias(base, 1);
+  else if (/\bhoje\b/.test(t)) d = base;
+  else if ((m = t.match(/\b(?:em|daqui a|daqui)\s+(\d+|um|uma|dois|duas|tres|quatro|cinco|seis|sete|quinze|trinta)\s+(dias?|semanas?|mes|meses)\b/))) { var q = numero(m[1]); d = /^dia/.test(m[2]) ? somaDias(base, q) : /^semana/.test(m[2]) ? somaDias(base, 7 * q) : new Date(base.getFullYear(), base.getMonth() + q, base.getDate()); }
+  else if (/\b(semana que vem|proxima semana)\b/.test(t) && !/\b(segunda|terca|quarta|quinta|sexta|sabado|domingo)\b/.test(t)) d = somaDias(base, 7);
+  else if (/\b(mes que vem|proximo mes)\b/.test(t)) d = new Date(base.getFullYear(), base.getMonth() + 1, base.getDate());
+  else if ((m = t.match(/\b(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?\b/))) { var ano = m[3] ? (+m[3] < 100 ? 2000 + +m[3] : +m[3]) : base.getFullYear(); d = new Date(ano, +m[2] - 1, +m[1]); if (!m[3] && d < base) d.setFullYear(d.getFullYear() + 1); }
+  else if ((m = t.match(/\bdia\s+(\d{1,2})(?:\s+de\s+([a-z]+))?/))) { var mes = m[2] && MES[m[2]] != null ? MES[m[2]] : base.getMonth(); d = new Date(base.getFullYear(), mes, +m[1]); if (d < base) { if (m[2] && MES[m[2]] != null) d.setFullYear(d.getFullYear() + 1); else d = new Date(base.getFullYear(), base.getMonth() + 1, +m[1]); } }
+  else { for (var k in DOW) { if (new RegExp("\\b" + k + "\\b").test(t)) { var dif = (DOW[k] - base.getDay() + 7) % 7; var mesmoDia = dif === 0; if (mesmoDia) dif = 7; if (/\b(semana que vem|proxima semana)\b/.test(t) && dif < 7) dif += 7; d = somaDias(base, dif); if (mesmoDia && !/\b(semana que vem|proxima semana|que vem)\b/.test(t)) d.mesmoDia = true; break; } } }
+  var h = null, mi = 0;
+  if (/\bmeio[- ]?dia\b/.test(t)) h = 12;
+  else if ((m = t.match(/\b(\d{1,2})(?::|h)(\d{2})\b/))) { h = +m[1]; mi = +m[2]; }
+  else if ((m = t.match(/\b(?:as|a)\s+(\d{1,2})(?:\s*h(?:oras?)?)?(?:\s+e\s+(meia|\d{1,2}))?(?:\s+(?:da|de)\s+(manha|tarde|noite))?\b/))) { h = +m[1]; mi = m[2] === "meia" ? 30 : (m[2] ? +m[2] : 0); if ((m[3] === "tarde" || m[3] === "noite") && h < 12) h += 12; }
+  else if ((m = t.match(/\b(\d{1,2})\s*h(?:oras?)?\b/))) h = +m[1];
+  else if ((m = t.match(/\b(\d{1,2})\s+(?:da|de)\s+(manha|tarde|noite)\b/))) { h = +m[1]; if (m[2] !== "manha" && h < 12) h += 12; }
+  if (h != null && (h > 23 || mi > 59)) { h = null; mi = 0; }
+  if (!d && h == null) return null;
+  if (d && d.mesmoDia && h != null) { var hj = new Date(base); hj.setHours(h, mi, 0, 0); if (hj > agora) d = base; }
+  if (!d) { var teste = new Date(base); teste.setHours(h, mi, 0, 0); d = teste < agora ? somaDias(base, 1) : base; }
+  var r = new Date(d); r.setHours(h == null ? 10 : h, h == null ? 0 : mi, 0, 0);
+  return { data: r, semHora: h == null };
+}
+function extrairValor(texto) {
+  var t = norm(texto).replace(/(\d)\.(\d{3})(?!\d)/g, "$1$2");
+  var m = t.match(/r\$\s*(\d+(?:,\d{1,2})?)(\s*mil)?/) || t.match(/(\d+(?:,\d+)?)\s*(mil)?\s*(?:reais|real|conto)\b/) || t.match(/\b(?:por|valor de|valor|orcamento de|orcamento|proposta de|fechou em|fechamos em|pagou)\s+(\d+(?:,\d+)?)\s*(mil)?\b/) || t.match(/\b(\d+(?:,\d+)?)\s+(mil)\b/);
+  if (!m) return /\bmil reais\b/.test(t) ? 1000 : null;
+  var v = parseFloat(m[1].replace(",", ".")); if (m[2]) v *= 1000; return v > 0 ? v : null;
+}
+function extrairNomeNovo(texto) {
+  var m = texto.match(/(?:novo cliente|cliente novo|cadastr\w* (?:o |a )?cliente|novo lead|lead novo|cadastr\w* (?:o |a )?lead|reuni[aã]o com|marquei com|agendei com|falei com|liguei (?:para|pra)|conversei com|fechei com|fechou com)\s+(?:o |a |os |as |com )?(.+)/i);
+  if (!m) return "";
+  var resto = m[1].split(/\s+(?:hoje|amanh[ãa]|depois|na |no |segunda|ter[çc]a|quarta|quinta|sexta|s[áa]bado|domingo|dia\s+\d|[àa]s\s+\d|\d{1,2}h|\d{1,2}:\d{2}|por\s|r\$|no valor|valor|quer|querem|precisa|precisam|para\s|pra\s|que\s|e\s+(?:quer|vai|ficou|pediu))|[,.;]/i)[0];
+  return resto.trim().split(/\s+/).slice(0, 6).map(function (w) { return w.length > 2 ? w.charAt(0).toUpperCase() + w.slice(1) : w; }).join(" ");
+}
+function interpretar(texto) {
+  var t = norm(texto);
+  var I = {
+    reuniao: /\b(reuniao|reunioes|agendei|agendad\w*|marquei|marcad\w*|encontro|call|visita|apresentacao)\b/.test(t),
+    fechou: /\b(fechou|fechamos|fechei|fechad\w*|contratou|contrataram|aprovou|aprovaram|pagou|pagaram|recebi)\b/.test(t),
+    respondeu: /\b(respondeu|responderam|retornou|retornaram|me chamou|me chamaram|interessad\w*|gostou|gostaram)\b/.test(t),
+    descartar: /\b(descart\w*|sem interesse|nao tem interesse|nao quer|nao querem|recusou|recusaram|desistiu|desistiram)\b/.test(t),
+    retomar: /\b(retomar|retomada|cobrar|voltar a falar|follow|lembrar de falar|lembra de falar|me lembra de falar|chamar de novo|falar de novo|recontatar|ligar de novo)\b/.test(t),
+    tarefa: /\b(lembrete|me lembra|lembrar de|tarefa|nao esquecer|preciso)\b/.test(t),
+    novoCliente: /\b(novo cliente|cliente novo|cadastr\w* (o |a )?cliente)\b/.test(t),
+    novoLead: /\b(novo lead|lead novo|cadastr\w* (o |a )?lead)\b/.test(t),
+    venda: /\b(vendi|venda|vendas|vendemos)\b/.test(t)
+  };
+  var cands = candidatos(texto), quando = extrairData(texto), valor = extrairValor(texto);
+  var plano = { texto: texto, cands: cands, alvo: null, novoNome: "", status: "", agenda: null, valor: valor, nota: texto, venda: null, resumo: [] };
+  var nomeNovo = extrairNomeNovo(texto);
+  if (cands.length && !I.novoCliente && !I.novoLead && cands[0].sc >= 0.65) plano.alvo = cands[0];
+  else if (nomeNovo) { plano.novoNome = nomeNovo; plano.novoTipo = I.novoCliente || I.fechou ? "cliente" : "lead"; }
+  else if (cands.length) plano.alvo = cands[0];
+  var tipoAlvo = plano.alvo ? plano.alvo.tipo : plano.novoNome ? plano.novoTipo : "";
+  if (tipoAlvo === "projeto" && (I.venda || I.fechou)) {
+    var mq = t.match(/\b(\d+|um|uma|dois|duas|tres|quatro|cinco)\s+(?:venda|vendas|unidade|unidades|kit|kits|pack|packs|curso|cursos)\b/);
+    var qtd = mq ? numero(mq[1]) : 1;
+    plano.venda = { qtd: qtd, receita: valor != null ? valor : qtd * n(plano.alvo.obj.preco) };
+  } else {
+    if (I.descartar) plano.status = "descartado";
+    else if (I.fechou) plano.status = "fechado";
+    else if (I.reuniao) plano.status = "reuniao";
+    else if (I.respondeu) plano.status = "respondeu";
+    else if (I.retomar && tipoAlvo === "cliente") plano.status = "retomar";
+  }
+  if (I.reuniao && !I.descartar) plano.agenda = { tipo: "reuniao", quando: quando ? quando.data : null, semHora: quando ? quando.semHora : true };
+  else if (I.retomar || (quando && (tipoAlvo === "lead" || tipoAlvo === "cliente") && !I.fechou && !I.descartar)) { var q = quando ? quando.data : (function () { var x = somaDias(inicioDoDia(new Date()), 3); x.setHours(10, 0, 0, 0); return x; })(); plano.agenda = { tipo: "retomada", quando: q, semHora: quando ? quando.semHora : true }; }
+  else if (I.tarefa && quando) plano.agenda = { tipo: "tarefa", quando: quando.data, semHora: quando.semHora };
+  if (plano.agenda && !plano.agenda.quando) { var amanha = somaDias(inicioDoDia(new Date()), 1); amanha.setHours(10, 0, 0, 0); plano.agenda.quando = amanha; plano.agenda.semData = true; }
+  return plano;
+}
+var STATUS_TXT = { reuniao: "Reunião", fechado: "Fechado", respondeu: "Respondeu", descartado: "Descartado", retomar: "Retomar", contatado: "Contatado" };
+function opcoesAlvoVoz(plano) {
+  var h = '<option value="">Sem vínculo (só agenda ou anotação)</option>';
+  plano.cands.forEach(function (c) { h += '<option value="' + c.tipo + ":" + c.obj.id + '"' + (plano.alvo && plano.alvo.obj.id === c.obj.id ? " selected" : "") + ">" + (c.tipo === "lead" ? "Lead · " : c.tipo === "cliente" ? "Cliente · " : "Projeto · ") + esc(c.nome) + "</option>"; });
+  var nome = plano.novoNome || "";
+  h += '<option value="novo-lead"' + (plano.novoNome && plano.novoTipo === "lead" ? " selected" : "") + ">Criar lead novo" + (nome ? ": " + esc(nome) : "") + "</option>";
+  h += '<option value="novo-cliente"' + (plano.novoNome && plano.novoTipo === "cliente" ? " selected" : "") + ">Criar cliente novo" + (nome ? ": " + esc(nome) : "") + "</option>";
+  h += '<option value="outro">Escolher outro na lista…</option>';
+  return h;
+}
+function abrirVoz() {
+  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  modal("Assistente", '<div class="voz">' +
+    '<button type="button" class="mic-grande" id="vz-mic" aria-label="Falar">' + ICON.mic + '</button><p class="vz-status" id="vz-status">' + (SR ? "Toque no microfone e fale" : "Digite o comando abaixo ou use o microfone do teclado") + '</p>' +
+    '<textarea class="inp" id="vz-txt" placeholder="Ex.: Marquei reunião com a Padaria Pão Dourado quinta às 15h, querem site com cardápio, orçamento de 1.500"></textarea>' +
+    '<div class="acoes" style="margin-top:0"><button class="btn" type="button" id="vz-ex">Ver exemplos</button><button class="btn pri" type="button" id="vz-ok">Organizar</button></div>' +
+    '<div id="vz-ajuda" hidden><ul class="steps"><li><b>Reunião:</b> "Marquei reunião com o Pet Shop Amigo amanhã às 10h"</li><li><b>Retomada:</b> "Retomar a Clínica Sorriso em 3 dias"</li><li><b>Resposta:</b> "A Padaria Central respondeu, gostou da proposta"</li><li><b>Fechamento:</b> "Fechei com a Imobiliária Lar por 2 mil"</li><li><b>Descarte:</b> "Estética Bela não tem interesse"</li><li><b>Cliente novo:</b> "Novo cliente João da Oficina Turbo, quer landing page"</li><li><b>Venda fora da Kiwify:</b> "Vendi 2 kits de Natal hoje"</li><li><b>Tarefa:</b> "Me lembra sexta às 9h de mandar o orçamento"</li></ul></div>' +
+    '<div id="vz-plano"></div></div>', function (bx) {
+    var tx = $("#vz-txt", bx), st = $("#vz-status", bx), mic = $("#vz-mic", bx), rec = null, ouvindo = false;
+    $("#vz-ex", bx).onclick = function () { var a = $("#vz-ajuda", bx); a.hidden = !a.hidden; };
+    $("#vz-ok", bx).onclick = function () { if (!tx.value.trim()) { toast("Fale ou digite um comando."); return; } mostrarPlano(bx, interpretar(tx.value.trim())); };
+    if (!SR) { mic.disabled = true; mic.classList.add("off"); return; }
+    mic.onclick = function () {
+      if (ouvindo && rec) { rec.stop(); return; }
+      rec = new SR(); rec.lang = "pt-BR"; rec.interimResults = true; rec.continuous = false; rec.maxAlternatives = 1;
+      var final = tx.value ? tx.value.trim() + " " : "";
+      rec.onstart = function () { ouvindo = true; mic.classList.add("ouvindo"); st.textContent = "Ouvindo… fale com calma"; };
+      rec.onresult = function (e) { var inter = ""; for (var i = e.resultIndex; i < e.results.length; i++) { if (e.results[i].isFinal) final += e.results[i][0].transcript + " "; else inter += e.results[i][0].transcript; } tx.value = (final + inter).trim(); };
+      rec.onerror = function (e) { st.textContent = e.error === "not-allowed" ? "Permita o uso do microfone nas configurações do navegador." : e.error === "no-speech" ? "Não ouvi nada. Toque e tente de novo." : "Não deu para ouvir. Tente de novo ou digite."; };
+      rec.onend = function () { ouvindo = false; mic.classList.remove("ouvindo"); if (tx.value.trim()) { st.textContent = "Entendi. Confira abaixo antes de salvar."; mostrarPlano(bx, interpretar(tx.value.trim())); } else if (!/Permita|Não/.test(st.textContent)) st.textContent = "Toque no microfone e fale"; };
+      try { rec.start(); } catch (e) { st.textContent = "Não deu para ligar o microfone."; }
+    };
+  });
+}
+function mostrarPlano(bx, plano) {
+  var box = $("#vz-plano", bx);
+  var sel = plano.alvo ? plano.alvo.tipo + ":" + plano.alvo.obj.id : plano.novoNome ? "novo-" + plano.novoTipo : "";
+  var nada = !plano.alvo && !plano.novoNome && !plano.agenda;
+  box.innerHTML = '<div class="card plano"><div class="card-h"><div><h2>Vou fazer isto</h2><p>Confira e ajuste se precisar</p></div></div>' +
+    (nada ? '<p class="hint">Não reconheci nenhum nome cadastrado nem uma data. Escolha abaixo com quem é, ou fale de novo citando o nome do lead, cliente ou projeto.</p>' : "") +
+    '<div class="form"><div class="f full"><label for="vp-alvo">Com quem</label><select class="inp" id="vp-alvo">' + opcoesAlvoVoz(plano) + '</select></div>' +
+    '<div class="f full" id="vp-outro-box" hidden><label for="vp-outro">Escolha na lista</label><select class="inp" id="vp-outro">' + opcoesAlvo("") + "</select></div>" +
+    '<div class="f full" id="vp-nome-box" hidden><label for="vp-nome">Nome do novo contato</label><input class="inp" id="vp-nome" value="' + esc(plano.novoNome) + '"></div>' +
+    '<div class="f full chk" id="vp-st-box"><label><input type="checkbox" id="vp-st-on"' + (plano.status ? " checked" : "") + '> Mudar status para</label><select class="inp" id="vp-st"><option value="contatado">Contatado</option><option value="respondeu">Respondeu</option><option value="reuniao">Reunião</option><option value="fechado">Fechado</option><option value="descartado">Descartado</option><option value="retomar">Retomar (cliente)</option></select></div>' +
+    '<div class="f full chk"><label><input type="checkbox" id="vp-ag-on"' + (plano.agenda ? " checked" : "") + '> Agendar</label><div class="linha"><select class="inp" id="vp-ag-tipo">' + Object.keys(TIPO_AG).map(function (k) { return '<option value="' + k + '"' + (plano.agenda && plano.agenda.tipo === k ? " selected" : "") + ">" + TIPO_AG[k][0] + "</option>"; }).join("") + '</select><input class="inp" id="vp-ag-q" type="datetime-local" value="' + valorDataLocal(plano.agenda ? plano.agenda.quando : somaDias(new Date(), 1)) + '"></div>' + (plano.agenda && (plano.agenda.semHora || plano.agenda.semData) ? '<span class="hint">' + (plano.agenda.semData ? "Não ouvi o dia: deixei amanhã às 10h." : "Não ouvi a hora: deixei 10h.") + " Ajuste se precisar.</span>" : "") + "</div>" +
+    '<div class="f chk"><label><input type="checkbox" id="vp-val-on"' + (plano.valor ? " checked" : "") + '> Valor</label><input class="inp" id="vp-val" type="number" min="0" step="0.01" value="' + (plano.valor || "") + '"></div>' +
+    (plano.venda ? '<div class="f chk"><label><input type="checkbox" id="vp-venda-on" checked> Registrar venda</label><input class="inp" id="vp-venda" type="number" min="1" step="1" value="' + plano.venda.qtd + '"></div>' : "") +
+    '<div class="f full chk"><label><input type="checkbox" id="vp-nota-on" checked> Anotar</label><textarea class="inp" id="vp-nota" style="min-height:70px">' + esc(plano.nota) + "</textarea></div></div>" +
+    '<div class="acoes"><button class="btn" type="button" data-fechar>Cancelar</button><button class="btn pri" type="button" id="vp-ok">Confirmar e salvar</button></div></div>';
+  if (plano.status) $("#vp-st", box).value = plano.status;
+  var alvoSel = $("#vp-alvo", box);
+  function vis() { var v = alvoSel.value; $("#vp-outro-box", box).hidden = v !== "outro"; $("#vp-nome-box", box).hidden = v.indexOf("novo-") !== 0; var tipo = v.indexOf("projeto:") === 0 ? "projeto" : v ? "pessoa" : ""; $("#vp-st-box", box).hidden = tipo !== "pessoa"; }
+  alvoSel.onchange = vis; vis();
+  box.scrollIntoView({ behavior: REDUZ ? "auto" : "smooth", block: "start" });
+  $("#vp-ok", box).onclick = function () { executarPlano(box, plano); };
+}
+async function executarPlano(box, plano) {
+  var b = $("#vp-ok", box); b.disabled = true; b.textContent = "Salvando…";
+  try {
+    var v = $("#vp-alvo", box).value; if (v === "outro") v = $("#vp-outro", box).value;
+    var tipo = "", obj = null, feito = [];
+    if (v.indexOf("novo-") === 0) {
+      var nome = $("#vp-nome", box).value.trim(); if (!nome) { toast("Diga o nome do novo contato."); b.disabled = false; b.textContent = "Confirmar e salvar"; return; }
+      if (v === "novo-lead") { var rl = await sb.from("leads").insert({ place_id: "manual-" + Date.now(), nome: nome, status: "novo", historico: [{ t: new Date().toISOString(), tipo: "voz", txt: "Criado por voz na Central" }] }).select("id,nome,categoria,nicho,telefone,tel_digitos,tel_tipo,whatsapp,email,site,instagram,endereco,bairro,cidade,uf,nota,avaliacoes,maps,status,obs,historico,ultimo_contato,criado_em,atualizado_em,dados").single(); if (rl.error) throw rl.error; S.leads.push(rl.data); tipo = "lead"; obj = rl.data; feito.push("lead criado"); }
+      else { var rc = await sb.from("clientes").insert({ nome: nome, origem: "voz", status: "ativo" }).select().single(); if (rc.error) throw rc.error; S.clientes.unshift(rc.data); tipo = "cliente"; obj = rc.data; feito.push("cliente criado"); }
+    } else if (v) {
+      var p = v.split(":"); tipo = p[0];
+      obj = (tipo === "lead" ? S.leads : tipo === "cliente" ? S.clientes : S.projetos).find(function (x) { return x.id === p[1]; });
+    }
+    var agora = new Date().toISOString(), nota = $("#vp-nota-on", box).checked ? $("#vp-nota", box).value.trim() : "";
+    var valor = $("#vp-val-on", box).checked ? n($("#vp-val", box).value) : 0;
+    var stOn = $("#vp-st-on", box) && $("#vp-st-on", box).checked && !$("#vp-st-box", box).hidden, st = $("#vp-st", box).value;
+    if (tipo === "lead" && obj) {
+      var mud = {}, hist = (obj.historico || []).slice();
+      if (stOn && st !== "retomar" && st !== obj.status) { mud.status = st; hist.push({ t: agora, tipo: "status", txt: "Status: " + STATUS_TXT[st] + " (por voz)" }); feito.push("status " + STATUS_TXT[st].toLowerCase()); }
+      if (nota) { hist.push({ t: agora, tipo: "voz", txt: nota }); mud.obs = ((obj.obs ? obj.obs + "\n" : "") + "[" + new Date().toLocaleDateString("pt-BR") + "] " + nota).slice(-4000); feito.push("anotação"); }
+      if (valor) { mud.dados = Object.assign({}, obj.dados || {}, { valor_proposta: valor }); }
+      if (stOn && (st === "reuniao" || st === "respondeu" || st === "fechado")) mud.ultimo_contato = agora;
+      mud.historico = hist;
+      obj = await salvarLead(obj, mud) || obj;
+      if (stOn && st === "fechado" && !S.clientes.some(function (c) { return c.lead_id === obj.id; })) {
+        var nc = await sb.from("clientes").insert({ nome: obj.nome, empresa: obj.nome, nicho: obj.nicho || obj.categoria || "", telefone: obj.whatsapp || obj.telefone || "", email: obj.email || "", origem: "prospecção", lead_id: obj.id, status: "ativo", valor_total: valor || 0 }).select().single();
+        if (!nc.error) { S.clientes.unshift(nc.data); feito.push("virou cliente"); }
+      }
+    } else if (tipo === "cliente" && obj) {
+      var mc = { historico: (obj.historico || []).concat(nota ? [{ t: agora, tipo: "voz", txt: nota }] : []), atualizado_em: agora };
+      if (stOn) { var mapa = { fechado: "ativo", descartado: "encerrado", retomar: "retomar", reuniao: obj.status, respondeu: obj.status, contatado: obj.status }; if (mapa[st] !== obj.status) { mc.status = mapa[st]; feito.push("status " + mc.status); } mc.ultimo_contato = agora; }
+      if (nota) { mc.obs = ((obj.obs ? obj.obs + "\n" : "") + "[" + new Date().toLocaleDateString("pt-BR") + "] " + nota).slice(-4000); feito.push("anotação"); }
+      if (valor && stOn && st === "fechado") { mc.valor_total = n(obj.valor_total) + valor; feito.push("valor somado"); }
+      var ru = await sb.from("clientes").update(mc).eq("id", obj.id).select().single(); if (ru.error) throw ru.error; S.clientes = S.clientes.map(function (x) { return x.id === obj.id ? ru.data : x; });
+    } else if (tipo === "projeto" && obj && $("#vp-venda-on", box) && $("#vp-venda-on", box).checked) {
+      var qtd = n($("#vp-venda", box).value) || 1, rec = valor || qtd * n(obj.preco), dia = hoje();
+      var ex = S.metricas.find(function (m) { return m.projeto_id === obj.id && m.data === dia && m.canal === "Geral"; });
+      var dm = { projeto_id: obj.id, data: dia, canal: "Geral", views: ex ? ex.views : 0, cliques: ex ? ex.cliques : 0, vendas: (ex ? n(ex.vendas) : 0) + qtd, receita: (ex ? n(ex.receita) : 0) + rec, gasto: ex ? ex.gasto : 0, seguidores: ex ? ex.seguidores : 0 };
+      var rm = await sb.from("metricas").upsert(dm, { onConflict: "projeto_id,data,canal" }).select().single(); if (rm.error) throw rm.error;
+      S.metricas = S.metricas.filter(function (m) { return m.id !== rm.data.id; }); S.metricas.push(rm.data); feito.push(qtd + (qtd > 1 ? " vendas" : " venda") + " em " + obj.nome);
+    }
+    if ($("#vp-ag-on", box).checked) {
+      var qv = $("#vp-ag-q", box).value;
+      if (qv) {
+        var d = { tipo: $("#vp-ag-tipo", box).value, quando: new Date(qv).toISOString(), titulo: "", obs: nota, valor: valor, origem: "voz" };
+        if (tipo === "lead" && obj) d.lead_id = obj.id; if (tipo === "cliente" && obj) d.cliente_id = obj.id; if (tipo === "projeto" && obj) d.projeto_id = obj.id;
+        if (!obj) d.titulo = nota.slice(0, 120);
+        if (await criarAgenda(d)) feito.push(TIPO_AG[d.tipo][0].toLowerCase() + " " + diaLongo(d.quando).toLowerCase() + " às " + hora(d.quando));
+      }
+    }
+    fecharModal(); montarMenu(); render();
+    toast(feito.length ? "Pronto: " + feito.join(", ") + "." : "Nada para salvar.");
+  } catch (e) { b.disabled = false; b.textContent = "Confirmar e salvar"; erro(e); }
+}
+$("#fab-voz").addEventListener("click", function () { abrirVoz(); });
+
+
 /* ───────────── início ───────────── */
+setInterval(checarLembretes, 30000);
+document.addEventListener("visibilitychange", function () { if (document.visibilityState === "visible") checarLembretes(); });
 var mq = window.matchMedia("(prefers-color-scheme: dark)"); if (mq.addEventListener) mq.addEventListener("change", function () { if (S.user) render(); });
 var rz; window.addEventListener("resize", function () { clearTimeout(rz); rz = setTimeout(function () { Object.keys(CH).forEach(function (id) { CH[id].resize(); }); }, 150); });
 setInterval(function () { if (S.user && S.view === "geral" && document.visibilityState === "visible") { var f = $("#w-feed"); if (f) wFeed(f); } }, 60000);
