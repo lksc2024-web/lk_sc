@@ -709,33 +709,60 @@ async function registrarDisparo(publico, alvo, modelo, canal, txt) {
     return r.data;
   }
 }
-function blocoMensagem(publico, alvo, objetivosPref) {
-  var wa = publico === "lead" ? (alvo.whatsapp || (alvo.tel_tipo === "celular" ? alvo.tel_digitos : "")) : telWa(alvo.telefone);
-  var mods = S.modelos.slice().sort(function (a, b) { return (objetivosPref.indexOf(a.objetivo) < 0) - (objetivosPref.indexOf(b.objetivo) < 0); });
-  return '<div class="card"><div class="card-h"><div><h2>Enviar mensagem</h2><p>' + (wa ? "WhatsApp " + esc(wa.replace(/^55/, "")) : "Sem WhatsApp cadastrado") + (alvo.email ? " · " + esc(alvo.email) : "") + '</p></div></div><div class="campo"><label for="mm-mod">Modelo</label><select class="inp" id="mm-mod">' + mods.map(function (m) { return '<option value="' + m.id + '">' + esc(OBJETIVOS[m.objetivo] + " · " + m.nome) + (m.canal === "email" ? " (e-mail)" : "") + "</option>"; }).join("") + '</select></div><textarea class="inp" id="mm-txt"></textarea><div class="acoes"><button class="btn" type="button" id="mm-mail"' + (alvo.email ? "" : " disabled") + '>Enviar e-mail</button><button class="btn wa" type="button" id="mm-wa"' + (wa ? "" : " disabled") + ">" + ICON.wa + "Abrir no WhatsApp</button></div></div>";
+function numeroDe(publico, alvo) { return publico === "lead" ? (alvo.whatsapp || alvo.tel_digitos || telWa(alvo.telefone)) : telWa(alvo.telefone); }
+function telVisivel(d) { d = String(d || "").replace(/\D/g, "").replace(/^55(?=\d{10,11}$)/, ""); if (d.length === 11) return "(" + d.slice(0, 2) + ") " + d.slice(2, 7) + "-" + d.slice(7); if (d.length === 10) return "(" + d.slice(0, 2) + ") " + d.slice(2, 6) + "-" + d.slice(6); return d; }
+function emReuniao(publico, alvo) {
+  if (publico === "lead" && alvo.status === "reuniao") return true;
+  return agPend().some(function (a) { return (a.tipo === "reuniao" || a.tipo === "retomada") && (a.lead_id === alvo.id || a.cliente_id === alvo.id); });
+}
+var NOME_RETOMAR = "Retomar conversa da reunião";
+function blocoMensagem(publico, alvo, objetivosPref, contexto) {
+  var num = numeroDe(publico, alvo), fixo = publico === "lead" && !alvo.whatsapp && alvo.tel_tipo === "fixo";
+  var reun = contexto === "reuniao" || emReuniao(publico, alvo);
+  var pref = reun ? ["retomada"] : objetivosPref;
+  var mods = S.modelos.slice().sort(function (a, b) { return (pref.indexOf(a.objetivo) < 0) - (pref.indexOf(b.objetivo) < 0); });
+  var canalPref = num || !alvo.email ? "whatsapp" : "email";
+  var esc0 = reun ? (mods.find(function (m) { return m.nome.indexOf(NOME_RETOMAR) === 0 && m.canal === canalPref; }) || mods.find(function (m) { return m.nome.indexOf(NOME_RETOMAR) === 0; })) : null;
+  var selId = esc0 ? esc0.id : (mods[0] ? mods[0].id : "");
+  return '<div class="card"><div class="card-h"><div><h2>Enviar mensagem</h2><p>' + (reun ? "Foco em retomar a conversa da reunião" : "Escolha o modelo e ajuste o texto") + '</p></div></div>' +
+    '<div class="form"><div class="f"><label for="mm-num">WhatsApp</label><input class="inp" id="mm-num" type="tel" inputmode="tel" value="' + esc(telVisivel(num)) + '" placeholder="(21) 99999-9999">' + (fixo ? '<span class="hint">Número fixo: funciona se a empresa usa WhatsApp Business.</span>' : !num ? '<span class="hint">Sem número cadastrado. Digite para enviar e salvar.</span>' : "") + '</div>' +
+    '<div class="f"><label for="mm-email">E-mail</label><input class="inp" id="mm-email" type="email" inputmode="email" value="' + esc(alvo.email || "") + '" placeholder="nome@empresa.com.br">' + (!alvo.email ? '<span class="hint">Sem e-mail cadastrado. Digite para enviar e salvar.</span>' : "") + "</div>" +
+    '<div class="f full"><label for="mm-mod">Modelo</label><select class="inp" id="mm-mod">' + mods.map(function (m) { return '<option value="' + m.id + '"' + (m.id === selId ? " selected" : "") + ">" + esc(OBJETIVOS[m.objetivo] + " · " + m.nome) + (m.canal === "email" && m.nome.indexOf("e-mail") < 0 ? " (e-mail)" : "") + "</option>"; }).join("") + '</select></div>' +
+    '<div class="f full"><textarea class="inp" id="mm-txt"></textarea></div></div>' +
+    '<div class="acoes"><button class="btn ghost" type="button" id="mm-copiar">' + ICON.copia + 'Copiar</button>' + (num ? '<a class="btn ghost" id="mm-ligar" href="tel:+' + esc(num) + '">Ligar</a>' : "") + '<button class="btn" type="button" id="mm-mail">Enviar e-mail</button><button class="btn wa" type="button" id="mm-wa">' + ICON.wa + "Abrir no WhatsApp</button></div></div>";
 }
 function ligarMensagem(bx, publico, alvo, depois) {
-  var sel = $("#mm-mod", bx), tx = $("#mm-txt", bx);
+  var sel = $("#mm-mod", bx), tx = $("#mm-txt", bx), inNum = $("#mm-num", bx), inMail = $("#mm-email", bx);
   if (!sel) return;
-  function aplicar() { var m = S.modelos.find(function (x) { return x.id === sel.value; }); tx.value = m ? preencher(m.corpo, alvo, publico) : ""; }
+  function modelo() { return S.modelos.find(function (x) { return x.id === sel.value; }); }
+  function aplicar() { var m = modelo(); tx.value = m ? preencher(m.corpo, alvo, publico) : ""; }
   sel.onchange = aplicar; aplicar();
-  var wa = publico === "lead" ? (alvo.whatsapp || (alvo.tel_tipo === "celular" ? alvo.tel_digitos : "")) : telWa(alvo.telefone);
+  async function guardar(campo, valor) {
+    if (publico === "lead") { var nv = await salvarLead(alvo, campo === "tel" ? { whatsapp: valor } : { email: valor }); if (nv) alvo = nv; }
+    else { var r = await sb.from("clientes").update(campo === "tel" ? { telefone: valor } : { email: valor }).eq("id", alvo.id).select().single(); if (!r.error) { S.clientes = S.clientes.map(function (x) { return x.id === alvo.id ? r.data : x; }); alvo = r.data; } }
+  }
+  $("#mm-copiar", bx).onclick = function () { copiar(tx.value); };
   $("#mm-wa", bx).onclick = async function () {
-    var m = S.modelos.find(function (x) { return x.id === sel.value; });
-    window.open("https://wa.me/" + wa + "?text=" + encodeURIComponent(tx.value), "_blank");
-    await registrarDisparo(publico, alvo, m, "whatsapp", tx.value); toast("Mensagem registrada."); if (depois) depois();
+    var d = telWa(inNum.value);
+    if (!d) { toast("Digite o número com DDD, por exemplo (21) 99999-9999."); inNum.focus(); return; }
+    var antes = numeroDe(publico, alvo);
+    window.open("https://wa.me/" + d + "?text=" + encodeURIComponent(tx.value), "_blank");
+    if (d !== antes && !(publico === "lead" && d === alvo.tel_digitos && !alvo.whatsapp)) await guardar("tel", d);
+    await registrarDisparo(publico, alvo, modelo(), "whatsapp", tx.value); toast("Mensagem registrada."); if (depois) depois();
   };
   $("#mm-mail", bx).onclick = async function () {
-    var m = S.modelos.find(function (x) { return x.id === sel.value; });
-    var assunto = m && m.assunto ? preencher(m.assunto, alvo, publico) : "Contato";
-    location.href = "mailto:" + encodeURIComponent(alvo.email) + "?subject=" + encodeURIComponent(assunto) + "&body=" + encodeURIComponent(tx.value);
+    var em = inMail.value.trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(em)) { toast("Digite um e-mail válido."); inMail.focus(); return; }
+    var m = modelo(), assunto = m && m.assunto ? preencher(m.assunto, alvo, publico) : "Retomando nossa conversa";
+    location.href = "mailto:" + encodeURIComponent(em) + "?subject=" + encodeURIComponent(assunto) + "&body=" + encodeURIComponent(tx.value);
+    if (em !== (alvo.email || "")) await guardar("email", em);
     await registrarDisparo(publico, alvo, m, "email", tx.value); if (depois) depois();
   };
 }
-function abrirLead(id) {
+function abrirLead(id, contexto) {
   var l = S.leads.find(function (x) { return x.id === id; }); if (!l) return;
   var info = [["Telefone", l.telefone], ["WhatsApp", l.whatsapp ? l.whatsapp.replace(/^55/, "") : ""], ["E-mail", l.email], ["Site", l.site], ["Instagram", l.instagram], ["Endereço", [l.endereco || "", l.bairro, l.cidade].filter(Boolean).join(" · ")], ["Nota no Google", n(l.nota) ? n(l.nota).toFixed(1) + " (" + int(l.avaliacoes) + " avaliações)" : ""]].filter(function (x) { return x[1]; });
-  modal(l.nome, '<div class="det"><div style="display:grid;gap:16px;align-content:start"><div class="card"><div class="card-h"><div><h2>' + esc(l.nicho || l.categoria || "Lead") + '</h2><p>Entrou ' + quando(l.criado_em) + '</p></div></div><div class="chips" id="ld-st">' + LEAD_ST.map(function (s) { return '<button class="chip" type="button" data-s="' + s[0] + '" aria-pressed="' + (l.status === s[0]) + '">' + s[1] + "</button>"; }).join("") + '</div><div class="stat-list" style="margin-top:10px">' + info.map(function (x) { var v = x[1]; var link = x[0] === "Site" ? '<a href="' + esc(/^http/.test(v) ? v : "https://" + v) + '" target="_blank" rel="noopener">' + esc(v.replace(/^https?:\/\//, "").slice(0, 40)) + "</a>" : esc(v); return "<div><span>" + x[0] + "</span><b>" + link + "</b></div>"; }).join("") + "</div>" + (l.maps ? '<a class="btn sm" style="margin-top:10px" href="' + esc(l.maps) + '" target="_blank" rel="noopener">' + ICON.ext + "Ver no Google Maps</a>" : "") + '</div>' + blocoMensagem("lead", l, l.status === "novo" ? ["prospeccao", "captacao"] : ["retomada", "continuidade"]) + '</div>' +
+  modal(l.nome, '<div class="det"><div style="display:grid;gap:16px;align-content:start"><div class="card"><div class="card-h"><div><h2>' + esc(l.nicho || l.categoria || "Lead") + '</h2><p>Entrou ' + quando(l.criado_em) + '</p></div></div><div class="chips" id="ld-st">' + LEAD_ST.map(function (s) { return '<button class="chip" type="button" data-s="' + s[0] + '" aria-pressed="' + (l.status === s[0]) + '">' + s[1] + "</button>"; }).join("") + '</div><div class="stat-list" style="margin-top:10px">' + info.map(function (x) { var v = x[1]; var link = x[0] === "Site" ? '<a href="' + esc(/^http/.test(v) ? v : "https://" + v) + '" target="_blank" rel="noopener">' + esc(v.replace(/^https?:\/\//, "").slice(0, 40)) + "</a>" : esc(v); return "<div><span>" + x[0] + "</span><b>" + link + "</b></div>"; }).join("") + "</div>" + (l.maps ? '<a class="btn sm" style="margin-top:10px" href="' + esc(l.maps) + '" target="_blank" rel="noopener">' + ICON.ext + "Ver no Google Maps</a>" : "") + '</div>' + blocoMensagem("lead", l, l.status === "novo" ? ["prospeccao", "captacao"] : ["retomada", "continuidade"], contexto) + '</div>' +
     '<div style="display:grid;gap:16px;align-content:start"><div class="card"><div class="card-h"><div><h2>Anotações</h2></div></div><textarea class="inp" id="ld-obs" style="min-height:90px">' + esc(l.obs || "") + '</textarea><div class="acoes"><button class="btn sm" type="button" id="ld-obs-ok">Salvar anotação</button></div></div>' +
     '<div class="card"><div class="card-h"><div><h2>Histórico</h2></div></div>' + ((l.historico || []).length ? '<ul class="hist">' + l.historico.slice().reverse().slice(0, 30).map(function (h) { return "<li>" + esc(h.txt || h.tipo) + "<small>" + (h.t ? new Date(h.t).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "") + "</small></li>"; }).join("") + "</ul>" : '<p class="hint">Sem registros ainda.</p>') + "</div>" +
     '<div class="card"><div class="card-h"><div><h2>Fechou negócio?</h2><p>Leva o lead para Clientes</p></div></div><button class="btn full" type="button" id="ld-cli">Transformar em cliente</button></div></div></div>', function (bx) {
@@ -750,7 +777,7 @@ function abrirLead(id) {
       S.clientes.unshift(r.data); if (l.status !== "fechado") await salvarLead(l, { status: "fechado" });
       toast("Cliente criado."); fecharModal(); ir("clientes"); abrirCliente(r.data.id);
     };
-    ligarMensagem(bx, "lead", l, function () { render(); abrirLead(l.id); });
+    ligarMensagem(bx, "lead", l, function () { render(); abrirLead(l.id, contexto); });
   }, true);
 }
 
@@ -790,16 +817,16 @@ function formCliente(c) {
     if (del) del.onclick = async function () { if (del.dataset.c !== "1") { del.dataset.c = "1"; del.textContent = "Confirmar exclusão"; return; } var r = await sb.from("clientes").delete().eq("id", c.id); if (r.error) return erro(r.error); S.clientes = S.clientes.filter(function (x) { return x.id !== c.id; }); fecharModal(); toast("Cliente excluído."); render(); };
   });
 }
-function abrirCliente(id) {
+function abrirCliente(id, contexto) {
   var c = S.clientes.find(function (x) { return x.id === id; }); if (!c) return;
   var compras = S.vendas.filter(function (v) { return v.cliente_id === c.id; });
   var projs = S.projetos.filter(function (p) { return p.cliente_id === c.id; });
-  modal(c.nome || c.empresa || "Cliente", '<div class="det"><div style="display:grid;gap:16px;align-content:start"><div class="card"><div class="card-h"><div><h2>' + esc(c.empresa || c.nicho || "Cliente") + '</h2><p>Desde ' + new Date(c.criado_em).toLocaleDateString("pt-BR") + " · origem " + esc(c.origem) + '</p></div><button class="btn sm" type="button" id="cd-ed">Editar</button></div><div class="chips" id="cd-st">' + CLI_ST.map(function (s) { return '<button class="chip" type="button" data-s="' + s[0] + '" aria-pressed="' + (c.status === s[0]) + '">' + s[1] + "</button>"; }).join("") + '</div><div class="stat-list" style="margin-top:10px"><div><span>Total recebido</span><b>' + brl(c.valor_total) + "</b></div><div><span>Telefone</span><b>" + esc(c.telefone || "—") + "</b></div><div><span>E-mail</span><b>" + esc(c.email || "—") + "</b></div><div><span>Último contato</span><b>" + quando(c.ultimo_contato) + "</b></div></div></div>" + blocoMensagem("cliente", c, c.status === "retomar" ? ["retomada"] : ["continuidade", "pos_venda", "retomada"]) + "</div>" +
+  modal(c.nome || c.empresa || "Cliente", '<div class="det"><div style="display:grid;gap:16px;align-content:start"><div class="card"><div class="card-h"><div><h2>' + esc(c.empresa || c.nicho || "Cliente") + '</h2><p>Desde ' + new Date(c.criado_em).toLocaleDateString("pt-BR") + " · origem " + esc(c.origem) + '</p></div><button class="btn sm" type="button" id="cd-ed">Editar</button></div><div class="chips" id="cd-st">' + CLI_ST.map(function (s) { return '<button class="chip" type="button" data-s="' + s[0] + '" aria-pressed="' + (c.status === s[0]) + '">' + s[1] + "</button>"; }).join("") + '</div><div class="stat-list" style="margin-top:10px"><div><span>Total recebido</span><b>' + brl(c.valor_total) + "</b></div><div><span>Telefone</span><b>" + esc(c.telefone || "—") + "</b></div><div><span>E-mail</span><b>" + esc(c.email || "—") + "</b></div><div><span>Último contato</span><b>" + quando(c.ultimo_contato) + "</b></div></div></div>" + blocoMensagem("cliente", c, c.status === "retomar" ? ["retomada"] : ["continuidade", "pos_venda", "retomada"], contexto) + "</div>" +
     '<div style="display:grid;gap:16px;align-content:start"><div class="card"><div class="card-h"><div><h2>Compras e projetos</h2></div></div>' + (compras.length || projs.length ? '<div class="stat-list">' + compras.map(function (v) { return "<div><span>" + esc(v.produto_nome) + " · " + quando(v.criado_em) + "</span><b>" + (v.status !== "aprovada" ? esc(v.status) + " · " : "") + brl(v.valor_bruto) + "</b></div>"; }).join("") + projs.map(function (p) { return '<div><span>' + esc(TIPOS[p.tipo]) + "</span><b>" + esc(p.nome) + "</b></div>"; }).join("") + "</div>" : '<p class="hint">Nenhuma compra ou projeto ligado ainda.</p>') + "</div>" +
     '<div class="card"><div class="card-h"><div><h2>Histórico</h2></div></div>' + ((c.historico || []).length ? '<ul class="hist">' + c.historico.slice().reverse().slice(0, 30).map(function (h) { return "<li>" + esc(h.txt) + "<small>" + (h.t ? new Date(h.t).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "") + "</small></li>"; }).join("") + "</ul>" : '<p class="hint">Sem registros ainda.</p>') + "</div></div></div>", function (bx) {
     $("#cd-ed", bx).onclick = function () { formCliente(c); };
     $("#cd-st", bx).onclick = async function (e) { var b = e.target.closest("[data-s]"); if (!b || b.dataset.s === c.status) return; var r = await sb.from("clientes").update({ status: b.dataset.s, atualizado_em: new Date().toISOString() }).eq("id", c.id).select().single(); if (r.error) return erro(r.error); S.clientes = S.clientes.map(function (x) { return x.id === c.id ? r.data : x; }); toast("Status atualizado."); render(); abrirCliente(c.id); };
-    ligarMensagem(bx, "cliente", c, function () { abrirCliente(c.id); });
+    ligarMensagem(bx, "cliente", c, function () { abrirCliente(c.id, contexto); });
   }, true);
 }
 
@@ -847,8 +874,9 @@ function tabCampanha(el) {
   if (!c.st.every(function (s) { return sts.some(function (x) { return x[0] === s; }); })) c.st = [sts[0][0]];
   var nichos = {}; base.forEach(function (x) { var nn = x.nicho || x.categoria || ""; if (nn) nichos[nn] = (nichos[nn] || 0) + 1; });
   var alvo = base.filter(function (x) { return c.st.indexOf(x.status) >= 0 && (!c.nicho || (x.nicho || x.categoria) === c.nicho); });
-  var comCanal = alvo.filter(function (x) { return ehLead ? (x.whatsapp || x.tel_tipo === "celular" || x.email) : (telWa(x.telefone) || x.email); });
+  var comCanal = alvo.filter(function (x) { return ehLead ? (x.whatsapp || x.tel_digitos || x.email) : (telWa(x.telefone) || x.email); });
   var mods = S.modelos.filter(function (m) { return !m.nicho || !c.nicho || m.nicho === c.nicho; });
+  if (!c.modeloManual) { var querRetomar = (ehLead && c.st.indexOf("reuniao") >= 0) || (!ehLead && c.st.indexOf("retomar") >= 0); var mr = querRetomar && mods.find(function (m) { return m.nome.indexOf(NOME_RETOMAR) === 0 && m.canal === "whatsapp"; }); if (mr) c.modelo = mr.id; }
   if (!mods.some(function (m) { return m.id === c.modelo; })) c.modelo = mods[0] ? mods[0].id : "";
   var mod = S.modelos.find(function (m) { return m.id === c.modelo; });
   var feitos = comCanal.filter(function (x) { return c.feitos[x.id]; }).length;
@@ -862,16 +890,16 @@ function tabCampanha(el) {
     '<div class="card" style="align-self:start"><div class="card-h"><div><h2>' + comCanal.length + " contatos</h2><p>" + feitos + " de " + comCanal.length + " enviados nesta sessão" + (alvo.length - comCanal.length ? " · " + (alvo.length - comCanal.length) + " sem WhatsApp ou e-mail" : "") + "</p></div>" + (mod && mod.canal === "email" ? '<button class="btn sm" type="button" id="cp-mails">Copiar e-mails</button>' : "") + "</div>" +
     '<div class="minibar" style="margin-bottom:8px"><i style="width:' + (comCanal.length ? feitos / comCanal.length * 100 : 0) + '%"></i></div>' +
     (comCanal.length ? comCanal.slice(0, 150).map(function (x) {
-      var wa = ehLead ? (x.whatsapp || (x.tel_tipo === "celular" ? x.tel_digitos : "")) : telWa(x.telefone);
+      var wa = ehLead ? (x.whatsapp || x.tel_digitos) : telWa(x.telefone);
       var porEmail = mod && mod.canal === "email";
       var pode = porEmail ? !!x.email : !!wa;
       return '<div class="dest' + (c.feitos[x.id] ? " feito" : "") + '"><div><b>' + esc(x.nome || x.empresa) + '</b><div class="sub">' + esc([x.nicho || x.categoria, x.bairro || x.cidade, x.ultimo_contato ? "contato " + quando(x.ultimo_contato) : ""].filter(Boolean).join(" · ")) + "</div></div>" +
         (pode ? '<button class="btn sm ' + (porEmail ? "" : "wa") + '" type="button" data-env="' + x.id + '">' + (c.feitos[x.id] ? "Enviado" : porEmail ? "E-mail" : ICON.wa + "Enviar") + "</button>" : '<span class="sub">sem ' + (porEmail ? "e-mail" : "WhatsApp") + "</span>") + "</div>";
     }).join("") + (comCanal.length > 150 ? '<p class="hint">Mostrando os 150 primeiros. Filtre por nicho para ver o resto.</p>' : "") : '<div class="vazio">Ninguém com esse filtro.</div>') + "</div></div>";
-  $("#cp-pub", el).onclick = function (e) { var b = e.target.closest("[data-p]"); if (b) { c.publico = b.dataset.p; c.st = [b.dataset.p === "lead" ? "novo" : "retomar"]; c.nicho = ""; render(); } };
+  $("#cp-pub", el).onclick = function (e) { var b = e.target.closest("[data-p]"); if (b) { c.publico = b.dataset.p; c.st = [b.dataset.p === "lead" ? "novo" : "retomar"]; c.nicho = ""; c.modeloManual = false; render(); } };
   $("#cp-nicho", el).onchange = function () { c.nicho = this.value; render(); };
-  $("#cp-st", el).onclick = function (e) { var b = e.target.closest("[data-s]"); if (!b) return; var i = c.st.indexOf(b.dataset.s); if (i >= 0) { if (c.st.length > 1) c.st.splice(i, 1); } else c.st.push(b.dataset.s); render(); };
-  $("#cp-mod", el).onchange = function () { c.modelo = this.value; render(); };
+  $("#cp-st", el).onclick = function (e) { var b = e.target.closest("[data-s]"); if (!b) return; var i = c.st.indexOf(b.dataset.s); if (i >= 0) { if (c.st.length > 1) c.st.splice(i, 1); } else c.st.push(b.dataset.s); c.modeloManual = false; render(); };
+  $("#cp-mod", el).onchange = function () { c.modelo = this.value; c.modeloManual = true; render(); };
   var cm = $("#cp-mails", el); if (cm) cm.onclick = function () { copiar(comCanal.map(function (x) { return x.email; }).filter(Boolean).join(", ")); };
   $$("[data-env]", el).forEach(function (b) { b.onclick = async function () {
     var x = base.find(function (y) { return y.id === b.dataset.env; }); if (!x || !mod) return;
@@ -970,7 +998,7 @@ function itemAgenda(a, atrasado) {
 function ligarItensAgenda(box) {
   $$("[data-feito]", box).forEach(function (b) { b.onclick = async function () { var a = S.agenda.find(function (x) { return x.id === b.dataset.feito; }); if (a && await mudarAgenda(a, { status: "feito", concluido_em: new Date().toISOString() })) { toast("Feito."); render(); montarMenu(); } }; });
   $$("[data-adiar]", box).forEach(function (b) { b.onclick = async function () { var a = S.agenda.find(function (x) { return x.id === b.dataset.adiar; }); if (!a) return; var q = new Date(a.quando); var base = q < new Date() ? new Date() : q; base.setDate(base.getDate() + 1); base.setHours(q.getHours(), q.getMinutes(), 0, 0); if (await mudarAgenda(a, { quando: base.toISOString() })) { toast("Adiado para " + diaLongo(base).toLowerCase() + "."); render(); montarMenu(); } }; });
-  $$("[data-abrir]", box).forEach(function (b) { b.onclick = function () { var a = S.agenda.find(function (x) { return x.id === b.dataset.abrir; }); var al = a && alvoDe(a); if (!al) return; if (al.tipo === "lead") abrirLead(al.obj.id); else abrirCliente(al.obj.id); }; });
+  $$("[data-abrir]", box).forEach(function (b) { b.onclick = function () { var a = S.agenda.find(function (x) { return x.id === b.dataset.abrir; }); var al = a && alvoDe(a); if (!al) return; var ctx = a.tipo === "reuniao" || a.tipo === "retomada" ? "reuniao" : ""; if (al.tipo === "lead") abrirLead(al.obj.id, ctx); else abrirCliente(al.obj.id, ctx); }; });
   $$("[data-ed-ag]", box).forEach(function (b) { b.onclick = function () { formAgenda(S.agenda.find(function (x) { return x.id === b.dataset.edAg; })); }; });
 }
 function vAgenda(box) {
