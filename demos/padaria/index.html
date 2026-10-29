@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Forno da Estação · Padaria em Campo Grande</title>
+<meta name="description" content="Pão francês saindo do forno cinco vezes por dia, bolos e salgados por encomenda. Padaria perto da estação de Campo Grande.">
+<meta name="theme-color" content="#1F4E5A">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800;900&family=Libre+Franklin:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/*
+  Plano: a padaria se apresenta como uma estação. O herói é um quadro de partidas de fornadas
+  calculado pela hora real. Esmalte azul-petróleo, branco-farinha, amarelo-manteiga e casca de pão.
+  Big Shoulders Display (letreiro) + Libre Franklin (texto). Texto alinhado à esquerda.
+*/
+:root{
+  --esmalte:#1F4E5A;--esmalte-2:#163B45;--farinha:#FBFBF8;--manteiga:#F2C14E;--casca:#8C4A1F;--tinta:#1C1A17;--cinza:#6A655E;--linha:#E6E2DA;
+  --letreiro:"Big Shoulders Display",Impact,sans-serif;--texto:"Libre Franklin",system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--farinha);color:var(--tinta);font:17px/1.6 var(--texto);-webkit-font-smoothing:antialiased}
+a{color:inherit}
+img,svg{display:block}
+:focus-visible{outline:3px solid var(--manteiga);outline-offset:3px}
+.wrap{max-width:1120px;margin:0 auto;padding:0 22px}
+/* topo */
+.topo{background:var(--esmalte);color:var(--farinha)}
+.topo .wrap{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:68px}
+.marca{display:flex;align-items:center;gap:12px;text-decoration:none}
+.marca svg{width:38px;height:38px}
+.marca b{font:800 26px/1 var(--letreiro);letter-spacing:.01em}
+.topo nav{display:flex;gap:22px;font-size:15px}
+.topo nav a{text-decoration:none;opacity:.85}
+.topo nav a:hover{opacity:1;text-decoration:underline;text-underline-offset:5px}
+/* herói */
+.heroi{background:var(--esmalte);color:var(--farinha);padding:34px 0 0;overflow:hidden}
+.heroi .wrap{display:grid;grid-template-columns:1fr 1.15fr;gap:48px;align-items:end}
+.heroi h1{font:900 clamp(54px,8.4vw,112px)/.86 var(--letreiro);margin:0 0 22px;text-transform:uppercase;letter-spacing:-.005em}
+.heroi p{margin:0 0 28px;font-size:19px;max-width:30ch;color:#D8E6E8}
+.botoes{display:flex;gap:12px;flex-wrap:wrap;padding-bottom:44px}
+.btn{display:inline-flex;align-items:center;gap:8px;border:2px solid var(--manteiga);background:var(--manteiga);color:var(--tinta);font:700 16px var(--texto);padding:13px 20px;border-radius:999px;text-decoration:none;cursor:pointer}
+.btn.vazado{background:transparent;color:var(--farinha);border-color:rgba(251,251,248,.45)}
+.btn:hover{filter:brightness(1.05)}
+/* quadro de fornadas */
+.quadro{background:#0F2A31;border-radius:14px 14px 0 0;padding:22px 22px 26px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.06)}
+.quadro-topo{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:14px;color:#9FC0C6;font-size:14px}
+.quadro-topo strong{font:800 22px var(--letreiro);color:var(--farinha);letter-spacing:.02em}
+.relogio{font:800 30px var(--letreiro);color:var(--manteiga);font-variant-numeric:tabular-nums}
+.partidas{list-style:none;margin:0;padding:0}
+.partidas li{display:grid;grid-template-columns:76px 1fr auto;gap:14px;align-items:center;padding:13px 0;border-top:1px solid rgba(255,255,255,.08)}
+.partidas .h{font:800 30px var(--letreiro);color:var(--manteiga);font-variant-numeric:tabular-nums}
+.partidas .p{font:600 26px/1.05 var(--letreiro);letter-spacing:.02em;text-transform:uppercase;color:var(--farinha)}
+.partidas .s{font-size:14px;font-weight:600;color:#9FC0C6;text-align:right;white-space:nowrap}
+.partidas .s.agora{color:var(--tinta);background:var(--manteiga);border-radius:6px;padding:4px 8px;animation:pisca 1.6s steps(2) infinite}
+@keyframes pisca{50%{opacity:.55}}
+.quadro small{display:block;margin-top:12px;color:#7FA3AA;font-size:13px}
+/* seções */
+section{padding:84px 0}
+h2{font:900 clamp(40px,5.4vw,64px)/.95 var(--letreiro);text-transform:uppercase;margin:0 0 14px;color:var(--esmalte)}
+.intro{max-width:56ch;color:var(--cinza);margin:0 0 40px}
+/* cardápio */
+.cardapio{display:grid;grid-template-columns:repeat(2,1fr);gap:8px 64px}
+.grupo h3{font:800 26px var(--letreiro);text-transform:uppercase;letter-spacing:.02em;color:var(--casca);margin:28px 0 6px}
+.item{display:flex;align-items:baseline;gap:10px;padding:9px 0}
+.item span{flex:none}
+.item i{flex:1;border-bottom:2px dotted #CFC8BC;transform:translateY(-5px)}
+.item b{font-weight:600;font-variant-numeric:tabular-nums}
+.item small{display:block;color:var(--cinza);font-size:14px;margin-top:-2px}
+/* encomenda */
+.encomenda{background:var(--manteiga)}
+.encomenda .wrap{display:grid;grid-template-columns:.9fr 1.1fr;gap:56px;align-items:start}
+.encomenda h2{color:var(--tinta)}
+.encomenda .intro{color:#4A3B18}
+.passos{margin:0;padding:0;list-style:none;counter-reset:p}
+.passos li{counter-increment:p;display:grid;grid-template-columns:44px 1fr;gap:12px;padding:12px 0;border-top:2px solid rgba(28,26,23,.14)}
+.passos li::before{content:counter(p);font:900 34px/1 var(--letreiro);color:var(--casca)}
+form{background:var(--farinha);border-radius:18px;padding:28px;display:grid;grid-template-columns:1fr 1fr;gap:16px}
+label{display:grid;gap:6px;font-size:14px;font-weight:600}
+input,select,textarea{font:inherit;font-size:16px;color:var(--tinta);background:#fff;border:1.5px solid var(--linha);border-radius:10px;padding:11px 12px}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--esmalte)}
+.cheio{grid-column:1/-1}
+textarea{min-height:90px;resize:vertical}
+form .btn{justify-content:center;background:var(--esmalte);border-color:var(--esmalte);color:var(--farinha)}
+.erro{color:#A3361F;font-size:14px;min-height:1em}
+/* visita */
+.visita .wrap{display:grid;grid-template-columns:1fr 1fr;gap:56px}
+.horas{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+.horas td{padding:12px 0;border-bottom:1px solid var(--linha)}
+.horas td:last-child{text-align:right;font-weight:600}
+.horas tr.hoje td{color:var(--esmalte);font-weight:700}
+.mapa{background:var(--esmalte);border-radius:18px;color:var(--farinha);padding:28px;display:grid;gap:14px;align-content:start}
+.mapa svg{width:100%;height:auto}
+footer{background:var(--esmalte-2);color:#B9CED2;font-size:14px;padding:28px 0}
+footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+footer a{color:var(--manteiga)}
+/* janela de confirmação */
+dialog{border:0;border-radius:18px;padding:0;max-width:440px;width:calc(100% - 32px)}
+dialog::backdrop{background:rgba(15,42,49,.6)}
+.dlg{padding:26px;display:grid;gap:14px}
+.dlg h3{font:800 30px/1 var(--letreiro);text-transform:uppercase;margin:0;color:var(--esmalte)}
+.wpp{background:#E7F6EC;border-radius:12px 12px 12px 2px;padding:14px;white-space:pre-wrap;font-size:15px}
+@media (max-width:860px){
+  .heroi .wrap,.encomenda .wrap,.visita .wrap{grid-template-columns:1fr;gap:28px}
+  .cardapio{grid-template-columns:1fr}
+  .topo nav{display:none}
+  .botoes{padding-bottom:8px}
+  .partidas li{grid-template-columns:72px 1fr auto;gap:10px}
+  .partidas .h{font-size:26px}
+  .partidas .p{font-size:22px}
+  form{grid-template-columns:1fr;padding:20px}
+  section{padding:60px 0}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<header class="topo">
+  <div class="wrap">
+    <a class="marca" href="#">
+      <svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="19" fill="#F2C14E"/><path d="M9 24c0-6 5-11 11-11s11 5 11 11H9z" fill="#8C4A1F"/><path d="M14 18l3 4M20 16v5M26 18l-3 4" stroke="#F2C14E" stroke-width="2" stroke-linecap="round"/><rect x="8" y="24" width="24" height="3" rx="1.5" fill="#1F4E5A"/></svg>
+      <b>Forno da Estação</b>
+    </a>
+    <nav aria-label="Seções"><a href="#cardapio">Cardápio</a><a href="#encomendas">Encomendas</a><a href="#visita">Horário e endereço</a></nav>
+  </div>
+</header>
+
+<main>
+<section class="heroi" aria-labelledby="t1">
+  <div class="wrap">
+    <div>
+      <h1 id="t1">Pão quente cinco vezes por dia</h1>
+      <p>A dois minutos da estação de Campo Grande. Veja a próxima fornada e passe na hora certa.</p>
+      <div class="botoes"><a class="btn" href="#encomendas">Fazer uma encomenda</a><a class="btn vazado" href="#cardapio">Ver o cardápio</a></div>
+    </div>
+    <div class="quadro" aria-live="polite">
+      <div class="quadro-topo"><strong>Próximas fornadas</strong><span class="relogio" id="relogio">--:--</span></div>
+      <ul class="partidas" id="partidas"></ul>
+      <small>Horários de segunda a sábado. Domingo tem fornada até o meio-dia.</small>
+    </div>
+  </div>
+</section>
+
+<section id="cardapio" aria-labelledby="t2">
+  <div class="wrap">
+    <h2 id="t2">Cardápio</h2>
+    <p class="intro">Massa de fermentação lenta, feita de madrugada. Os preços são do balcão; para festas, veja as encomendas.</p>
+    <div class="cardapio">
+      <div class="grupo">
+        <h3>Pães</h3>
+        <div class="item"><span>Pão francês</span><i></i><b>R$ 19,90/kg</b></div>
+        <div class="item"><span>Pão de queijo<small>com queijo canastra</small></span><i></i><b>R$ 3,50</b></div>
+        <div class="item"><span>Broa de milho</span><i></i><b>R$ 6,00</b></div>
+        <div class="item"><span>Pão de fermentação natural<small>sai às sextas e sábados</small></span><i></i><b>R$ 24,00</b></div>
+        <h3>Doces</h3>
+        <div class="item"><span>Sonho de creme</span><i></i><b>R$ 7,50</b></div>
+        <div class="item"><span>Bolo de cenoura com chocolate<small>fatia</small></span><i></i><b>R$ 9,00</b></div>
+        <div class="item"><span>Bolo de cenoura com chocolate<small>inteiro, 1,2 kg</small></span><i></i><b>R$ 48,00</b></div>
+      </div>
+      <div class="grupo">
+        <h3>Café e lanches</h3>
+        <div class="item"><span>Café coado</span><i></i><b>R$ 5,00</b></div>
+        <div class="item"><span>Pingado na média</span><i></i><b>R$ 6,50</b></div>
+        <div class="item"><span>Pão na chapa</span><i></i><b>R$ 7,00</b></div>
+        <div class="item"><span>Misto quente</span><i></i><b>R$ 12,00</b></div>
+        <h3>Para festas</h3>
+        <div class="item"><span>Salgados fritos<small>cento: coxinha, bolinha de queijo, risole</small></span><i></i><b>R$ 85,00</b></div>
+        <div class="item"><span>Mini pão de queijo<small>cento</small></span><i></i><b>R$ 70,00</b></div>
+        <div class="item"><span>Torta salgada de frango<small>assadeira grande</small></span><i></i><b>R$ 95,00</b></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="encomenda" id="encomendas" aria-labelledby="t3">
+  <div class="wrap">
+    <div>
+      <h2 id="t3">Encomendas para festa e café da firma</h2>
+      <p class="intro">Peça com 24 horas de antecedência. Bolos personalizados, com 48 horas.</p>
+      <ol class="passos">
+        <li><span>Preencha o pedido ao lado com o dia e a hora da retirada.</span></li>
+        <li><span>A gente confirma pelo WhatsApp em até uma hora, com o valor final.</span></li>
+        <li><span>Você retira no balcão ou recebe em casa, em Campo Grande.</span></li>
+      </ol>
+    </div>
+    <form id="form" novalidate>
+      <label class="cheio">Seu nome<input id="f-nome" autocomplete="name" required></label>
+      <label>O que vai querer
+        <select id="f-item">
+          <option>Salgados fritos (cento)</option><option>Mini pão de queijo (cento)</option><option>Bolo de cenoura inteiro</option><option>Torta salgada de frango</option><option>Bolo personalizado</option><option>Café da manhã para empresa</option>
+        </select>
+      </label>
+      <label>Quantidade<input id="f-qtd" type="number" min="1" value="1" inputmode="numeric"></label>
+      <label>Dia da retirada<input id="f-dia" type="date" required></label>
+      <label>Horário<select id="f-hora"><option>8h</option><option>10h</option><option>12h</option><option>15h</option><option>17h</option><option>19h</option></select></label>
+      <label class="cheio">Observações<textarea id="f-obs" placeholder="Sabor do bolo, entrega, número de pessoas"></textarea></label>
+      <p class="erro cheio" id="f-erro" role="alert"></p>
+      <button class="btn cheio" type="submit">Enviar pedido pelo WhatsApp</button>
+    </form>
+  </div>
+</section>
+
+<section class="visita" id="visita" aria-labelledby="t4">
+  <div class="wrap">
+    <div>
+      <h2 id="t4">Horário</h2>
+      <table class="horas" id="horas">
+        <tr data-d="1"><td>Segunda a sexta</td><td>5h30 às 20h30</td></tr>
+        <tr data-d="6"><td>Sábado</td><td>6h às 20h</td></tr>
+        <tr data-d="0"><td>Domingo e feriados</td><td>6h às 13h</td></tr>
+      </table>
+    </div>
+    <div class="mapa">
+      <h2 style="color:var(--manteiga)">Onde fica</h2>
+      <svg viewBox="0 0 400 180" aria-label="Mapa simples: a padaria fica do lado da praça, a duas quadras da estação de trem">
+        <rect width="400" height="180" rx="12" fill="#163B45"/>
+        <path d="M0 120h400" stroke="#2E6672" stroke-width="10"/><path d="M0 120h400" stroke="#F2C14E" stroke-width="2" stroke-dasharray="10 8"/>
+        <path d="M150 0v180M290 0v180" stroke="#2E6672" stroke-width="14"/>
+        <rect x="40" y="132" width="90" height="26" rx="4" fill="#F2C14E"/><text x="85" y="150" text-anchor="middle" font-family="Libre Franklin" font-size="13" font-weight="700" fill="#1C1A17">Estação</text>
+        <rect x="186" y="40" width="74" height="52" rx="6" fill="#2E6672"/><text x="223" y="71" text-anchor="middle" font-family="Libre Franklin" font-size="12" fill="#D8E6E8">Praça</text>
+        <circle cx="318" cy="70" r="14" fill="#F2C14E"/><circle cx="318" cy="70" r="5" fill="#8C4A1F"/>
+        <text x="318" y="104" text-anchor="middle" font-family="Libre Franklin" font-size="13" font-weight="700" fill="#FBFBF8">Forno</text>
+      </svg>
+      <p>Saindo da estação, atravesse a praça e siga duas quadras. A porta azul na esquina.</p>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap"><span>Forno da Estação é um negócio fictício. Site demonstrativo feito por Luka.</span><a href="https://central-lk.vercel.app/portfolio">Quero um site assim</a></div>
+</footer>
+
+<dialog id="dlg" aria-labelledby="dlg-t">
+  <div class="dlg">
+    <h3 id="dlg-t">Pedido pronto</h3>
+    <p style="margin:0;color:var(--cinza)">No site de verdade, esta mensagem abre direto no WhatsApp da padaria:</p>
+    <div class="wpp" id="dlg-msg"></div>
+    <button class="btn" type="button" id="dlg-ok" style="justify-content:center">Entendi</button>
+  </div>
+</dialog>
+
+<script>
+(function(){
+  // horários das fornadas, de segunda a sábado [hora, minuto, produto]
+  var FORNADAS=[[6,0,"Pão francês"],[7,0,"Pão de queijo"],[8,30,"Broa de milho"],[9,0,"Pão francês"],[10,0,"Bolo do dia"],[12,0,"Pão francês"],[15,0,"Pão de queijo"],[16,0,"Pão francês"],[17,0,"Sonho de creme"],[18,30,"Pão francês"]];
+  var DOMINGO=[[6,30,"Pão francês"],[8,0,"Pão de queijo"],[10,0,"Pão francês"]];
+  function dd(n){return String(n).padStart(2,"0")}
+  function lista(d){return d.getDay()===0?DOMINGO:FORNADAS}
+  function quadro(){
+    var agora=new Date(),min=agora.getHours()*60+agora.getMinutes(),saida=[];
+    lista(agora).forEach(function(f){var m=f[0]*60+f[1];if(m>=min-10)saida.push({m:m,f:f,amanha:false})});
+    if(saida.length<4){var am=new Date(agora);am.setDate(am.getDate()+1);lista(am).forEach(function(f){if(saida.length<4)saida.push({m:f[0]*60+f[1]+1440,f:f,amanha:true})})}
+    document.getElementById("relogio").textContent=dd(agora.getHours())+":"+dd(agora.getMinutes());
+    document.getElementById("partidas").innerHTML=saida.slice(0,4).map(function(s){
+      var falta=s.m-min,txt,cl="s";
+      if(falta<=0){txt="Saindo agora";cl+=" agora"}
+      else if(s.amanha)txt="Amanhã";
+      else if(falta<60)txt="Em "+falta+" min";
+      else txt="Em "+Math.floor(falta/60)+"h"+(falta%60?dd(falta%60):"");
+      return '<li><span class="h">'+s.f[0]+"h"+(s.f[1]?dd(s.f[1]):"00")+'</span><span class="p">'+s.f[2]+'</span><span class="'+cl+'">'+txt+"</span></li>";
+    }).join("");
+  }
+  quadro();setInterval(quadro,30000);
+
+  var dia=new Date().getDay(),linha=document.querySelector('#horas tr[data-d="'+(dia===0?0:dia===6?6:1)+'"]');if(linha)linha.className="hoje";
+
+  var amanha=new Date();amanha.setDate(amanha.getDate()+1);
+  var fd=document.getElementById("f-dia");fd.min=amanha.toISOString().slice(0,10);fd.value=fd.min;
+  var dlg=document.getElementById("dlg");
+  document.getElementById("dlg-ok").onclick=function(){dlg.close()};
+  document.getElementById("form").addEventListener("submit",function(e){
+    e.preventDefault();
+    var nome=document.getElementById("f-nome").value.trim(),erro=document.getElementById("f-erro");
+    if(!nome){erro.textContent="Escreva seu nome para a gente saber de quem é o pedido.";document.getElementById("f-nome").focus();return}
+    erro.textContent="";
+    var d=new Date(fd.value+"T12:00"),obs=document.getElementById("f-obs").value.trim();
+    var msg="Olá! Sou "+nome+" e quero encomendar:\n"+document.getElementById("f-qtd").value+"x "+document.getElementById("f-item").value+"\nRetirada: "+d.toLocaleDateString("pt-BR",{weekday:"long",day:"2-digit",month:"2-digit"})+", "+document.getElementById("f-hora").value+(obs?"\nObs.: "+obs:"");
+    document.getElementById("dlg-msg").textContent=msg;
+    if(dlg.showModal)dlg.showModal();else alert(msg);
+  });
+})();
+</script>
+</body>
+</html>

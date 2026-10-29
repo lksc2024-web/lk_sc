@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lume · Estética facial em Campo Grande</title>
+<meta name="description" content="Limpeza de pele, peeling, microagulhamento e skinbooster com avaliação antes de começar. Estética facial em Campo Grande, Rio de Janeiro.">
+<meta name="theme-color" content="#4A2C4F">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/*
+  Plano: calma e confiança. O momento principal é o "o que te incomoda?": a pessoa toca na queixa
+  e vê o protocolo, quantas sessões e o preço. Névoa lilás, ameixa, sálvia e um dourado discreto.
+  Instrument Serif nos títulos, Hanken Grotesk no texto. Esquerda, com muito respiro.
+*/
+:root{
+  --nevoa:#EEE8F1;--branco:#FFFFFF;--ameixa:#4A2C4F;--ameixa-2:#331D37;--tinta:#2A1E2C;--salvia:#8FAE8B;--ouro:#B8924A;--suave:#6E6072;--linha:#DCD2E0;
+  --serif:"Instrument Serif",Georgia,serif;--sans:"Hanken Grotesk",system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--nevoa);color:var(--tinta);font:17px/1.65 var(--sans);-webkit-font-smoothing:antialiased}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--ameixa);outline-offset:3px}
+.wrap{max-width:1160px;margin:0 auto;padding:0 24px}
+.topo .wrap{display:flex;align-items:center;justify-content:space-between;min-height:80px;gap:16px}
+.marca{font:400 34px/1 var(--serif);text-decoration:none;color:var(--ameixa);display:flex;align-items:center;gap:10px}
+.marca svg{width:28px;height:28px}
+.topo nav{display:flex;gap:28px;font-size:15px}
+.topo nav a{text-decoration:none;color:var(--suave)}
+.topo nav a:hover{color:var(--ameixa)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;font:600 15.5px var(--sans);border:1.5px solid var(--ameixa);background:var(--ameixa);color:#fff;border-radius:999px;padding:13px 24px;text-decoration:none;cursor:pointer;white-space:nowrap}
+.btn:hover{background:var(--ameixa-2)}
+.btn.linha{background:transparent;color:var(--ameixa)}
+.btn.linha:hover{background:rgba(74,44,79,.06)}
+/* herói */
+.heroi{padding:40px 0 90px}
+.heroi .wrap{display:grid;grid-template-columns:1.2fr .8fr;gap:40px;align-items:center}
+h1{font:400 clamp(48px,7vw,96px)/.98 var(--serif);margin:0 0 26px;color:var(--ameixa);letter-spacing:-.01em}
+.heroi p{font-size:19px;color:var(--suave);max-width:38ch;margin:0 0 30px}
+.acoes{display:flex;gap:12px;flex-wrap:wrap}
+.luz{width:100%;max-width:420px;justify-self:end;aspect-ratio:1}
+.luz circle{transform-origin:200px 200px;animation:respira 7s ease-in-out infinite}
+.luz circle:nth-child(2){animation-delay:-1.5s}.luz circle:nth-child(3){animation-delay:-3s}.luz circle:nth-child(4){animation-delay:-4.5s}
+@keyframes respira{50%{transform:scale(1.04)}}
+/* queixas */
+.queixas{background:var(--branco);padding:90px 0}
+h2{font:400 clamp(38px,4.8vw,60px)/1.02 var(--serif);margin:0 0 14px;color:var(--ameixa)}
+.intro{color:var(--suave);max-width:52ch;margin:0 0 36px}
+.chips{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:34px}
+.chip{font:500 16px var(--sans);border:1.5px solid var(--linha);background:var(--branco);color:var(--tinta);border-radius:999px;padding:11px 20px;cursor:pointer}
+.chip:hover{border-color:var(--ameixa)}
+.chip[aria-pressed="true"]{background:var(--ameixa);border-color:var(--ameixa);color:#fff}
+.protocolo{display:grid;grid-template-columns:1.1fr .9fr;gap:0;border:1.5px solid var(--linha);border-radius:28px;overflow:hidden;min-height:300px}
+.protocolo .esq{padding:36px}
+.protocolo h3{font:400 40px/1.05 var(--serif);margin:0 0 12px;color:var(--ameixa)}
+.protocolo p{margin:0 0 18px;color:var(--suave);max-width:46ch}
+.protocolo .dir{background:var(--nevoa);padding:36px;display:grid;align-content:start;gap:0}
+.dado{display:flex;justify-content:space-between;gap:12px;padding:13px 0;border-bottom:1px solid var(--linha)}
+.dado:last-of-type{border-bottom:0}
+.dado span{color:var(--suave)}
+.dado b{font-weight:600;text-align:right}
+.dir .btn{margin-top:18px}
+.troca{animation:entra .35s ease}
+@keyframes entra{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+/* tabela */
+.tabela{padding:90px 0}
+.tabela .wrap{display:grid;grid-template-columns:.8fr 1.2fr;gap:56px}
+table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+th{text-align:left;font-weight:600;font-size:14px;color:var(--suave);padding:0 0 10px;border-bottom:1.5px solid var(--ameixa)}
+th:last-child,td:last-child{text-align:right}
+td{padding:16px 0;border-bottom:1px solid var(--linha);vertical-align:top}
+td small{display:block;color:var(--suave);font-size:14px}
+td:nth-child(2){color:var(--suave);white-space:nowrap;padding:16px 18px}
+/* primeira visita: sequência */
+.visita{background:var(--ameixa);color:#EADFEC;padding:90px 0}
+.visita h2{color:#fff}
+.etapas{display:grid;grid-template-columns:repeat(4,1fr);gap:28px;margin-top:40px;list-style:none;padding:0;counter-reset:e}
+.etapas li{counter-increment:e;border-top:1px solid rgba(255,255,255,.25);padding-top:18px}
+.etapas li::before{content:counter(e);display:block;font:400 54px/1 var(--serif);color:var(--ouro);margin-bottom:10px}
+.etapas b{display:block;color:#fff;font-weight:600;margin-bottom:4px}
+.etapas span{font-size:15.5px}
+/* responsável */
+.quem{padding:90px 0}
+.quem .wrap{display:grid;grid-template-columns:.7fr 1.3fr;gap:56px;align-items:center}
+.retrato{aspect-ratio:4/5;border-radius:200px 200px 28px 28px;background:linear-gradient(180deg,#D9C9DE,#C2AFC8);display:grid;place-items:end center;overflow:hidden}
+.retrato svg{width:78%}
+blockquote{margin:0 0 20px;font:400 italic clamp(26px,3vw,36px)/1.25 var(--serif);color:var(--ameixa)}
+.quem p{color:var(--suave);margin:0 0 6px}
+/* agendar */
+.agendar{background:var(--branco);padding:90px 0}
+.agendar .wrap{display:grid;grid-template-columns:.85fr 1.15fr;gap:56px;align-items:start}
+form{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+label{display:grid;gap:6px;font-size:14px;font-weight:600}
+input,select,textarea{font:inherit;font-size:16px;color:var(--tinta);background:var(--nevoa);border:1.5px solid transparent;border-radius:14px;padding:12px 14px}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--ameixa);background:#fff}
+.cheio{grid-column:1/-1}
+.erro{color:#A03A3A;font-size:14px;margin:0;min-height:1em}
+details{border-bottom:1px solid var(--linha);padding:16px 0}
+summary{cursor:pointer;font-weight:600;list-style:none;display:flex;justify-content:space-between;gap:12px}
+summary::after{content:"+";font:400 26px/1 var(--serif);color:var(--ameixa)}
+details[open] summary::after{content:"−"}
+details p{margin:10px 0 0;color:var(--suave)}
+footer{background:var(--ameixa-2);color:#CDBFD1;font-size:14px;padding:26px 0}
+footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+footer a{color:#E8D3A6}
+dialog{border:0;border-radius:24px;padding:0;max-width:440px;width:calc(100% - 32px)}
+dialog::backdrop{background:rgba(51,29,55,.55)}
+.dlg{padding:28px;display:grid;gap:14px}
+.dlg h3{font:400 34px/1 var(--serif);margin:0;color:var(--ameixa)}
+.wpp{background:#E7F6EC;border-radius:14px 14px 14px 3px;padding:14px;white-space:pre-wrap;font-size:15px}
+@media (max-width:900px){
+  .heroi .wrap,.tabela .wrap,.quem .wrap,.agendar .wrap,.protocolo{grid-template-columns:1fr}
+  .luz{max-width:120px;justify-self:start;order:-1}
+  .topo nav{display:none}
+  .etapas{grid-template-columns:1fr 1fr}
+  .protocolo .esq,.protocolo .dir{padding:24px}
+  .retrato{max-width:280px}
+  form{grid-template-columns:1fr}
+  .heroi,.queixas,.tabela,.visita,.quem,.agendar{padding:60px 0}
+  td:nth-child(2){padding:16px 10px}
+}
+@media (max-width:520px){.etapas{grid-template-columns:1fr}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<header class="topo">
+  <div class="wrap">
+    <a class="marca" href="#"><svg viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="14" r="13" fill="none" stroke="#B8924A" stroke-width="1.5"/><circle cx="14" cy="14" r="6" fill="#4A2C4F"/></svg>Lume</a>
+    <nav aria-label="Seções"><a href="#queixas">Tratamentos</a><a href="#precos">Preços</a><a href="#quem">Quem atende</a><a href="#agendar">Agendar</a></nav>
+    <a class="btn" href="#agendar">Agendar avaliação</a>
+  </div>
+</header>
+
+<main>
+<section class="heroi" aria-labelledby="t1">
+  <div class="wrap">
+    <div>
+      <h1 id="t1">Sua pele avaliada antes de qualquer tratamento</h1>
+      <p>Estética facial em Campo Grande. A primeira consulta é para entender a sua pele e montar um plano, sem pacote empurrado.</p>
+      <div class="acoes"><a class="btn" href="#agendar">Agendar avaliação</a><a class="btn linha" href="#queixas">Ver tratamentos</a></div>
+    </div>
+    <svg class="luz" viewBox="0 0 400 400" aria-hidden="true">
+      <circle cx="200" cy="200" r="190" fill="#E3D8E8"/>
+      <circle cx="200" cy="200" r="140" fill="#D6C5DC"/>
+      <circle cx="200" cy="200" r="92" fill="#C3ABCB"/>
+      <circle cx="200" cy="200" r="46" fill="#4A2C4F"/>
+      <path d="M200 10a190 190 0 0 1 190 190" fill="none" stroke="#B8924A" stroke-width="1.5"/>
+    </svg>
+  </div>
+</section>
+
+<section class="queixas" id="queixas" aria-labelledby="t2">
+  <div class="wrap">
+    <h2 id="t2">O que te incomoda na pele?</h2>
+    <p class="intro">Toque na queixa e veja o tratamento que costumamos indicar. A indicação final sai na avaliação.</p>
+    <div class="chips" role="group" aria-label="Queixas" id="chips"></div>
+    <div class="protocolo" id="protocolo" aria-live="polite"></div>
+  </div>
+</section>
+
+<section class="tabela" id="precos" aria-labelledby="t3">
+  <div class="wrap">
+    <div>
+      <h2 id="t3">Preços</h2>
+      <p class="intro">Valores por sessão. Pacotes têm desconto e podem ser divididos em até 6 vezes no cartão.</p>
+    </div>
+    <table>
+      <thead><tr><th>Tratamento</th><th>Duração</th><th>Sessão</th></tr></thead>
+      <tbody>
+        <tr><td>Avaliação facial<small>abatida do primeiro tratamento</small></td><td>40 min</td><td>R$ 80</td></tr>
+        <tr><td>Limpeza de pele profunda</td><td>1h20</td><td>R$ 180</td></tr>
+        <tr><td>Peeling químico</td><td>50 min</td><td>R$ 250</td></tr>
+        <tr><td>Microagulhamento</td><td>1h</td><td>R$ 380</td></tr>
+        <tr><td>Skinbooster<small>hidratação injetável</small></td><td>45 min</td><td>R$ 690</td></tr>
+        <tr><td>Radiofrequência facial</td><td>50 min</td><td>R$ 220</td></tr>
+        <tr><td>Revitalização de olheiras</td><td>40 min</td><td>R$ 290</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="visita" aria-labelledby="t4">
+  <div class="wrap">
+    <h2 id="t4">Como é a primeira vez</h2>
+    <ol class="etapas">
+      <li><b>Conversa</b><span>Rotina, produtos que você usa, alergias e o que espera do tratamento.</span></li>
+      <li><b>Análise da pele</b><span>Com luz e lupa, olhamos textura, manchas, oleosidade e sensibilidade.</span></li>
+      <li><b>Plano por escrito</b><span>Você leva para casa o que fazer, quantas sessões e quanto vai custar.</span></li>
+      <li><b>Retorno</b><span>Depois de cada etapa, foto comparativa e ajuste do plano se precisar.</span></li>
+    </ol>
+  </div>
+</section>
+
+<section class="quem" id="quem" aria-labelledby="t5">
+  <div class="wrap">
+    <div class="retrato" aria-hidden="true">
+      <svg viewBox="0 0 200 220"><circle cx="100" cy="82" r="44" fill="#E9D6C4"/><path d="M56 78c0-34 20-52 46-52s42 20 42 50c-8-14-24-22-44-22s-36 10-44 24z" fill="#3A2A2E"/><path d="M20 220c0-56 36-86 80-86s80 30 80 86z" fill="#F6F1F7"/><path d="M84 134h32l-16 22z" fill="#E9D6C4"/></svg>
+    </div>
+    <div>
+      <h2 id="t5">Quem atende</h2>
+      <blockquote>“Prefiro dizer que você não precisa de um procedimento a vender um que não vai fazer diferença.”</blockquote>
+      <p><b style="color:var(--tinta)">Marina Albuquerque</b>, biomédica esteta, responsável técnica da Lume.</p>
+      <p>Atende há oito anos com foco em pele sensível e manchas.</p>
+    </div>
+  </div>
+</section>
+
+<section class="agendar" id="agendar" aria-labelledby="t6">
+  <div class="wrap">
+    <div>
+      <h2 id="t6">Agendar avaliação</h2>
+      <p class="intro">Terça a sábado, das 9h às 19h. Confirmamos pelo WhatsApp.</p>
+      <details><summary>Preciso ir sem maquiagem?</summary><p>De preferência sim. Se vier direto do trabalho, a gente tem demaquilante.</p></details>
+      <details><summary>Dá para fazer algo no mesmo dia?</summary><p>A limpeza de pele, se houver horário livre. Peeling e microagulhamento ficam para depois da avaliação.</p></details>
+      <details><summary>Atende gestantes?</summary><p>Alguns tratamentos sim, com liberação do obstetra. Conte isso na hora de agendar.</p></details>
+    </div>
+    <form id="form" novalidate>
+      <label>Seu nome<input id="f-nome" autocomplete="name"></label>
+      <label>Interesse<select id="f-int"></select></label>
+      <label>Dia preferido<input id="f-dia" type="date"></label>
+      <label>Horário<select id="f-hora"><option>Manhã</option><option>Tarde</option><option>Depois das 17h</option></select></label>
+      <label class="cheio">Algo que a gente deva saber<textarea id="f-obs" rows="3" placeholder="Alergias, tratamentos recentes, gestação"></textarea></label>
+      <p class="erro cheio" id="f-erro" role="alert"></p>
+      <button class="btn cheio" type="submit">Enviar pelo WhatsApp</button>
+    </form>
+  </div>
+</section>
+</main>
+
+<footer><div class="wrap"><span>Lume é um negócio fictício e a profissional citada é uma personagem. Site demonstrativo feito por Luka.</span><a href="https://central-lk.vercel.app/portfolio">Quero um site assim</a></div></footer>
+
+<dialog id="dlg" aria-labelledby="dlg-t"><div class="dlg"><h3 id="dlg-t">Pedido pronto</h3><p style="margin:0;color:var(--suave)">No site de verdade, esta mensagem abre direto no WhatsApp da clínica:</p><div class="wpp" id="dlg-msg"></div><button class="btn" type="button" id="dlg-ok">Entendi</button></div></dialog>
+
+<script>
+(function(){
+  var Q=[
+    {q:"Manchas",t:"Peeling químico",d:"Renova as camadas de cima da pele e clareia manchas de sol e de espinha. Feito no outono e no inverno, com protetor todo dia.",s:"4 sessões",i:"a cada 21 dias",p:"R$ 250 por sessão",pk:"Pacote de 4 por R$ 890"},
+    {q:"Acne e oleosidade",t:"Limpeza profunda e peeling leve",d:"Tira cravos, controla o óleo e acalma a inflamação. Para acne ativa forte, encaminhamos ao dermatologista.",s:"3 sessões",i:"a cada 15 dias",p:"R$ 180 a R$ 250",pk:"Combinado de 3 por R$ 560"},
+    {q:"Linhas finas",t:"Microagulhamento",d:"Estimula colágeno com microperfurações. A pele fica avermelhada por um ou dois dias.",s:"3 a 4 sessões",i:"a cada 30 dias",p:"R$ 380 por sessão",pk:"Pacote de 3 por R$ 1.020"},
+    {q:"Flacidez",t:"Radiofrequência facial",d:"Calor controlado que firma a pele aos poucos. Sem agulha e sem tempo de recuperação.",s:"6 a 8 sessões",i:"semanal",p:"R$ 220 por sessão",pk:"Pacote de 8 por R$ 1.490"},
+    {q:"Pele opaca",t:"Skinbooster",d:"Hidratação injetável com ácido hialurônico, para viço e textura. Resultado dura de 6 a 9 meses.",s:"2 sessões",i:"a cada 30 dias",p:"R$ 690 por sessão",pk:"Duas sessões por R$ 1.250"},
+    {q:"Olheiras",t:"Revitalização de olheiras",d:"Combina peeling suave e bioestimulador na região. Olheira de sombra profunda pode precisar de preenchimento.",s:"4 sessões",i:"a cada 15 dias",p:"R$ 290 por sessão",pk:"Pacote de 4 por R$ 990"}
+  ];
+  var chips=document.getElementById("chips"),box=document.getElementById("protocolo"),sel=document.getElementById("f-int");
+  chips.innerHTML=Q.map(function(x,i){return '<button type="button" class="chip" data-i="'+i+'" aria-pressed="'+(i===0)+'">'+x.q+"</button>"}).join("");
+  sel.innerHTML='<option>Ainda não sei, quero a avaliação</option>'+Q.map(function(x){return "<option>"+x.t+"</option>"}).join("");
+  function mostrar(i){
+    var x=Q[i];
+    box.innerHTML='<div class="esq troca"><h3>'+x.t+"</h3><p>"+x.d+'</p></div><div class="dir troca"><div class="dado"><span>Sessões</span><b>'+x.s+'</b></div><div class="dado"><span>Intervalo</span><b>'+x.i+'</b></div><div class="dado"><span>Valor</span><b>'+x.p+'</b></div><div class="dado"><span>Pacote</span><b>'+x.pk+'</b></div><a class="btn" href="#agendar" data-quero="'+i+'">Quero esse tratamento</a></div>';
+    chips.querySelectorAll(".chip").forEach(function(c){c.setAttribute("aria-pressed",c.dataset.i==i)});
+  }
+  chips.addEventListener("click",function(e){var c=e.target.closest(".chip");if(c)mostrar(+c.dataset.i)});
+  box.addEventListener("click",function(e){var a=e.target.closest("[data-quero]");if(a)sel.selectedIndex=+a.dataset.quero+1});
+  mostrar(0);
+  var amanha=new Date();amanha.setDate(amanha.getDate()+1);var fd=document.getElementById("f-dia");fd.min=amanha.toISOString().slice(0,10);fd.value=fd.min;
+  var dlg=document.getElementById("dlg");document.getElementById("dlg-ok").onclick=function(){dlg.close()};
+  document.getElementById("form").addEventListener("submit",function(e){
+    e.preventDefault();var nome=document.getElementById("f-nome").value.trim(),err=document.getElementById("f-erro");
+    if(!nome){err.textContent="Escreva seu nome para a gente confirmar o horário.";document.getElementById("f-nome").focus();return}
+    err.textContent="";var d=new Date(fd.value+"T12:00"),obs=document.getElementById("f-obs").value.trim();
+    var msg="Olá! Sou "+nome+" e quero agendar uma avaliação.\nInteresse: "+sel.value+"\n"+d.toLocaleDateString("pt-BR",{weekday:"long",day:"2-digit",month:"2-digit"})+", "+document.getElementById("f-hora").value.toLowerCase()+(obs?"\nObs.: "+obs:"");
+    document.getElementById("dlg-msg").textContent=msg;if(dlg.showModal)dlg.showModal();else alert(msg);
+  });
+})();
+</script>
+</body>
+</html>

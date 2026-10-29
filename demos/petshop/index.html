@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bicho Solto · Banho e tosa em Campo Grande</title>
+<meta name="description" content="Banho, tosa e táxi dog em Campo Grande. Veja o preço para o seu bicho e agende pelo WhatsApp.">
+<meta name="theme-color" content="#2F7D4F">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/*
+  Plano: o herói é a calculadora de banho. O dono escolhe o porte e o bicho desenhado cresce junto,
+  com preço e tempo na hora. Verde-grama, amarelo-sol, azul-céu claro e focinho rosa.
+  Baloo 2 para títulos (redonda, simpática), Figtree no texto. Alinhado à esquerda.
+*/
+:root{
+  --fundo:#F4F8F2;--tinta:#183028;--grama:#2F7D4F;--grama-2:#235F3C;--sol:#FFD23F;--ceu:#CFE6F5;--focinho:#F29CA3;--suave:#5A6E66;--linha:#DCE6DE;
+  --titulo:"Baloo 2",system-ui,sans-serif;--texto:"Figtree",system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--fundo);color:var(--tinta);font:17px/1.6 var(--texto);-webkit-font-smoothing:antialiased}
+a{color:inherit}
+:focus-visible{outline:3px solid var(--grama);outline-offset:3px}
+.wrap{max-width:1140px;margin:0 auto;padding:0 22px}
+.topo .wrap{display:flex;align-items:center;justify-content:space-between;min-height:76px;gap:16px}
+.marca{display:flex;align-items:center;gap:10px;text-decoration:none;font:800 26px/1 var(--titulo);color:var(--grama-2)}
+.marca svg{width:40px;height:40px}
+.topo nav{display:flex;gap:24px;font-weight:600;font-size:15px}
+.topo nav a{text-decoration:none}
+.topo nav a:hover{color:var(--grama)}
+.pill{display:inline-flex;align-items:center;gap:8px;font:700 16px var(--texto);border:0;border-radius:999px;padding:13px 22px;background:var(--grama);color:#fff;text-decoration:none;cursor:pointer;white-space:nowrap}
+.pill:hover{background:var(--grama-2)}
+.pill.sol{background:var(--sol);color:var(--tinta)}
+.pill.sol:hover{background:#F5C518}
+/* herói */
+.heroi{padding:26px 0 70px}
+.heroi .wrap{display:grid;grid-template-columns:.85fr 1.15fr;gap:44px;align-items:center}
+h1{font:800 clamp(44px,6.2vw,80px)/.95 var(--titulo);margin:0 0 18px;letter-spacing:-.01em;color:var(--grama-2)}
+.heroi p.lead{font-size:19px;color:var(--suave);max-width:34ch;margin:0 0 24px}
+.selos{display:flex;gap:10px;flex-wrap:wrap;margin:0;padding:0;list-style:none}
+.selos li{background:#fff;border:1.5px solid var(--linha);border-radius:999px;padding:7px 14px;font-size:14px;font-weight:600}
+/* calculadora */
+.calc{background:#fff;border-radius:32px;padding:26px;box-shadow:0 2px 0 var(--linha),0 30px 60px -40px rgba(24,48,40,.45);display:grid;grid-template-columns:1fr 1fr;gap:22px}
+.palco{grid-column:1/-1;background:var(--ceu);border-radius:22px;height:220px;position:relative;overflow:hidden}
+.palco::after{content:"";position:absolute;left:0;right:0;bottom:0;height:46px;background:#9ED39B}
+.bicho{position:absolute;left:42%;bottom:22px;transform-origin:50% 100%;transition:transform .45s cubic-bezier(.3,1.4,.5,1);z-index:1}
+.bicho svg{width:170px;height:auto;display:block;margin-left:-85px}
+.bicho svg[hidden]{display:none}
+.bolhas span{position:absolute;bottom:40px;width:14px;height:14px;border-radius:50%;border:2px solid #fff;opacity:0}
+.palco.banho .bolhas span{animation:sobe 1.8s ease-out forwards}
+@keyframes sobe{0%{opacity:.9;transform:translateY(0)}100%{opacity:0;transform:translateY(-150px)}}
+.preco-box{position:absolute;right:16px;top:14px;background:#fff;border-radius:16px;padding:10px 16px;text-align:right;z-index:2}
+.preco-box b{display:block;font:800 34px/1 var(--titulo);color:var(--grama-2);font-variant-numeric:tabular-nums}
+.preco-box small{color:var(--suave);font-size:13px}
+fieldset{border:0;margin:0;padding:0;display:grid;gap:8px}
+legend{font-weight:700;font-size:15px;margin-bottom:8px;padding:0}
+.opcoes{display:flex;flex-wrap:wrap;gap:8px}
+.opcoes input{position:absolute;opacity:0;pointer-events:none}
+.opcoes label{border:1.5px solid var(--linha);border-radius:12px;padding:8px 12px;font-size:15px;font-weight:600;cursor:pointer;background:#fff}
+.opcoes input:checked+label{background:var(--grama);border-color:var(--grama);color:#fff}
+.opcoes input:focus-visible+label{outline:3px solid var(--sol);outline-offset:2px}
+.porte{grid-column:1/-1}
+input[type=range]{width:100%;accent-color:var(--grama);height:28px}
+.marcas{display:flex;justify-content:space-between;font-size:13px;color:var(--suave);font-weight:600}
+.marcas span.on{color:var(--grama-2)}
+.calc .rodape{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;border-top:1.5px dashed var(--linha);padding-top:18px}
+.calc .rodape p{margin:0;color:var(--suave);font-size:15px}
+/* faixa táxi */
+.taxi{background:var(--sol)}
+.taxi .wrap{display:flex;align-items:center;gap:22px;padding-top:22px;padding-bottom:22px;flex-wrap:wrap}
+.taxi svg{width:84px;flex:none}
+.taxi p{margin:0;font-size:18px;font-weight:600;flex:1;min-width:240px}
+section{padding:80px 0}
+h2{font:800 clamp(34px,4.4vw,52px)/1 var(--titulo);margin:0 0 12px;color:var(--grama-2)}
+.sub{color:var(--suave);max-width:54ch;margin:0 0 36px}
+/* dia do bicho: sequência real */
+.dia{display:grid;grid-template-columns:repeat(4,1fr);gap:0;position:relative}
+.dia::before{content:"";position:absolute;left:0;right:0;top:27px;border-top:3px dotted var(--grama)}
+.etapa{position:relative;padding-right:22px}
+.etapa .hora{display:inline-block;background:var(--grama);color:#fff;font:700 15px var(--texto);border-radius:999px;padding:14px 16px;position:relative}
+.etapa h3{font:700 22px/1.2 var(--titulo);margin:16px 0 6px}
+.etapa p{margin:0;color:var(--suave);font-size:15.5px}
+/* cuidados */
+.cuidados{background:#fff}
+.cuidados .wrap{display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:start}
+.lista-ok{list-style:none;margin:0;padding:0;display:grid;gap:14px}
+.lista-ok li{display:grid;grid-template-columns:30px 1fr;gap:10px}
+.lista-ok svg{width:26px;height:26px;margin-top:2px}
+.vitrine{background:var(--ceu);border-radius:28px;padding:28px}
+.vitrine h3{font:800 26px var(--titulo);margin:0 0 10px}
+.vitrine .item{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1.5px solid rgba(24,48,40,.1)}
+.vitrine .item:last-child{border-bottom:0}
+.vitrine .item b{font-variant-numeric:tabular-nums}
+/* agenda */
+.agendar .wrap{display:grid;grid-template-columns:.8fr 1.2fr;gap:52px;align-items:start}
+form{background:#fff;border-radius:28px;padding:28px;display:grid;grid-template-columns:1fr 1fr;gap:16px;box-shadow:0 2px 0 var(--linha)}
+label.campo{display:grid;gap:6px;font-size:14px;font-weight:700}
+input:not([type=radio]):not([type=range]),select,textarea{font:inherit;font-size:16px;color:var(--tinta);border:1.5px solid var(--linha);border-radius:12px;padding:11px 12px;background:#fff}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--grama)}
+.cheio{grid-column:1/-1}
+.erro{color:#B2382E;font-size:14px;margin:0;min-height:1em}
+.contato{display:grid;gap:18px}
+.contato div{background:#fff;border-radius:20px;padding:18px 20px}
+.contato b{display:block;font:700 19px var(--titulo)}
+.contato span{color:var(--suave);font-size:15px}
+footer{background:var(--grama-2);color:#CFE3D5;font-size:14px;padding:26px 0}
+footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+footer a{color:var(--sol)}
+dialog{border:0;border-radius:24px;padding:0;max-width:440px;width:calc(100% - 32px)}
+dialog::backdrop{background:rgba(24,48,40,.55)}
+.dlg{padding:26px;display:grid;gap:14px}
+.dlg h3{font:800 28px/1 var(--titulo);margin:0;color:var(--grama-2)}
+.wpp{background:#E7F6EC;border-radius:14px 14px 14px 3px;padding:14px;white-space:pre-wrap;font-size:15px}
+@media (max-width:900px){
+  .heroi .wrap,.cuidados .wrap,.agendar .wrap{grid-template-columns:1fr;gap:30px}
+  .topo nav,.topo .pill{display:none}
+  .bicho{left:36%}
+  .preco-box{right:10px;top:10px;padding:8px 12px}
+  .preco-box b{font-size:28px}
+  .calc{grid-template-columns:1fr;padding:18px;border-radius:26px}
+  .dia{grid-template-columns:1fr;gap:22px}
+  .dia::before{left:27px;right:auto;top:0;bottom:0;border-top:0;border-left:3px dotted var(--grama)}
+  .etapa{padding-left:0}
+  form{grid-template-columns:1fr;padding:20px}
+  section{padding:56px 0}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<header class="topo">
+  <div class="wrap">
+    <a class="marca" href="#"><svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="20" fill="#FFD23F"/><ellipse cx="20" cy="25" rx="8" ry="6.5" fill="#2F7D4F"/><circle cx="11.5" cy="16" r="3.4" fill="#2F7D4F"/><circle cx="17" cy="11.5" r="3.4" fill="#2F7D4F"/><circle cx="23" cy="11.5" r="3.4" fill="#2F7D4F"/><circle cx="28.5" cy="16" r="3.4" fill="#2F7D4F"/></svg>Bicho Solto</a>
+    <nav aria-label="Seções"><a href="#dia">Como funciona</a><a href="#cuidados">Cuidados</a><a href="#agendar">Agendar</a></nav>
+    <a class="pill sol" href="#agendar">Agendar banho</a>
+  </div>
+</header>
+
+<main>
+<section class="heroi" aria-labelledby="t1" style="padding-top:20px">
+  <div class="wrap">
+    <div>
+      <h1 id="t1">Banho, tosa e cafuné em Campo Grande</h1>
+      <p class="lead">Escolha o porte e veja quanto fica o banho do seu bicho antes de agendar. Sem surpresa no balcão.</p>
+      <ul class="selos"><li>Táxi dog grátis até 3 km</li><li>Secagem sem soprador barulhento</li><li>Fotos pelo WhatsApp</li></ul>
+    </div>
+    <div class="calc" aria-labelledby="calc-t">
+      <h2 id="calc-t" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">Calcule o banho</h2>
+      <div class="palco" id="palco">
+        <div class="preco-box" aria-live="polite"><b id="preco">R$ 65</b><small id="tempo">cerca de 1h30</small></div>
+        <div class="bolhas" aria-hidden="true"><span style="left:38%"></span><span style="left:46%;animation-delay:.3s"></span><span style="left:56%;animation-delay:.15s"></span><span style="left:62%;animation-delay:.5s"></span></div>
+        <div class="bicho" id="bicho" aria-hidden="true">
+          <svg id="svg-cao" viewBox="0 0 150 120"><ellipse cx="78" cy="78" rx="46" ry="26" fill="#C98B4E"/><rect x="44" y="88" width="12" height="28" rx="6" fill="#B07540"/><rect x="62" y="90" width="12" height="26" rx="6" fill="#C98B4E"/><rect x="92" y="90" width="12" height="26" rx="6" fill="#B07540"/><rect x="108" y="88" width="12" height="28" rx="6" fill="#C98B4E"/><path d="M122 70c12-6 18-20 14-30" stroke="#C98B4E" stroke-width="9" stroke-linecap="round" fill="none"/><circle cx="40" cy="52" r="26" fill="#D9A066"/><path d="M20 38c-10 4-12 22-4 30 6-4 8-18 4-30z" fill="#8F5A2E"/><path d="M52 30c8-2 16 10 12 22-6-2-12-12-12-22z" fill="#8F5A2E"/><circle cx="34" cy="50" r="3.6" fill="#183028"/><circle cx="48" cy="50" r="3.6" fill="#183028"/><ellipse cx="40" cy="62" rx="7" ry="5" fill="#183028"/><path d="M40 67v4M34 72c3 3 9 3 12 0" stroke="#183028" stroke-width="2" fill="none" stroke-linecap="round"/><ellipse cx="40" cy="76" rx="4" ry="3" fill="#F29CA3"/></svg>
+          <svg id="svg-gato" viewBox="0 0 150 120" hidden><ellipse cx="80" cy="84" rx="40" ry="22" fill="#7C8794"/><path d="M116 82c18-4 22-30 8-40" stroke="#7C8794" stroke-width="8" stroke-linecap="round" fill="none"/><rect x="52" y="94" width="10" height="22" rx="5" fill="#6A7480"/><rect x="98" y="94" width="10" height="22" rx="5" fill="#6A7480"/><circle cx="44" cy="60" r="24" fill="#8D99A6"/><path d="M24 48l2-24 16 14zM64 48l-2-24-16 14z" fill="#8D99A6"/><path d="M28 44l2-14 8 8zM60 44l-2-14-8 8z" fill="#F29CA3"/><ellipse cx="36" cy="58" rx="3" ry="4.4" fill="#183028"/><ellipse cx="52" cy="58" rx="3" ry="4.4" fill="#183028"/><path d="M41 66h6l-3 3z" fill="#F29CA3"/><path d="M44 69c-2 3-6 3-8 1M44 69c2 3 6 3 8 1M30 66h-12M30 70l-11 3M58 66h12M58 70l11 3" stroke="#183028" stroke-width="1.6" fill="none" stroke-linecap="round"/></svg>
+        </div>
+      </div>
+      <fieldset>
+        <legend>Seu bicho</legend>
+        <div class="opcoes"><input type="radio" name="tipo" id="t-cao" value="cao" checked><label for="t-cao">Cachorro</label><input type="radio" name="tipo" id="t-gato" value="gato"><label for="t-gato">Gato</label></div>
+      </fieldset>
+      <fieldset>
+        <legend>Pelo</legend>
+        <div class="opcoes"><input type="radio" name="pelo" id="p-curto" value="curto" checked><label for="p-curto">Curto</label><input type="radio" name="pelo" id="p-longo" value="longo"><label for="p-longo">Longo</label></div>
+      </fieldset>
+      <fieldset class="porte" id="box-porte">
+        <legend id="porte-l">Porte: <span id="porte-nome">Pequeno</span></legend>
+        <input type="range" id="porte" min="0" max="4" step="1" value="1" aria-labelledby="porte-l" aria-valuetext="Pequeno">
+        <div class="marcas" aria-hidden="true"><span>Mini</span><span>Pequeno</span><span>Médio</span><span>Grande</span><span>Gigante</span></div>
+      </fieldset>
+      <fieldset class="porte">
+        <legend>Serviço</legend>
+        <div class="opcoes"><input type="radio" name="serv" id="s-banho" value="banho" checked><label for="s-banho">Só banho</label><input type="radio" name="serv" id="s-hig" value="hig"><label for="s-hig">Banho e tosa higiênica</label><input type="radio" name="serv" id="s-tosa" value="tosa"><label for="s-tosa">Banho e tosa completa</label></div>
+      </fieldset>
+      <div class="rodape"><p id="resumo">Cachorro pequeno, pelo curto, só banho.</p><a class="pill" href="#agendar" id="levar">Agendar este banho</a></div>
+    </div>
+  </div>
+</section>
+
+<div class="taxi">
+  <div class="wrap">
+    <svg viewBox="0 0 90 50" aria-hidden="true"><rect x="4" y="12" width="66" height="26" rx="8" fill="#2F7D4F"/><path d="M70 20h8l8 10v8H70z" fill="#235F3C"/><rect x="14" y="17" width="16" height="10" rx="3" fill="#CFE6F5"/><rect x="36" y="17" width="16" height="10" rx="3" fill="#CFE6F5"/><circle cx="22" cy="40" r="7" fill="#183028"/><circle cx="66" cy="40" r="7" fill="#183028"/><circle cx="22" cy="40" r="2.5" fill="#FFD23F"/><circle cx="66" cy="40" r="2.5" fill="#FFD23F"/></svg>
+    <p>A gente busca e leva o seu bicho. Grátis até 3 km da loja; depois disso, R$ 2 por km.</p>
+    <a class="pill" href="#agendar">Pedir táxi dog</a>
+  </div>
+</div>
+
+<section id="dia" aria-labelledby="t2">
+  <div class="wrap">
+    <h2 id="t2">O dia do seu bicho com a gente</h2>
+    <p class="sub">Um exemplo de banho agendado para as 9h. Você acompanha tudo pelo WhatsApp.</p>
+    <div class="dia">
+      <div class="etapa"><span class="hora">9h00</span><h3>Busca em casa</h3><p>O táxi dog chega no horário marcado, com caixa de transporte limpa.</p></div>
+      <div class="etapa"><span class="hora">9h20</span><h3>Banho</h3><p>Água morna e shampoo escolhido para o tipo de pelo. Ouvidos protegidos.</p></div>
+      <div class="etapa"><span class="hora">10h10</span><h3>Secagem e escova</h3><p>Secador de baixo ruído, sem pressa. Para quem tem medo, toalha e paciência.</p></div>
+      <div class="etapa"><span class="hora">10h40</span><h3>Volta para casa</h3><p>Você recebe uma foto quando ele sai e outra quando chega.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="cuidados" id="cuidados" aria-labelledby="t3">
+  <div class="wrap">
+    <div>
+      <h2 id="t3">Cuidados que fazem diferença</h2>
+      <ul class="lista-ok">
+        <li><svg viewBox="0 0 26 26" aria-hidden="true"><circle cx="13" cy="13" r="13" fill="#2F7D4F"/><path d="M7.5 13.5l3.5 3.5 7.5-8" stroke="#fff" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Bicho com medo não fica preso no box: tem pausa e colo quando precisa.</span></li>
+        <li><svg viewBox="0 0 26 26" aria-hidden="true"><circle cx="13" cy="13" r="13" fill="#2F7D4F"/><path d="M7.5 13.5l3.5 3.5 7.5-8" stroke="#fff" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Antes de começar, olhamos pele, unhas e ouvidos. Se algo parecer estranho, avisamos você.</span></li>
+        <li><svg viewBox="0 0 26 26" aria-hidden="true"><circle cx="13" cy="13" r="13" fill="#2F7D4F"/><path d="M7.5 13.5l3.5 3.5 7.5-8" stroke="#fff" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Gatos têm horário só deles, sem cachorro latindo por perto.</span></li>
+        <li><svg viewBox="0 0 26 26" aria-hidden="true"><circle cx="13" cy="13" r="13" fill="#2F7D4F"/><path d="M7.5 13.5l3.5 3.5 7.5-8" stroke="#fff" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Vacina em dia é obrigatória. Traga a carteirinha na primeira visita.</span></li>
+      </ul>
+    </div>
+    <div class="vitrine">
+      <h3>Também na loja</h3>
+      <div class="item"><span>Ração Premium 10,1 kg</span><b>a partir de R$ 189</b></div>
+      <div class="item"><span>Antipulgas mensal</span><b>a partir de R$ 59</b></div>
+      <div class="item"><span>Corte de unhas avulso</span><b>R$ 25</b></div>
+      <div class="item"><span>Hidratação de pelo</span><b>R$ 35</b></div>
+      <div class="item"><span>Pacote de 4 banhos no mês</span><b>15% de desconto</b></div>
+    </div>
+  </div>
+</section>
+
+<section class="agendar" id="agendar" aria-labelledby="t4">
+  <div class="wrap">
+    <div>
+      <h2 id="t4">Agendar</h2>
+      <p class="sub">Escolha o dia e o período. A confirmação chega pelo WhatsApp com o horário exato.</p>
+      <div class="contato">
+        <div><b>Segunda a sábado</b><span>8h às 18h. Gatos às terças e quintas de manhã.</span></div>
+        <div><b>Campo Grande, Zona Oeste do Rio</b><span>Estacionamento na porta para quem vem de carro.</span></div>
+      </div>
+    </div>
+    <form id="form" novalidate>
+      <label class="campo">Seu nome<input id="f-nome" autocomplete="name"></label>
+      <label class="campo">Nome do bicho<input id="f-pet"></label>
+      <label class="campo cheio">Serviço<input id="f-serv" readonly></label>
+      <label class="campo">Dia<input id="f-dia" type="date"></label>
+      <label class="campo">Período<select id="f-per"><option>Manhã</option><option>Tarde</option></select></label>
+      <label class="campo cheio"><span><input type="checkbox" id="f-taxi" style="width:auto;margin-right:8px;accent-color:#2F7D4F">Quero táxi dog</span></label>
+      <p class="erro cheio" id="f-erro" role="alert"></p>
+      <button class="pill cheio" type="submit" style="justify-content:center">Enviar pelo WhatsApp</button>
+    </form>
+  </div>
+</section>
+</main>
+
+<footer><div class="wrap"><span>Bicho Solto é um negócio fictício. Site demonstrativo feito por Luka.</span><a href="https://central-lk.vercel.app/portfolio">Quero um site assim</a></div></footer>
+
+<dialog id="dlg" aria-labelledby="dlg-t"><div class="dlg"><h3 id="dlg-t">Agendamento pronto</h3><p style="margin:0;color:var(--suave)">No site de verdade, esta mensagem abre direto no WhatsApp da loja:</p><div class="wpp" id="dlg-msg"></div><button class="pill" type="button" id="dlg-ok" style="justify-content:center">Entendi</button></div></dialog>
+
+<script>
+(function(){
+  var PORTES=["Mini","Pequeno","Médio","Grande","Gigante"],BANHO=[55,65,80,100,130],TOSA=[45,55,70,90,120],TEMPO=[60,90,100,120,150],ESCALA=[.55,.72,.9,1.08,1.25];
+  var $=function(s){return document.querySelector(s)},atual={};
+  function val(n){return document.querySelector('input[name="'+n+'"]:checked').value}
+  function horas(m){var h=Math.floor(m/60),r=m%60;return "cerca de "+h+"h"+(r?String(r).padStart(2,"0"):"")}
+  function calcular(bolha){
+    var tipo=val("tipo"),pelo=val("pelo"),serv=val("serv"),i=+$("#porte").value,preco,tempo;
+    $("#box-porte").hidden=tipo==="gato";
+    $("#svg-cao").hidden=tipo==="gato";$("#svg-gato").hidden=tipo!=="gato";
+    if(tipo==="gato"){preco=80;tempo=90;if(serv==="hig")preco+=20;if(serv==="tosa"){preco+=70;tempo+=40}}
+    else{preco=BANHO[i];tempo=TEMPO[i];if(serv==="hig"){preco+=20;tempo+=15}if(serv==="tosa"){preco+=TOSA[i];tempo+=45}}
+    if(pelo==="longo"){preco=Math.round(preco*1.2/5)*5;tempo+=20}
+    $("#preco").textContent="R$ "+preco;$("#tempo").textContent=horas(tempo);
+    $("#porte-nome").textContent=PORTES[i];$("#porte").setAttribute("aria-valuetext",PORTES[i]);
+    document.querySelectorAll(".marcas span").forEach(function(s,k){s.className=k===i?"on":""});
+    $("#bicho").style.transform="translateX(0) scale("+(tipo==="gato"?.85:ESCALA[i])+")";
+    var servTxt={banho:"só banho",hig:"banho e tosa higiênica",tosa:"banho e tosa completa"}[serv];
+    var quem=tipo==="gato"?"Gato":"Cachorro "+PORTES[i].toLowerCase();
+    $("#resumo").textContent=quem+", pelo "+pelo+", "+servTxt+".";
+    atual={txt:quem+", pelo "+pelo+", "+servTxt+" (R$ "+preco+")"};$("#f-serv").value=atual.txt;
+    if(bolha){var p=$("#palco");p.classList.remove("banho");void p.offsetWidth;p.classList.add("banho")}
+  }
+  document.querySelectorAll(".calc input").forEach(function(el){el.addEventListener("input",function(){calcular(true)})});
+  calcular(false);
+  var amanha=new Date();amanha.setDate(amanha.getDate()+1);$("#f-dia").min=amanha.toISOString().slice(0,10);$("#f-dia").value=$("#f-dia").min;
+  var dlg=$("#dlg");$("#dlg-ok").onclick=function(){dlg.close()};
+  $("#form").addEventListener("submit",function(e){
+    e.preventDefault();var nome=$("#f-nome").value.trim(),pet=$("#f-pet").value.trim();
+    if(!nome||!pet){$("#f-erro").textContent="Preencha o seu nome e o nome do bicho.";(nome?$("#f-pet"):$("#f-nome")).focus();return}
+    $("#f-erro").textContent="";
+    var d=new Date($("#f-dia").value+"T12:00");
+    var msg="Oi! Sou "+nome+" e quero agendar para o "+pet+":\n"+atual.txt+"\n"+d.toLocaleDateString("pt-BR",{weekday:"long",day:"2-digit",month:"2-digit"})+", "+$("#f-per").value.toLowerCase()+($("#f-taxi").checked?"\nCom táxi dog.":"");
+    $("#dlg-msg").textContent=msg;if(dlg.showModal)dlg.showModal();else alert(msg);
+  });
+})();
+</script>
+</body>
+</html>

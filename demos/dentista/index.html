@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Arco Odontologia · Dentista em Campo Grande</title>
+<meta name="description" content="Dentista em Campo Grande com atendimento à noite e aos sábados. Veja se aceitamos o seu convênio e agende pelo WhatsApp.">
+<meta name="theme-color" content="#0E4D5C">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Albert+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/*
+  Plano: clareza de clínica, sem frieza. O sorriso vira a marca: um arco de dentes desenhado no herói.
+  A pergunta que mais trava o paciente ("aceita meu convênio?") é respondida na hora, no topo.
+  Petróleo, menta, amarelo-manteiga para destaque, branco gelo. Uma família: Albert Sans.
+*/
+:root{
+  --gelo:#F3F7F8;--branco:#FFFFFF;--petroleo:#0E4D5C;--petroleo-2:#0A3A46;--menta:#7FD1C2;--menta-2:#D7F1EC;--manteiga:#FFE08A;--tinta:#102A30;--suave:#56707A;--linha:#D8E4E7;
+  --f:"Albert Sans",system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--gelo);color:var(--tinta);font:17px/1.6 var(--f);-webkit-font-smoothing:antialiased}
+a{color:inherit}
+:focus-visible{outline:3px solid var(--menta);outline-offset:3px}
+.wrap{max-width:1140px;margin:0 auto;padding:0 22px}
+.urgencia{background:var(--manteiga);font-size:15px}
+.urgencia .wrap{display:flex;justify-content:space-between;align-items:center;gap:12px;min-height:44px;flex-wrap:wrap;padding-top:6px;padding-bottom:6px}
+.urgencia b{font-weight:700}
+.urgencia a{font-weight:700}
+.topo .wrap{display:flex;justify-content:space-between;align-items:center;min-height:78px;gap:16px}
+.marca{display:flex;align-items:center;gap:10px;text-decoration:none;font:800 22px var(--f);color:var(--petroleo);letter-spacing:-.01em}
+.marca svg{width:36px;height:24px}
+.topo nav{display:flex;gap:26px;font-size:15px;font-weight:500}
+.topo nav a{text-decoration:none;color:var(--suave)}
+.topo nav a:hover{color:var(--petroleo)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;font:700 16px var(--f);background:var(--petroleo);color:#fff;border:0;border-radius:12px;padding:14px 22px;text-decoration:none;cursor:pointer;white-space:nowrap}
+.btn:hover{background:var(--petroleo-2)}
+.btn.claro{background:var(--branco);color:var(--petroleo);box-shadow:inset 0 0 0 1.5px var(--linha)}
+/* herói */
+.heroi{padding:30px 0 0}
+.heroi .wrap{display:grid;grid-template-columns:1.05fr .95fr;gap:48px;align-items:center}
+h1{font:800 clamp(40px,5.6vw,70px)/1.02 var(--f);letter-spacing:-.03em;margin:0 0 20px;color:var(--petroleo)}
+.heroi p{font-size:19px;color:var(--suave);margin:0 0 26px;max-width:38ch}
+.sorriso{width:100%;height:auto;max-height:340px}
+.sorriso .dente{fill:#fff;stroke:var(--petroleo);stroke-width:2.5;opacity:0;animation:aparece .5s ease forwards}
+@keyframes aparece{to{opacity:1}}
+/* convênio */
+.convenio{margin:44px 0 0;background:var(--petroleo);color:#DDEFF0;border-radius:24px;padding:28px;display:grid;grid-template-columns:1fr 1.3fr;gap:28px;align-items:center}
+.convenio h2{color:#fff;font-size:28px;margin:0 0 6px;letter-spacing:-.02em}
+.heroi .wrap.conv{display:block}
+.convenio p{margin:0;font-size:15.5px;color:#C9E3E6;max-width:none}
+.busca{display:grid;gap:10px}
+.busca label{font-weight:600;font-size:14px}
+.busca .linha{display:flex;gap:10px}
+.busca input{flex:1;font:inherit;font-size:17px;border:0;border-radius:12px;padding:14px 16px;color:var(--tinta)}
+.busca input:focus{outline:3px solid var(--menta)}
+.resp{min-height:28px;font-weight:600;font-size:16px}
+.resp.sim{color:var(--menta)}
+.resp.nao{color:var(--manteiga)}
+section{padding:84px 0}
+h2{font:800 clamp(32px,4vw,48px)/1.08 var(--f);letter-spacing:-.025em;margin:0 0 12px;color:var(--petroleo)}
+.intro{color:var(--suave);max-width:54ch;margin:0 0 36px}
+/* tratamentos */
+.trats{display:grid;grid-template-columns:repeat(3,1fr);gap:0;background:var(--branco);border-radius:24px;overflow:hidden;box-shadow:0 0 0 1.5px var(--linha)}
+.trat{padding:26px;border-right:1.5px solid var(--linha);border-bottom:1.5px solid var(--linha);display:grid;gap:6px;align-content:start}
+.trat:nth-child(3n){border-right:0}
+.trat:nth-last-child(-n+3){border-bottom:0}
+.trat h3{margin:0;font-size:20px;letter-spacing:-.01em}
+.trat p{margin:0;color:var(--suave);font-size:15.5px}
+.trat b{margin-top:6px;color:var(--petroleo);font-size:15px}
+/* horários */
+.horario{background:var(--menta-2)}
+.horario .wrap{display:grid;grid-template-columns:.9fr 1.1fr;gap:56px;align-items:center}
+.semana{display:grid;grid-template-columns:repeat(7,1fr);gap:8px}
+.dia{background:var(--branco);border-radius:14px;padding:14px 6px;text-align:center;display:grid;gap:4px}
+.dia b{font-size:15px}
+.dia span{font-size:13px;color:var(--suave);line-height:1.3}
+.dia.hoje{background:var(--petroleo);color:#fff}
+.dia.hoje span{color:#BFE3E0}
+.dia.fechado{background:transparent;box-shadow:inset 0 0 0 1.5px rgba(14,77,92,.18)}
+/* equipe */
+.equipe{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
+.pessoa{display:grid;grid-template-columns:72px 1fr;gap:16px;align-items:center}
+.avatar{width:72px;height:72px;border-radius:50%;display:grid;place-items:center;font:800 24px var(--f);color:var(--petroleo)}
+.pessoa b{display:block;font-size:18px}
+.pessoa span{color:var(--suave);font-size:15px}
+/* agendar */
+.agendar{background:var(--branco)}
+.agendar .wrap{display:grid;grid-template-columns:.85fr 1.15fr;gap:56px;align-items:start}
+form{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+form label{display:grid;gap:6px;font-size:14px;font-weight:600}
+input,select,textarea{font:inherit;font-size:16px;color:var(--tinta);background:var(--gelo);border:1.5px solid var(--linha);border-radius:12px;padding:12px 14px}
+form input:focus,select:focus,textarea:focus{outline:none;border-color:var(--petroleo);background:#fff}
+.cheio{grid-column:1/-1}
+.erro{color:#B23B32;font-size:14px;margin:0;min-height:1em}
+details{border-bottom:1.5px solid var(--linha);padding:16px 0}
+summary{cursor:pointer;font-weight:700;list-style:none;display:flex;justify-content:space-between;gap:10px}
+summary::after{content:"";width:12px;height:12px;border-right:2.5px solid var(--petroleo);border-bottom:2.5px solid var(--petroleo);transform:rotate(45deg);margin-top:4px;flex:none;transition:transform .2s}
+details[open] summary::after{transform:rotate(-135deg);margin-top:10px}
+details p{margin:10px 0 0;color:var(--suave)}
+footer{background:var(--petroleo-2);color:#B3CDD2;font-size:14px;padding:26px 0}
+footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+footer a{color:var(--manteiga)}
+dialog{border:0;border-radius:22px;padding:0;max-width:440px;width:calc(100% - 32px)}
+dialog::backdrop{background:rgba(10,58,70,.55)}
+.dlg{padding:26px;display:grid;gap:14px}
+.dlg h3{font-size:26px;margin:0;color:var(--petroleo);letter-spacing:-.02em}
+.wpp{background:#E7F6EC;border-radius:14px 14px 14px 3px;padding:14px;white-space:pre-wrap;font-size:15px}
+@media (max-width:900px){
+  .heroi .wrap,.convenio,.horario .wrap,.agendar .wrap{grid-template-columns:1fr;gap:26px}
+  .sorriso{max-width:360px}
+  .topo nav,.topo .btn{display:none}
+  .trats,.equipe{grid-template-columns:1fr}
+  .trat{border-right:0!important;border-bottom:1.5px solid var(--linha)!important}
+  .trat:last-child{border-bottom:0!important}
+  .semana{grid-template-columns:repeat(4,1fr)}
+  .busca .linha{flex-direction:column}
+  form{grid-template-columns:1fr}
+  section{padding:60px 0}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}.sorriso .dente{opacity:1}}
+</style>
+</head>
+<body>
+<div class="urgencia"><div class="wrap"><span><b>Dor de dente agora?</b> Encaixe de urgência no mesmo dia, inclusive sábado.</span><a href="#agendar" data-urg>Pedir encaixe</a></div></div>
+<header class="topo">
+  <div class="wrap">
+    <a class="marca" href="#"><svg viewBox="0 0 36 24" aria-hidden="true"><path d="M3 6c4 10 10 15 15 15s11-5 15-15" fill="none" stroke="#0E4D5C" stroke-width="4" stroke-linecap="round"/><circle cx="33" cy="6" r="3" fill="#7FD1C2"/></svg>Arco Odontologia</a>
+    <nav aria-label="Seções"><a href="#tratamentos">Tratamentos</a><a href="#horarios">Horários</a><a href="#equipe">Equipe</a></nav>
+    <a class="btn" href="#agendar">Agendar consulta</a>
+  </div>
+</header>
+
+<main>
+<section class="heroi" aria-labelledby="t1" style="padding-bottom:0">
+  <div class="wrap">
+    <div>
+      <h1 id="t1">Dentista em Campo Grande com horário à noite e no sábado</h1>
+      <p>Consulta, limpeza e tratamento sem precisar faltar ao trabalho. Atendemos até as 21h.</p>
+      <div style="display:flex;gap:12px;flex-wrap:wrap"><a class="btn" href="#agendar">Agendar consulta</a><a class="btn claro" href="#convenio">Ver convênios</a></div>
+    </div>
+    <svg class="sorriso" id="sorriso" viewBox="0 0 480 300" role="img" aria-label="Desenho de uma arcada de dentes em forma de sorriso"></svg>
+  </div>
+  <div class="wrap conv">
+    <div class="convenio" id="convenio">
+      <div><h2>Aceita o meu convênio?</h2><p>Digite o nome do plano. Se não aceitarmos, o particular tem desconto na primeira consulta.</p></div>
+      <div class="busca">
+        <label for="plano">Nome do convênio</label>
+        <div class="linha"><input id="plano" list="planos" placeholder="Ex.: Amil Dental" autocomplete="off"><button class="btn claro" type="button" id="ver">Verificar</button></div>
+        <datalist id="planos"></datalist>
+        <div class="resp" id="resp" aria-live="polite"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="tratamentos" aria-labelledby="t2">
+  <div class="wrap">
+    <h2 id="t2">Tratamentos</h2>
+    <p class="intro">Valores particulares de referência. O orçamento exato sai depois da avaliação, por escrito.</p>
+    <div class="trats">
+      <div class="trat"><h3>Consulta e limpeza</h3><p>Avaliação completa, raspagem do tártaro e polimento.</p><b>R$ 180</b></div>
+      <div class="trat"><h3>Restauração</h3><p>Resina da cor do dente, feita em uma consulta.</p><b>a partir de R$ 200</b></div>
+      <div class="trat"><h3>Canal</h3><p>Com anestesia e localizador eletrônico. Em uma ou duas sessões.</p><b>a partir de R$ 750</b></div>
+      <div class="trat"><h3>Clareamento</h3><p>Moldeira para usar em casa, com acompanhamento.</p><b>R$ 690</b></div>
+      <div class="trat"><h3>Aparelho</h3><p>Fixo ou alinhador transparente. Manutenção mensal.</p><b>a partir de R$ 180/mês</b></div>
+      <div class="trat"><h3>Implante</h3><p>Planejamento com tomografia e prótese sobre implante.</p><b>a partir de R$ 2.900</b></div>
+    </div>
+  </div>
+</section>
+
+<section class="horario" id="horarios" aria-labelledby="t3">
+  <div class="wrap">
+    <div>
+      <h2 id="t3">Horários</h2>
+      <p class="intro" style="margin-bottom:0">Fácil de encaixar depois do expediente. Estacionamento conveniado em frente.</p>
+    </div>
+    <div class="semana" id="semana"></div>
+  </div>
+</section>
+
+<section id="equipe" aria-labelledby="t4">
+  <div class="wrap">
+    <h2 id="t4">Quem vai te atender</h2>
+    <p class="intro">Cada dentista cuida da própria área. Você não é passado de mão em mão.</p>
+    <div class="equipe">
+      <div class="pessoa"><span class="avatar" style="background:var(--menta-2)">RC</span><div><b>Dr. Rafael Costa</b><span>Clínico geral e canal</span></div></div>
+      <div class="pessoa"><span class="avatar" style="background:#FFF1C7">LM</span><div><b>Dra. Larissa Mendes</b><span>Ortodontia e alinhadores</span></div></div>
+      <div class="pessoa"><span class="avatar" style="background:#E3ECF6">PA</span><div><b>Dr. Paulo Azevedo</b><span>Implantes e prótese</span></div></div>
+    </div>
+  </div>
+</section>
+
+<section class="agendar" id="agendar" aria-labelledby="t5">
+  <div class="wrap">
+    <div>
+      <h2 id="t5">Agendar consulta</h2>
+      <p class="intro">Confirmamos pelo WhatsApp em até uma hora, no horário de atendimento.</p>
+      <details><summary>Atende criança?</summary><p>Sim, a partir dos 4 anos, de preferência pela manhã.</p></details>
+      <details><summary>Dá para parcelar?</summary><p>Tratamentos acima de R$ 500 em até 10 vezes no cartão.</p></details>
+      <details><summary>Quanto tempo dura a primeira consulta?</summary><p>Cerca de 40 minutos, com radiografia se precisar.</p></details>
+    </div>
+    <form id="form" novalidate>
+      <label>Seu nome<input id="f-nome" autocomplete="name"></label>
+      <label>Motivo<select id="f-mot"><option>Consulta e limpeza</option><option>Dor ou urgência</option><option>Aparelho</option><option>Clareamento</option><option>Implante</option><option>Outro</option></select></label>
+      <label>Convênio<input id="f-conv" list="planos" placeholder="Particular"></label>
+      <label>Melhor horário<select id="f-hora"><option>Manhã</option><option>Tarde</option><option>Noite (até 21h)</option><option>Sábado</option></select></label>
+      <p class="erro cheio" id="f-erro" role="alert"></p>
+      <button class="btn cheio" type="submit">Enviar pelo WhatsApp</button>
+    </form>
+  </div>
+</section>
+</main>
+
+<footer><div class="wrap"><span>Arco Odontologia é um negócio fictício e os dentistas citados são personagens. Site demonstrativo feito por Luka.</span><a href="https://central-lk.vercel.app/portfolio">Quero um site assim</a></div></footer>
+
+<dialog id="dlg" aria-labelledby="dlg-t"><div class="dlg"><h3 id="dlg-t">Pedido pronto</h3><p style="margin:0;color:var(--suave)">No site de verdade, esta mensagem abre direto no WhatsApp da clínica:</p><div class="wpp" id="dlg-msg"></div><button class="btn" type="button" id="dlg-ok">Entendi</button></div></dialog>
+
+<script>
+(function(){
+  // arcada: dentes distribuídos numa curva, maiores no centro
+  var svg=document.getElementById("sorriso"),n=12,h="";
+  h+='<path d="M40 70 Q240 330 440 70" fill="none" stroke="#7FD1C2" stroke-width="22" stroke-linecap="round" opacity=".45"/>';
+  for(var i=0;i<n;i++){
+    var t=(i+.5)/n,x=(1-t)*(1-t)*40+2*(1-t)*t*240+t*t*440,y=(1-t)*(1-t)*70+2*(1-t)*t*330+t*t*70;
+    var dx=2*(1-t)*(240-40)+2*t*(440-240),dy=2*(1-t)*(330-70)+2*t*(70-330),ang=Math.atan2(dy,dx)*180/Math.PI;
+    var c=Math.abs(t-.5),w=c<.1?34:c<.25?30:26,hh=c<.1?46:c<.25?40:34;
+    h+='<g transform="translate('+x.toFixed(1)+" "+(y-hh/2-6).toFixed(1)+") rotate("+ang.toFixed(1)+')"><rect class="dente" style="animation-delay:'+(i*60)+'ms" x="'+(-w/2)+'" y="'+(-hh/2)+'" width="'+w+'" height="'+hh+'" rx="'+(w/2.4)+'"/></g>';
+  }
+  h+='<g transform="translate(250 60)"><circle r="9" fill="#FFE08A"/><path d="M0-17v-9M17 0h9M-17 0h-9M12-12l6-6M-12-12l-6-6" stroke="#FFE08A" stroke-width="3" stroke-linecap="round"/></g>';
+  svg.innerHTML=h;
+
+  var ACEITOS=["Amil Dental","Bradesco Dental","SulAmérica Odonto","OdontoPrev","Porto Seguro Odonto","Unimed Odonto","MetLife Dental","Dental Uni"];
+  var NAO=["Hapvida Odonto","Interodonto"];
+  document.getElementById("planos").innerHTML=ACEITOS.concat(NAO).map(function(p){return '<option value="'+p+'">'}).join("");
+  function norm(s){return s.normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().replace(/[^a-z0-9]/g,"")}
+  function verificar(){
+    var v=norm(document.getElementById("plano").value),r=document.getElementById("resp");
+    if(!v){r.className="resp";r.textContent="Digite o nome do convênio.";return}
+    var ok=ACEITOS.find(function(p){return norm(p).indexOf(v)>=0||v.indexOf(norm(p).slice(0,5))===0});
+    if(ok){r.className="resp sim";r.textContent="Aceitamos "+ok+". Leve a carteirinha e um documento com foto."}
+    else{r.className="resp nao";r.textContent="Esse plano a gente não atende. No particular, a primeira consulta sai por R$ 140."}
+  }
+  document.getElementById("ver").onclick=verificar;
+  document.getElementById("plano").addEventListener("keydown",function(e){if(e.key==="Enter")verificar()});
+
+  var DIAS=[["Dom","Fechado"],["Seg","9h às 21h"],["Ter","9h às 21h"],["Qua","9h às 21h"],["Qui","9h às 21h"],["Sex","9h às 19h"],["Sáb","8h às 14h"]],hoje=new Date().getDay();
+  var ordem=[1,2,3,4,5,6,0];
+  document.getElementById("semana").innerHTML=ordem.map(function(d){var x=DIAS[d];return '<div class="dia'+(d===hoje?" hoje":"")+(d===0?" fechado":"")+'"><b>'+x[0]+(d===hoje?" (hoje)":"")+"</b><span>"+x[1]+"</span></div>"}).join("");
+
+  document.querySelector("[data-urg]").addEventListener("click",function(){document.getElementById("f-mot").value="Dor ou urgência"});
+  var dlg=document.getElementById("dlg");document.getElementById("dlg-ok").onclick=function(){dlg.close()};
+  document.getElementById("form").addEventListener("submit",function(e){
+    e.preventDefault();var nome=document.getElementById("f-nome").value.trim(),err=document.getElementById("f-erro");
+    if(!nome){err.textContent="Escreva seu nome para a gente confirmar o horário.";document.getElementById("f-nome").focus();return}
+    err.textContent="";var conv=document.getElementById("f-conv").value.trim()||"Particular";
+    var msg="Olá! Sou "+nome+" e quero agendar.\nMotivo: "+document.getElementById("f-mot").value+"\nConvênio: "+conv+"\nMelhor horário: "+document.getElementById("f-hora").value.toLowerCase();
+    document.getElementById("dlg-msg").textContent=msg;if(dlg.showModal)dlg.showModal();else alert(msg);
+  });
+})();
+</script>
+</body>
+</html>
