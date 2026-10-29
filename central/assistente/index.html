@@ -37,6 +37,7 @@ header{display:flex;align-items:center;justify-content:space-between;gap:10px;pa
 .marca small{display:block;font-size:12px;color:var(--muted)}
 .topo-acoes{display:flex;gap:6px}
 .ibtn{width:38px;height:38px;border-radius:11px;border:1px solid var(--line);background:var(--panel);display:grid;place-items:center;cursor:pointer;text-decoration:none;color:var(--ink)}
+.instalar{height:38px;border-radius:11px}
 .ibtn svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.8}
 .ibtn[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
 #conversa{overflow-y:auto;padding:18px 16px 8px;display:flex;flex-direction:column;gap:12px;scroll-behavior:smooth}
@@ -56,11 +57,12 @@ header{display:flex;align-items:center;justify-content:space-between;gap:10px;pa
 .tag{font:600 10.5px var(--mono);text-transform:uppercase;letter-spacing:.05em;padding:3px 6px;border-radius:6px;color:#fff;background:var(--muted);white-space:nowrap}
 .t-ok{background:var(--ok)}.t-warn{background:var(--warn)}.t-bad{background:var(--bad)}.t-info{background:var(--info)}
 .num{font-family:var(--mono);font-variant-numeric:tabular-nums}
-.kv{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:12px;overflow:hidden}
-.kv div{background:var(--panel-2);padding:10px 12px}
+.kv{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:0;background:var(--panel-2);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.kv div{background:var(--panel-2);padding:10px 12px;box-shadow:0 0 0 .5px var(--line)}
 .kv span{display:block;font-size:12px;color:var(--muted)}
 .kv b{font:600 18px var(--mono)}
 .sec{font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-top:4px}
+.passo-ic{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:6px;border:1px solid var(--line);background:var(--panel-2);vertical-align:-6px;font:600 13px var(--mono)}
 ol.passos{margin:0;padding-left:20px;display:grid;gap:4px;font-size:14px}
 .acoes{display:flex;gap:6px;flex-wrap:wrap}
 .btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--panel-2);border-radius:10px;padding:7px 11px;font-size:13px;font-weight:500;cursor:pointer;text-decoration:none;color:var(--ink)}
@@ -107,6 +109,7 @@ ol.passos{margin:0;padding-left:20px;display:grid;gap:4px;font-size:14px}
   <header>
     <div class="marca"><span class="ic"><svg viewBox="0 0 24 24"><path d="M4 5h16v11H8l-4 4V5z"/></svg></span><span><b>Assistente</b><small id="sub-topo">Pergunte ou peça por voz</small></span></div>
     <div class="topo-acoes">
+      <button class="btn pri instalar" type="button" id="b-instalar" hidden><svg viewBox="0 0 24 24"><path d="M12 4v11M7.5 10.5L12 15l4.5-4.5M5 19h14"/></svg>Instalar</button>
       <button class="ibtn" type="button" id="b-voz" aria-pressed="false" aria-label="Ler as respostas em voz alta" title="Ler as respostas em voz alta"><svg viewBox="0 0 24 24"><path d="M4 10v4h4l5 4V6L8 10H4z"/><path d="M16.5 8.5a5 5 0 010 7M19 6a8.5 8.5 0 010 12"/></svg></button>
       <a class="ibtn" href="/" aria-label="Abrir a Central" title="Abrir a Central"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg></a>
     </div>

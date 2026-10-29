@@ -16,7 +16,7 @@
   },
   "headers": [
     {
-      "source": "/sw.js",
+      "source": "/(sw.js|assistente/sw.js)",
       "headers": [
         {
           "key": "Cache-Control",
@@ -25,7 +25,7 @@
       ]
     },
     {
-      "source": "/(app.js|styles.css|cena3d.js)",
+      "source": "/(app.js|styles.css|cena3d.js|nucleo.js|assistente/assistente.js)",
       "headers": [
         {
           "key": "Cache-Control",

@@ -161,6 +161,7 @@ async function responder(texto) {
   var t = norm(texto), pergunta = RX_PERGUNTA.test(t) || /\?\s*$/.test(texto);
 
   if (/^(ajuda|help|o que (voce|vc) faz|comandos|como (te )?uso)/.test(t)) return ajuda();
+  if (/\b(instalar|instala|baixar|instalacao)\b/.test(t)) return comoInstalar();
 
   var mResp = texto.match(/^\s*(?:o\s+)?(?:cliente|lead|ele|ela|[^:]{2,40}?)\s+(?:disse|falou|respondeu|mandou|escreveu)\s*:\s*([\s\S]+)$/i);
   if (mResp) return respostaCliente(texto.slice(0, texto.indexOf(":")), mResp[1]);
@@ -542,5 +543,35 @@ bv.addEventListener("click", function () { lerVoz = !lerVoz; bv.setAttribute("ar
 document.addEventListener("keydown", function (e) { if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") { e.preventDefault(); $("#entrada").focus(); } });
 sb.auth.onAuthStateChange(function (ev, ses) { if (ses && ses.user) { if (!S.user) { S.user = ses.user; iniciarApp(); } } else { S.user = null; mostrarLogin(); } });
 sb.auth.getSession().then(function (r) { if (!r.data.session) mostrarLogin(); });
-if ("serviceWorker" in navigator) addEventListener("load", function () { navigator.serviceWorker.register("/sw.js").catch(function () {}); });
+/* ───── instalar como app ───── */
+var pedidoInstalar = null, bi = $("#b-instalar");
+function instalado() { return (window.matchMedia && matchMedia("(display-mode: standalone)").matches) || navigator.standalone === true; }
+function plataforma() {
+  var ua = navigator.userAgent || "";
+  if (/iphone|ipad|ipod/i.test(ua) || (/macintosh/i.test(ua) && navigator.maxTouchPoints > 1)) return "ios";
+  if (/android/i.test(ua)) return "android";
+  return "pc";
+}
+if (!instalado()) bi.hidden = false;
+window.addEventListener("beforeinstallprompt", function (e) { e.preventDefault(); pedidoInstalar = e; bi.hidden = false; });
+window.addEventListener("appinstalled", function () { pedidoInstalar = null; bi.hidden = true; statusVoz("Assistente instalado. Ele aparece junto com os seus apps."); });
+function comoInstalar() {
+  var p = plataforma(), passos, extra = "";
+  if (p === "ios") passos = ["Abra este endereço no <b>Safari</b>.", "Toque em <b>Compartilhar</b> (o quadrado com a seta para cima).", "Escolha <b>Adicionar à Tela de Início</b> e confirme."];
+  else if (p === "android") {
+    passos = ["Abra este endereço no <b>Chrome</b>.", 'Toque nos três pontos <span class="passo-ic">⋮</span> no canto de cima.', "Toque em <b>Instalar app</b> (ou <b>Adicionar à tela inicial</b>) e confirme."];
+    extra = '<p class="sub">Em celulares Xiaomi, Redmi e Poco, se o ícone não aparecer: Configurações › Apps › Chrome › Outras permissões › ative <b>Atalhos da tela inicial</b>. Depois repita o passo 3.</p>';
+  } else passos = ["Use o <b>Chrome</b> ou o <b>Edge</b>.", 'Clique no ícone de instalar no fim da barra de endereço <span class="passo-ic">⊕</span>.', "Confirme em <b>Instalar</b>. Ele abre em janela própria e fica no menu Iniciar ou no Dock."];
+  bolhaEle("<h3>Instalar o Assistente</h3><ol class=\"passos\">" + passos.map(function (x) { return "<li>" + x + "</li>"; }).join("") + "</ol>" + extra + '<p class="sub">Ele fica separado da Central, com ícone próprio, e usa a mesma conta.</p>', "", false);
+}
+bi.addEventListener("click", async function () {
+  if (pedidoInstalar) {
+    pedidoInstalar.prompt();
+    var r = await pedidoInstalar.userChoice; pedidoInstalar = null;
+    if (r && r.outcome === "accepted") bi.hidden = true;
+    return;
+  }
+  if (S.user) comoInstalar(); else statusVoz("Entre primeiro.");
+});
+if ("serviceWorker" in navigator) addEventListener("load", function () { navigator.serviceWorker.register("/assistente/sw.js", { scope: "/assistente/" }).catch(function () {}); });
 })();

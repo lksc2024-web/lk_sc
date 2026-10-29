@@ -3,6 +3,7 @@
   "short_name": "Central",
   "description": "Projetos, serviços, hospedagens, prospecção, clientes e mensagens num lugar só.",
   "lang": "pt-BR",
+  "id": "/",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
