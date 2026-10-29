@@ -10,8 +10,39 @@
   "background_color": "#111514",
   "theme_color": "#111514",
   "icons": [
-    { "src": "/icone-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "/icone-512.png", "sizes": "512x512", "type": "image/png" },
-    { "src": "/icone-512-mask.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
-  ]
+    {
+      "src": "/icone-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icone-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "/icone-512-mask.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "share_target": {
+    "action": "/compartilhar",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "title": "titulo",
+      "text": "texto",
+      "url": "link",
+      "files": [
+        {
+          "name": "imagem",
+          "accept": [
+            "image/*"
+          ]
+        }
+      ]
+    }
+  }
 }

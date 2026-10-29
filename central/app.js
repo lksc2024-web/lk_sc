@@ -56,6 +56,7 @@ var ICON = {
   mensagens: '<svg viewBox="0 0 24 24"><path d="M4 5h16v11H8l-4 4V5z"/><path d="M8 9h8M8 12.5h5"/></svg>',
   conexoes: '<svg viewBox="0 0 24 24"><path d="M9 7V3M15 7V3"/><path d="M6 7h12v4a6 6 0 01-12 0V7z"/><path d="M12 17v4"/></svg>',
   agenda: '<svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/><path d="M8 14h3"/></svg>',
+  responder: '<svg viewBox="0 0 24 24"><path d="M4 5h16v11H8l-4 4V5z"/><path d="M13 8l-3 2.5 3 2.5"/><path d="M10 10.5h4.5a2 2 0 012 2v.5"/></svg>',
   mic: '<svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0013 0M12 17.5V21M8.5 21h7"/></svg>',
   mais: '<svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>',
   mais_: '<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>',
@@ -70,7 +71,7 @@ var PLATAFORMAS = ["Kiwify", "Hotmart", "Eduzz", "Pix / direto", "Instagram", "T
 var CANAIS = ["TikTok", "Instagram", "YouTube", "Anúncios", "WhatsApp", "Indicação", "Google", "Geral"];
 var LEAD_ST = [["novo", "Novo", "--muted"], ["contatado", "Contatado", "--info"], ["respondeu", "Respondeu", "--warn"], ["reuniao", "Reunião", "--accent"], ["fechado", "Fechado", "--ok"], ["descartado", "Descartado", "--bad"]];
 var CLI_ST = [["ativo", "Ativo", "--ok"], ["recorrente", "Recorrente", "--info"], ["retomar", "Retomar", "--warn"], ["encerrado", "Encerrado", "--muted"]];
-var OBJETIVOS = { prospeccao: "Prospecção", captacao: "Captação", retomada: "Retomada", continuidade: "Continuidade", pos_venda: "Pós-venda" };
+var OBJETIVOS = { prospeccao: "Prospecção", captacao: "Captação", retomada: "Retomada", continuidade: "Continuidade", pos_venda: "Pós-venda", resposta: "Resposta ao cliente" };
 
 /* ───────────── estado ───────────── */
 var S = {
@@ -121,6 +122,7 @@ async function entrar(user) {
   fimBoot();
   montarMenu();
   var h = (location.hash || "").replace("#", "");
+  if (lerCompartilhado()) h = "responder";
   ir(VIEWS.some(function (v) { return v[0] === h; }) ? h : "geral");
   ouvirAoVivo();
   $("#fab-voz").hidden = false;
@@ -235,6 +237,7 @@ var VIEWS = [
   ["hospedagens", "Hospedagens", "Sites", "Negócio"],
   ["investir", "Investimento", "Investir", "Negócio"],
   ["agenda", "Agenda", "Agenda", "Relacionamento"],
+  ["responder", "Responder cliente", "Responder", "Relacionamento"],
   ["prospeccao", "Prospecção e leads", "Leads", "Relacionamento"],
   ["clientes", "Clientes", "Clientes", "Relacionamento"],
   ["mensagens", "Mensagens", "Mensagens", "Relacionamento"],
@@ -255,14 +258,14 @@ function montarMenu() {
 }
 function marcarMenu() {
   $$("[data-v]").forEach(function (b) { if (b.dataset.v === S.view) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current"); });
-  var bm = $("#bot-mais"); if (bm) { if (["projetos", "hospedagens", "investir", "mensagens", "conexoes"].indexOf(S.view) >= 0) bm.setAttribute("aria-current", "page"); else bm.removeAttribute("aria-current"); }
+  var bm = $("#bot-mais"); if (bm) { if (["responder", "projetos", "hospedagens", "investir", "mensagens", "conexoes"].indexOf(S.view) >= 0) bm.setAttribute("aria-current", "page"); else bm.removeAttribute("aria-current"); }
 }
 document.addEventListener("click", function (e) {
   var b = e.target.closest("[data-v]"); if (b && !b.closest(".modal")) { ir(b.dataset.v); return; }
   if (e.target.closest("#bot-mais")) abrirMais();
 });
 function abrirMais() {
-  modal("Mais", '<div class="cl">' + ["projetos", "hospedagens", "mensagens", "investir", "conexoes"].map(function (id) { var v = VIEWS.find(function (x) { return x[0] === id; }); return '<button type="button" class="btn" style="justify-content:flex-start;padding:12px" data-ir="' + id + '">' + ICON[id] + v[1] + "</button>"; }).join("") +
+  modal("Mais", '<div class="cl">' + ["responder", "projetos", "hospedagens", "mensagens", "investir", "conexoes"].map(function (id) { var v = VIEWS.find(function (x) { return x[0] === id; }); return '<button type="button" class="btn" style="justify-content:flex-start;padding:12px" data-ir="' + id + '">' + ICON[id] + v[1] + "</button>"; }).join("") +
     '<button type="button" class="btn danger" style="justify-content:flex-start;padding:12px" id="m-sair">Sair da conta</button></div>', function (box) {
     $$("[data-ir]", box).forEach(function (b) { b.onclick = function () { fecharModal(); ir(b.dataset.ir); }; });
     $("#m-sair", box).onclick = function () { fecharModal(); sb.auth.signOut(); };
@@ -286,7 +289,7 @@ function render() {
   $("#seg-dias").hidden = !usaPeriodo;
   $("#btn-custom").hidden = S.view !== "geral";
   acaoTopo(null);
-  var fn = { geral: vGeral, projetos: vProjetos, hospedagens: vHospedagens, investir: vInvestir, prospeccao: vProspeccao, clientes: vClientes, mensagens: vMensagens, conexoes: vConexoes, agenda: vAgenda }[S.view];
+  var fn = { geral: vGeral, projetos: vProjetos, hospedagens: vHospedagens, investir: vInvestir, prospeccao: vProspeccao, clientes: vClientes, mensagens: vMensagens, conexoes: vConexoes, agenda: vAgenda, responder: vResponder }[S.view];
   try { fn($("#conteudo")); } catch (e) { console.error(e); $("#conteudo").innerHTML = '<div class="card vazio"><b>Algo deu errado nesta tela.</b>Recarregue a página. Se continuar, me avise.</div>'; }
 }
 
@@ -720,7 +723,7 @@ function blocoMensagem(publico, alvo, objetivosPref, contexto) {
   var num = numeroDe(publico, alvo), fixo = publico === "lead" && !alvo.whatsapp && alvo.tel_tipo === "fixo";
   var reun = contexto === "reuniao" || emReuniao(publico, alvo);
   var pref = reun ? ["retomada"] : objetivosPref;
-  var mods = S.modelos.slice().sort(function (a, b) { return (pref.indexOf(a.objetivo) < 0) - (pref.indexOf(b.objetivo) < 0); });
+  var mods = S.modelos.filter(function (m) { return m.objetivo !== "resposta"; }).sort(function (a, b) { return (pref.indexOf(a.objetivo) < 0) - (pref.indexOf(b.objetivo) < 0); });
   var canalPref = num || !alvo.email ? "whatsapp" : "email";
   var esc0 = reun ? (mods.find(function (m) { return m.nome.indexOf(NOME_RETOMAR) === 0 && m.canal === canalPref; }) || mods.find(function (m) { return m.nome.indexOf(NOME_RETOMAR) === 0; })) : null;
   var selId = esc0 ? esc0.id : (mods[0] ? mods[0].id : "");
@@ -765,10 +768,12 @@ function abrirLead(id, contexto) {
   modal(l.nome, '<div class="det"><div style="display:grid;gap:16px;align-content:start"><div class="card"><div class="card-h"><div><h2>' + esc(l.nicho || l.categoria || "Lead") + '</h2><p>Entrou ' + quando(l.criado_em) + '</p></div></div><div class="chips" id="ld-st">' + LEAD_ST.map(function (s) { return '<button class="chip" type="button" data-s="' + s[0] + '" aria-pressed="' + (l.status === s[0]) + '">' + s[1] + "</button>"; }).join("") + '</div><div class="stat-list" style="margin-top:10px">' + info.map(function (x) { var v = x[1]; var link = x[0] === "Site" ? '<a href="' + esc(/^http/.test(v) ? v : "https://" + v) + '" target="_blank" rel="noopener">' + esc(v.replace(/^https?:\/\//, "").slice(0, 40)) + "</a>" : esc(v); return "<div><span>" + x[0] + "</span><b>" + link + "</b></div>"; }).join("") + "</div>" + (l.maps ? '<a class="btn sm" style="margin-top:10px" href="' + esc(l.maps) + '" target="_blank" rel="noopener">' + ICON.ext + "Ver no Google Maps</a>" : "") + '</div>' + blocoMensagem("lead", l, l.status === "novo" ? ["prospeccao", "captacao"] : ["retomada", "continuidade"], contexto) + '</div>' +
     '<div style="display:grid;gap:16px;align-content:start"><div class="card"><div class="card-h"><div><h2>Anotações</h2></div></div><textarea class="inp" id="ld-obs" style="min-height:90px">' + esc(l.obs || "") + '</textarea><div class="acoes"><button class="btn sm" type="button" id="ld-obs-ok">Salvar anotação</button></div></div>' +
     '<div class="card"><div class="card-h"><div><h2>Histórico</h2></div></div>' + ((l.historico || []).length ? '<ul class="hist">' + l.historico.slice().reverse().slice(0, 30).map(function (h) { return "<li>" + esc(h.txt || h.tipo) + "<small>" + (h.t ? new Date(h.t).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "") + "</small></li>"; }).join("") + "</ul>" : '<p class="hint">Sem registros ainda.</p>') + "</div>" +
+    '<div class="card"><div class="card-h"><div><h2>O lead respondeu?</h2><p>Cole a resposta e receba a mensagem pronta</p></div></div><button class="btn full" type="button" id="ld-resp">' + ICON.responder + 'Colar resposta do cliente</button></div>' +
     '<div class="card"><div class="card-h"><div><h2>Fechou negócio?</h2><p>Leva o lead para Clientes</p></div></div><button class="btn full" type="button" id="ld-cli">Transformar em cliente</button></div></div></div>', function (bx) {
     $("#ld-st", bx).onclick = async function (e) { var b = e.target.closest("[data-s]"); if (!b || b.dataset.s === l.status) return;
       var nova = await salvarLead(l, { status: b.dataset.s, historico: (l.historico || []).concat([{ t: new Date().toISOString(), tipo: "status", txt: "Status: " + LEAD_ST.find(function (s) { return s[0] === b.dataset.s; })[1] + " (pela Central)" }]) });
       if (nova) { toast("Status atualizado."); render(); abrirLead(l.id); } };
+    $("#ld-resp", bx).onclick = function () { S.resp = { texto: "", alvo: "lead:" + l.id, resultado: null }; fecharModal(); ir("responder"); setTimeout(function () { var t = $("#rp-txt"); if (t) t.focus(); }, 100); };
     $("#ld-obs-ok", bx).onclick = async function () { if (await salvarLead(l, { obs: $("#ld-obs", bx).value })) toast("Anotação salva."); };
     $("#ld-cli", bx).onclick = async function () {
       var ja = S.clientes.find(function (c) { return c.lead_id === l.id; }); if (ja) { fecharModal(); ir("clientes"); abrirCliente(ja.id); return; }
@@ -822,9 +827,10 @@ function abrirCliente(id, contexto) {
   var compras = S.vendas.filter(function (v) { return v.cliente_id === c.id; });
   var projs = S.projetos.filter(function (p) { return p.cliente_id === c.id; });
   modal(c.nome || c.empresa || "Cliente", '<div class="det"><div style="display:grid;gap:16px;align-content:start"><div class="card"><div class="card-h"><div><h2>' + esc(c.empresa || c.nicho || "Cliente") + '</h2><p>Desde ' + new Date(c.criado_em).toLocaleDateString("pt-BR") + " · origem " + esc(c.origem) + '</p></div><button class="btn sm" type="button" id="cd-ed">Editar</button></div><div class="chips" id="cd-st">' + CLI_ST.map(function (s) { return '<button class="chip" type="button" data-s="' + s[0] + '" aria-pressed="' + (c.status === s[0]) + '">' + s[1] + "</button>"; }).join("") + '</div><div class="stat-list" style="margin-top:10px"><div><span>Total recebido</span><b>' + brl(c.valor_total) + "</b></div><div><span>Telefone</span><b>" + esc(c.telefone || "—") + "</b></div><div><span>E-mail</span><b>" + esc(c.email || "—") + "</b></div><div><span>Último contato</span><b>" + quando(c.ultimo_contato) + "</b></div></div></div>" + blocoMensagem("cliente", c, c.status === "retomar" ? ["retomada"] : ["continuidade", "pos_venda", "retomada"], contexto) + "</div>" +
-    '<div style="display:grid;gap:16px;align-content:start"><div class="card"><div class="card-h"><div><h2>Compras e projetos</h2></div></div>' + (compras.length || projs.length ? '<div class="stat-list">' + compras.map(function (v) { return "<div><span>" + esc(v.produto_nome) + " · " + quando(v.criado_em) + "</span><b>" + (v.status !== "aprovada" ? esc(v.status) + " · " : "") + brl(v.valor_bruto) + "</b></div>"; }).join("") + projs.map(function (p) { return '<div><span>' + esc(TIPOS[p.tipo]) + "</span><b>" + esc(p.nome) + "</b></div>"; }).join("") + "</div>" : '<p class="hint">Nenhuma compra ou projeto ligado ainda.</p>') + "</div>" +
+    '<div style="display:grid;gap:16px;align-content:start"><div class="card"><div class="card-h"><div><h2>O cliente respondeu?</h2></div></div><button class="btn full" type="button" id="cd-resp">' + ICON.responder + 'Colar resposta do cliente</button></div><div class="card"><div class="card-h"><div><h2>Compras e projetos</h2></div></div>' + (compras.length || projs.length ? '<div class="stat-list">' + compras.map(function (v) { return "<div><span>" + esc(v.produto_nome) + " · " + quando(v.criado_em) + "</span><b>" + (v.status !== "aprovada" ? esc(v.status) + " · " : "") + brl(v.valor_bruto) + "</b></div>"; }).join("") + projs.map(function (p) { return '<div><span>' + esc(TIPOS[p.tipo]) + "</span><b>" + esc(p.nome) + "</b></div>"; }).join("") + "</div>" : '<p class="hint">Nenhuma compra ou projeto ligado ainda.</p>') + "</div>" +
     '<div class="card"><div class="card-h"><div><h2>Histórico</h2></div></div>' + ((c.historico || []).length ? '<ul class="hist">' + c.historico.slice().reverse().slice(0, 30).map(function (h) { return "<li>" + esc(h.txt) + "<small>" + (h.t ? new Date(h.t).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "") + "</small></li>"; }).join("") + "</ul>" : '<p class="hint">Sem registros ainda.</p>') + "</div></div></div>", function (bx) {
     $("#cd-ed", bx).onclick = function () { formCliente(c); };
+    var cr = $("#cd-resp", bx); if (cr) cr.onclick = function () { S.resp = { texto: "", alvo: "cliente:" + c.id, resultado: null }; fecharModal(); ir("responder"); };
     $("#cd-st", bx).onclick = async function (e) { var b = e.target.closest("[data-s]"); if (!b || b.dataset.s === c.status) return; var r = await sb.from("clientes").update({ status: b.dataset.s, atualizado_em: new Date().toISOString() }).eq("id", c.id).select().single(); if (r.error) return erro(r.error); S.clientes = S.clientes.map(function (x) { return x.id === c.id ? r.data : x; }); toast("Status atualizado."); render(); abrirCliente(c.id); };
     ligarMensagem(bx, "cliente", c, function () { abrirCliente(c.id, contexto); });
   }, true);
@@ -845,7 +851,7 @@ function vMensagens(box) {
 function tabModelos(el) {
   var grupos = {}; S.modelos.forEach(function (m) { (grupos[m.objetivo] = grupos[m.objetivo] || []).push(m); });
   el.innerHTML = Object.keys(OBJETIVOS).filter(function (o) { return grupos[o]; }).map(function (o) {
-    return '<div class="card" style="margin-bottom:14px"><div class="card-h"><div><h2>' + OBJETIVOS[o] + '</h2><p>' + grupos[o].length + ' modelos</p></div></div><div class="stat-list">' + grupos[o].map(function (m) { return '<div><span style="color:var(--ink)">' + esc(m.nome) + (m.nicho ? ' <span class="sub">· ' + esc(m.nicho) + "</span>" : "") + ' <span class="sub">· ' + (m.canal === "email" ? "e-mail" : "WhatsApp") + '</span></span><b><button class="btn sm" type="button" data-ed="' + m.id + '">Editar</button></b></div>'; }).join("") + "</div></div>";
+    return '<div class="card" style="margin-bottom:14px"><div class="card-h"><div><h2>' + OBJETIVOS[o] + '</h2><p>' + grupos[o].length + ' modelos</p></div></div><div class="stat-list">' + grupos[o].map(function (m) { return '<div><span style="color:var(--ink)">' + esc(m.nome) + (m.gatilho ? ' <span class="sub">· ' + esc((GATILHOS.find(function (g) { return g.id === m.gatilho; }) || {}).nome || m.gatilho) + "</span>" : "") + (m.nicho ? ' <span class="sub">· ' + esc(m.nicho) + "</span>" : "") + ' <span class="sub">· ' + (m.canal === "email" ? "e-mail" : "WhatsApp") + '</span></span><b><button class="btn sm" type="button" data-ed="' + m.id + '">Editar</button></b></div>'; }).join("") + "</div></div>";
   }).join("") || '<div class="card vazio"><b>Nenhum modelo.</b></div>';
   $$("[data-ed]", el).forEach(function (b) { b.onclick = function () { formModelo(S.modelos.find(function (m) { return m.id === b.dataset.ed; })); }; });
 }
@@ -853,11 +859,13 @@ function formModelo(m) {
   m = m || { objetivo: "captacao", canal: "whatsapp" };
   modal(m.id ? "Editar modelo" : "Novo modelo", '<form class="form" novalidate><div class="f full"><label for="fm-nome">Nome</label><input class="inp" id="fm-nome" value="' + esc(m.nome || "") + '" placeholder="Ex.: Retomar cliente de site"></div>' +
     '<div class="f"><label for="fm-obj">Objetivo</label><select class="inp" id="fm-obj">' + Object.keys(OBJETIVOS).map(function (o) { return '<option value="' + o + '"' + (m.objetivo === o ? " selected" : "") + ">" + OBJETIVOS[o] + "</option>"; }).join("") + '</select></div><div class="f"><label for="fm-canal">Canal</label><select class="inp" id="fm-canal"><option value="whatsapp"' + (m.canal !== "email" ? " selected" : "") + '>WhatsApp</option><option value="email"' + (m.canal === "email" ? " selected" : "") + ">E-mail</option></select></div>" +
+    '<div class="f full" id="fm-gat-box"><label for="fm-gat">Quando usar (tipo de resposta do cliente)</label><select class="inp" id="fm-gat">' + GATILHOS.map(function (g) { return '<option value="' + g.id + '"' + (m.gatilho === g.id ? " selected" : "") + ">" + esc(g.nome) + "</option>"; }).join("") + "</select></div>" +
     '<div class="f"><label for="fm-nicho">Nicho (opcional)</label><input class="inp" id="fm-nicho" value="' + esc(m.nicho || "") + '" placeholder="Vale para todos se vazio"></div><div class="f"><label for="fm-ass">Assunto do e-mail</label><input class="inp" id="fm-ass" value="' + esc(m.assunto || "") + '"></div>' +
     '<div class="f full"><label for="fm-corpo">Mensagem</label><textarea class="inp" id="fm-corpo" style="min-height:150px">' + esc(m.corpo || "") + '</textarea><span class="hint">Use {nome}, {empresa}, {cidade}, {nicho} ou {produto}: cada pessoa recebe com os próprios dados.</span></div></form>' +
     '<div class="acoes">' + (m.id ? '<button class="btn danger esq" type="button" id="fm-del">Excluir</button>' : "") + '<button class="btn" type="button" data-fechar>Cancelar</button><button class="btn pri" type="button" id="fm-ok">Salvar</button></div>', function (bx) {
+    var ob = $("#fm-obj", bx); function visG() { $("#fm-gat-box", bx).hidden = ob.value !== "resposta"; } ob.addEventListener("change", visG); visG();
     $("#fm-ok", bx).onclick = async function () {
-      var d = { nome: $("#fm-nome", bx).value.trim(), objetivo: $("#fm-obj", bx).value, canal: $("#fm-canal", bx).value, nicho: $("#fm-nicho", bx).value.trim(), assunto: $("#fm-ass", bx).value.trim(), corpo: $("#fm-corpo", bx).value.trim() };
+      var d = { nome: $("#fm-nome", bx).value.trim(), objetivo: $("#fm-obj", bx).value, gatilho: $("#fm-obj", bx).value === "resposta" ? $("#fm-gat", bx).value : "", canal: $("#fm-canal", bx).value, nicho: $("#fm-nicho", bx).value.trim(), assunto: $("#fm-ass", bx).value.trim(), corpo: $("#fm-corpo", bx).value.trim() };
       if (!d.nome || !d.corpo) { toast("Preencha o nome e a mensagem."); return; }
       var r = m.id ? await sb.from("modelos").update(d).eq("id", m.id).select().single() : await sb.from("modelos").insert(d).select().single();
       if (r.error) return erro(r.error);
@@ -875,7 +883,7 @@ function tabCampanha(el) {
   var nichos = {}; base.forEach(function (x) { var nn = x.nicho || x.categoria || ""; if (nn) nichos[nn] = (nichos[nn] || 0) + 1; });
   var alvo = base.filter(function (x) { return c.st.indexOf(x.status) >= 0 && (!c.nicho || (x.nicho || x.categoria) === c.nicho); });
   var comCanal = alvo.filter(function (x) { return ehLead ? (x.whatsapp || x.tel_digitos || x.email) : (telWa(x.telefone) || x.email); });
-  var mods = S.modelos.filter(function (m) { return !m.nicho || !c.nicho || m.nicho === c.nicho; });
+  var mods = S.modelos.filter(function (m) { return m.objetivo !== "resposta" && (!m.nicho || !c.nicho || m.nicho === c.nicho); });
   if (!c.modeloManual) { var querRetomar = (ehLead && c.st.indexOf("reuniao") >= 0) || (!ehLead && c.st.indexOf("retomar") >= 0); var mr = querRetomar && mods.find(function (m) { return m.nome.indexOf(NOME_RETOMAR) === 0 && m.canal === "whatsapp"; }); if (mr) c.modelo = mr.id; }
   if (!mods.some(function (m) { return m.id === c.modelo; })) c.modelo = mods[0] ? mods[0].id : "";
   var mod = S.modelos.find(function (m) { return m.id === c.modelo; });
@@ -1081,11 +1089,195 @@ function resumoDoDia() {
   if (g.atrasados.length || g.hoje.length || sug) setTimeout(function () { toast("Hoje: " + g.hoje.length + (g.hoje.length === 1 ? " compromisso" : " compromissos") + (g.atrasados.length ? ", " + g.atrasados.length + (g.atrasados.length === 1 ? " atrasado" : " atrasados") : "") + (sug ? " e " + sug + (sug === 1 ? " retomada sugerida" : " retomadas sugeridas") : "") + "."); }, 1500);
 }
 
+/* ═════════════ RESPONDER CLIENTE ═════════════ */
+// Cada gatilho: como reconhecer, o que significa, o status sugerido e o que agendar. O texto da resposta vem dos modelos (editáveis).
+var GATILHOS = [
+  { id: "remover", nome: "Pediu para não receber mais", rx: /(para|pare|parem) de (me )?mand|n[aã]o (me )?mand(e|em)|me (tira|remov)|sair da lista|bloque|denunci|n[aã]o (me )?(chama|ligue|liga|chamem) mais/, st: "descartado", tipo4: "rejeicao", cor: "bad", dica: "Respeite o pedido e não volte a chamar." },
+  { id: "quem_e", nome: "Perguntou quem é você", rx: /quem (e|seria|fala|est[aá] falando)|como (voc[eê] |vc )?(conseguiu|achou|pegou|tem) (meu|o|esse|este) (n[uú]mero|contato|telefone)|de onde (voc[eê]|vc|[eé])|[eé] golpe|golpe/, st: "respondeu", tipo4: "atencao", cor: "warn", dica: "Desconfiança: apresente-se com clareza e ofereça parar." },
+  { id: "ja_tem", nome: "Já tem site ou alguém cuidando", rx: /j[aá] (temos|tenho|possu\w*|fizemos|contratamos|tem)|temos (um |uma )?(site|ag[eê]ncia|pessoa|algu[eé]m|designer|programador|empresa)|j[aá] (cuida|faz|est[aá] (feito|resolvido))/, st: "descartado", tipo4: "rejeicao", cor: "bad", dica: "Negativa educada: deixe a porta aberta para o futuro.", agendaDias: 90 },
+  { id: "horario", nome: "Sugeriu dia ou horário", rx: /que horas|qual (o )?(melhor )?hor[aá]rio|pode ser (amanh|hoje|segunda|ter[cç]a|quarta|quinta|sexta|s[aá]bado|depois)|(as|às) \d{1,2}(h|:| horas| da)|\d{1,2}h\d{0,2}\b|(amanh[aã]|segunda|ter[cç]a|quarta|quinta|sexta).{0,25}(pode|serve|fica bom|t[aá] bom|combinado)/, st: "reuniao", tipo4: "desejo", cor: "ok", dica: "Ótimo sinal: confirme e marque na agenda.", agendaReuniao: true },
+  { id: "aprovacao", nome: "Aprovou", rx: /vamos (fazer|fechar)|pode (fazer|come[cç]ar|seguir|mandar a proposta|mandar o contrato)|\bfechado\b|\bfechou\b|quero contratar|manda (a proposta|o contrato|o pix|os dados)|\baceito\b|\bbora\b|t[oô] dentro/, st: "fechado", tipo4: "aprovacao", cor: "ok", dica: "Fechamento: peça os dados e mande a proposta." },
+  { id: "caro", nome: "Achou caro ou sem verba", rx: /\bcaro\b|sem (verba|dinheiro|grana|or[cç]amento)|n[aã]o (tenho|temos) (como pagar|dinheiro|verba|grana)|fora do (or[cç]amento|meu or[cç]amento|nosso or[cç]amento)|apertad|n[aã]o cabe/, st: "respondeu", tipo4: "atencao", cor: "warn", dica: "Objeção de preço: ofereça algo menor ou parcelado." },
+  { id: "sem_tempo", nome: "Sem tempo agora", rx: /(agora|momento|no momento) n[aã]o|n[aã]o [eé] (o|um bom) momento|depois (a gente|eu|conversa|vejo|falamos)|mais (pra|para) frente|semana que vem|m[eê]s que vem|sem tempo|correria|corrido|ocupad|me (chama|procura|liga|manda mensagem) (depois|mais tarde|outro dia|semana|no m[eê]s|daqui)|daqui a \w+ (dias|semanas|meses)|ano que vem/, st: "respondeu", tipo4: "atencao", cor: "warn", dica: "Não é um não: agende a retomada.", agendaDias: 15 },
+  { id: "sem_interesse", nome: "Sem interesse", rx: /n[aã]o (tenho|temos) interesse|sem interesse|n[aã]o (quero|queremos|preciso|precisamos|vou querer|vamos querer)|n[aã]o,? obrigad|dispenso|n[aã]o rola|n[aã]o faz sentido|n[aã]o tenho necessidade/, st: "descartado", tipo4: "rejeicao", cor: "bad", dica: "Negativa: agradeça e pergunte o motivo, sem insistir." },
+  { id: "pensar", nome: "Vai pensar ou consultar alguém", rx: /vou (pensar|ver|analisar|conversar|falar|consultar|avaliar)|preciso (pensar|ver|conversar|falar|consultar|avaliar)|deixa eu (ver|pensar)|vou te (falar|retornar|avisar|dar um retorno)|(meu|minha) (s[oó]ci|espos|marido|mulher|chefe|gerente|dono)/, st: "respondeu", tipo4: "atencao", cor: "warn", dica: "Está considerando: facilite a decisão e marque a retomada.", agendaDias: 3 },
+  { id: "exemplos", nome: "Pediu exemplos", rx: /exemplo|portf[oó]lio|trabalhos (seus|anteriores|feitos)|j[aá] fez|mostra (algum|alguns|uns)|ver (algum|um|uns) (site|trabalho)/, st: "respondeu", tipo4: "atencao", cor: "info", dica: "Interesse com dúvida: mostre trabalhos parecidos." },
+  { id: "preco", nome: "Perguntou o preço", rx: /quanto|valor|pre[cç]o|custa|or[cç]amento|investimento|cobra/, st: "respondeu", tipo4: "atencao", cor: "info", dica: "Pergunta de preço: dê uma faixa e puxe para o diagnóstico." },
+  { id: "como_funciona", nome: "Perguntou como funciona", rx: /como funciona|como seria|o que (seria|[eé] isso)|explica|me fala mais|mais detalhes|mais informa|prazo|quanto tempo|como (voc[eê]s|vc) trabalha/, st: "respondeu", tipo4: "atencao", cor: "info", dica: "Dúvida: explique o processo em poucas linhas." },
+  { id: "interesse", nome: "Mostrou interesse", rx: /\bquero\b|me manda|manda sim|pode mandar|gostei|tenho interesse|temos interesse|interessante|quero ver|me mostra|pode sim|sim,? pode|faz sentido|\bshow\b|\btop\b|\blegal\b|\bsim\b|\bclaro\b|\bok\b|beleza|\bblz\b/, st: "respondeu", tipo4: "desejo", cor: "ok", dica: "Interesse: avance para a conversa ou chamada." },
+  { id: "outro", nome: "Resposta geral", rx: /.^/, st: "respondeu", tipo4: "atencao", cor: "info", dica: "Não reconheci o tipo: confira a resposta sugerida." }
+];
+function classificar(texto) {
+  var t = norm(texto).replace(/\s+/g, " ");
+  var tOrig = String(texto || "").toLowerCase();
+  for (var i = 0; i < GATILHOS.length - 1; i++) { if (GATILHOS[i].rx.test(t) || GATILHOS[i].rx.test(tOrig)) return GATILHOS[i]; }
+  return GATILHOS[GATILHOS.length - 1];
+}
+function respostasDe(gatilho) { return S.modelos.filter(function (m) { return m.objetivo === "resposta" && m.gatilho === gatilho; }); }
+function limparOCR(txt) {
+  return String(txt || "").split(/\n+/).map(function (l) { return l.trim(); }).filter(function (l) {
+    if (l.length < 2) return false;
+    if (/^\d{1,2}[:.]\d{2}(\s*[✓v√]+)?$/i.test(l)) return false;
+    if (/^(hoje|ontem|online|digitando|visto por|mensagem|digite uma mensagem|as mensagens|criptografad|toque para)/i.test(norm(l))) return false;
+    return true;
+  }).map(function (l) { return l.replace(/\s+\d{1,2}[:.]\d{2}\s*[✓v√]*$/i, ""); }).join("\n").trim();
+}
+function carregarOCR() {
+  if (window.Tesseract) return Promise.resolve(window.Tesseract);
+  return new Promise(function (ok, falha) { var s = document.createElement("script"); s.src = "https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js"; s.onload = function () { ok(window.Tesseract); }; s.onerror = function () { falha(new Error("não deu para carregar o leitor de prints")); }; document.head.appendChild(s); });
+}
+async function lerPrint(arquivo, aoProgresso) {
+  var T = await carregarOCR();
+  var r = await T.recognize(arquivo, "por", { logger: function (m) { if (m.status === "recognizing text" && aoProgresso) aoProgresso(Math.round(m.progress * 100)); } });
+  return r.data.text || "";
+}
+function portfolioTexto() {
+  var p = S.perfil && S.perfil.portfolio;
+  if (p) return p;
+  var orla = sites().find(function (s) { return /orla/i.test(s.nome); });
+  return orla ? orla.url : "posso te mandar os links por aqui";
+}
+function quandoTexto(d, comHora) {
+  var dif = Math.round((inicioDoDia(d) - inicioDoDia(new Date())) / 864e5), dow = d.getDay();
+  var nomes = ["domingo", "segunda", "terça", "quarta", "quinta", "sexta", "sábado"];
+  var s = dif === 0 ? "hoje" : dif === 1 ? "amanhã" : dif > 1 && dif < 7 ? (dow === 0 || dow === 6 ? "no " : "na ") + nomes[dow] + " (" + pad(d.getDate()) + "/" + pad(d.getMonth() + 1) + ")" : "no dia " + pad(d.getDate()) + "/" + pad(d.getMonth() + 1);
+  if (comHora) s += " às " + d.getHours() + "h" + (d.getMinutes() ? pad(d.getMinutes()) : "");
+  return s;
+}
+S.resp = S.resp || { texto: "", alvo: "", resultado: null };
+function vResponder(box) {
+  var r = S.resp;
+  var ult = S.disparos.filter(function (d) { return d.objetivo === "resposta"; }).slice(-12).reverse();
+  box.innerHTML = '<div class="det"><div class="card" style="align-self:start"><div class="card-h"><div><h2>Resposta do cliente</h2><p>Cole o que ele escreveu ou envie o print da conversa</p></div></div>' +
+    '<textarea class="inp" id="rp-txt" style="min-height:140px" placeholder="Ex.: Obrigado, mas já temos um site e no momento não temos interesse.">' + esc(r.texto) + "</textarea>" +
+    '<div class="acoes" style="margin-top:10px;justify-content:flex-start"><button class="btn" type="button" id="rp-colar">' + ICON.copia + 'Colar</button><label class="btn" for="rp-img" style="cursor:pointer">Enviar print</label><input type="file" id="rp-img" accept="image/*" hidden><span class="hint" id="rp-ocr"></span></div>' +
+    '<div class="campo" style="margin-top:12px"><label for="rp-alvo">De quem é</label><select class="inp" id="rp-alvo">' + opcoesAlvo(r.alvo) + "</select></div>" +
+    '<button class="btn pri full" type="button" id="rp-ok">Analisar e sugerir resposta</button>' +
+    '<p class="hint" style="margin-top:10px">Dica: no celular, com a Central instalada, você pode compartilhar o print ou o texto direto do WhatsApp para a Central.</p></div>' +
+    '<div id="rp-res" style="display:grid;gap:16px;align-content:start">' + (r.resultado ? "" : '<div class="card vazio"><b>A resposta sugerida aparece aqui.</b>A Central identifica se foi uma negativa, dúvida de preço, falta de tempo, interesse ou aprovação, e já deixa a mensagem pronta.</div>') + "</div></div>" +
+    (ult.length ? '<div class="card"><div class="card-h"><div><h2>Últimas respostas enviadas</h2></div></div><div class="stat-list">' + ult.map(function (d) { var a = d.publico === "lead" ? S.leads.find(function (l) { return l.id === d.destinatario_id; }) : S.clientes.find(function (c) { return c.id === d.destinatario_id; }); var m = S.modelos.find(function (x) { return x.id === d.modelo_id; }); return "<div><span>" + esc(a ? (a.nome || a.empresa) : "Contato") + " · " + esc(m ? m.nome : "resposta") + "</span><b>" + quando(d.criado_em) + "</b></div>"; }).join("") + "</div></div>" : "");
+  var tx = $("#rp-txt"), al = $("#rp-alvo");
+  tx.oninput = function () { r.texto = tx.value; };
+  al.onchange = function () { r.alvo = al.value; };
+  $("#rp-colar").onclick = function () { if (navigator.clipboard && navigator.clipboard.readText) navigator.clipboard.readText().then(function (t) { tx.value = t; r.texto = t; analisar(); }, function () { toast("Não deu para colar automático. Segure no campo e cole."); tx.focus(); }); else { toast("Segure no campo e cole."); tx.focus(); } };
+  $("#rp-img").onchange = function () { var f = this.files && this.files[0]; if (f) processarPrint(f); this.value = ""; };
+  $("#rp-ok").onclick = analisar;
+  if (r.resultado) mostrarSugestao();
+}
+async function processarPrint(arquivo) {
+  var info = $("#rp-ocr"); if (info) info.textContent = "Lendo o print…";
+  try {
+    var bruto = await lerPrint(arquivo, function (p) { var i = $("#rp-ocr"); if (i) i.textContent = "Lendo o print… " + p + "%"; });
+    var limpo = limparOCR(bruto);
+    S.resp.texto = limpo;
+    if (!S.resp.alvo) { var c = candidatos(bruto).filter(function (x) { return x.tipo !== "projeto"; })[0]; if (c) S.resp.alvo = c.tipo + ":" + c.obj.id; }
+    if (S.view !== "responder") ir("responder"); else render();
+    var i2 = $("#rp-ocr"); if (i2) i2.textContent = "Confira o texto e apague o que não for do cliente.";
+    if (limpo) analisar();
+  } catch (e) { erro(e); var i3 = $("#rp-ocr"); if (i3) i3.textContent = ""; }
+}
+function analisar() {
+  var r = S.resp, tx = $("#rp-txt"), al = $("#rp-alvo");
+  if (tx) r.texto = tx.value.trim(); if (al) r.alvo = al.value;
+  if (!r.texto) { toast("Cole a mensagem do cliente ou envie o print."); return; }
+  if (!r.alvo) { var c = candidatos(r.texto).filter(function (x) { return x.tipo !== "projeto"; })[0]; if (c && c.sc >= 0.65) { r.alvo = c.tipo + ":" + c.obj.id; if (al) al.value = r.alvo; } }
+  var g = classificar(r.texto), dt = extrairData(r.texto);
+  var quandoD = dt ? dt.data : null;
+  if (!quandoD && (g.agendaDias || g.agendaReuniao)) { quandoD = somaDias(inicioDoDia(new Date()), g.agendaReuniao ? 1 : g.agendaDias); while (quandoD.getDay() === 0 || quandoD.getDay() === 6) quandoD = somaDias(quandoD, 1); quandoD.setHours(10, 0, 0, 0); }
+  r.resultado = { g: g, quando: quandoD, temData: !!dt, comHora: !!(dt && !dt.semHora) || !!g.agendaReuniao };
+  mostrarSugestao();
+}
+function alvoResp() { var p = (S.resp.alvo || "").split(":"); if (p[0] === "lead") return { tipo: "lead", obj: S.leads.find(function (x) { return x.id === p[1]; }) }; if (p[0] === "cliente") return { tipo: "cliente", obj: S.clientes.find(function (x) { return x.id === p[1]; }) }; return null; }
+function mostrarSugestao() {
+  var box = $("#rp-res"); if (!box || !S.resp.resultado) return;
+  var res = S.resp.resultado, g = res.g, al = alvoResp(), mods = respostasDe(g.id);
+  if (!mods.length) mods = respostasDe("outro");
+  var outros = S.modelos.filter(function (m) { return m.objetivo === "resposta" && m.gatilho !== g.id; });
+  var num = al && al.obj ? numeroDe(al.tipo, al.obj) : "";
+  var temAgenda = !!(g.agendaDias || g.agendaReuniao || res.temData);
+  box.innerHTML = '<div class="card plano"><div class="card-h"><div><h2>Resposta sugerida</h2><p>' + esc(g.dica) + '</p></div><span class="tag t-' + g.cor + '">' + esc(g.nome) + "</span></div>" +
+    '<div class="campo"><label for="rs-mod">Modelo</label><select class="inp" id="rs-mod">' + mods.map(function (m) { return '<option value="' + m.id + '">' + esc(m.nome) + "</option>"; }).join("") + (outros.length ? '<optgroup label="Outros tipos de resposta">' + outros.map(function (m) { return '<option value="' + m.id + '">' + esc(m.nome) + "</option>"; }).join("") + "</optgroup>" : "") + "</select></div>" +
+    '<textarea class="inp" id="rs-txt" style="min-height:120px"></textarea>' +
+    '<div class="form" style="margin-top:12px">' + (al ? '<div class="f full chk"><label><input type="checkbox" id="rs-st-on" checked> Atualizar status para</label><select class="inp" id="rs-st">' + (al.tipo === "lead" ? LEAD_ST : CLI_ST).map(function (s) { return '<option value="' + s[0] + '">' + s[1] + "</option>"; }).join("") + "</select></div>" : '<p class="hint full">Escolha de quem é a mensagem para atualizar o status e o histórico automaticamente.</p>') +
+    '<div class="f full chk"><label><input type="checkbox" id="rs-ag-on"' + (temAgenda && g.id !== "remover" && g.id !== "sem_interesse" ? " checked" : "") + '> Agendar ' + (g.agendaReuniao ? "reunião" : "retomada") + '</label><input class="inp" id="rs-ag-q" type="datetime-local" value="' + valorDataLocal(res.quando || somaDias(new Date(), 15)) + '"></div>' +
+    '<div class="f"><label for="rs-num">WhatsApp</label><input class="inp" id="rs-num" type="tel" inputmode="tel" value="' + esc(telVisivel(num)) + '" placeholder="(21) 99999-9999"></div></div>' +
+    '<div class="acoes"><button class="btn ghost" type="button" id="rs-copiar">' + ICON.copia + 'Copiar</button><button class="btn" type="button" id="rs-salvar">Só registrar</button><button class="btn wa" type="button" id="rs-wa">' + ICON.wa + "Enviar no WhatsApp</button></div></div>";
+  var sel = $("#rs-mod", box), tx = $("#rs-txt", box);
+  function aplicar() {
+    var m = S.modelos.find(function (x) { return x.id === sel.value; }); var alvo = al && al.obj ? al.obj : { nome: "" };
+    var q = $("#rs-ag-q", box).value ? new Date($("#rs-ag-q", box).value) : res.quando;
+    var txt = m ? preencher(m.corpo, alvo, al ? al.tipo : "lead") : "";
+    txt = txt.replace(/\{portfolio\}/g, portfolioTexto()).replace(/\{quando\}/g, q ? quandoTexto(q, res.comHora) : "em breve");
+    if (!al || !al.obj) txt = txt.replace(/^(Olá|Oi),\s*!/, "$1!").replace(/,\s*!/, "!");
+    tx.value = txt;
+  }
+  sel.onchange = aplicar; $("#rs-ag-q", box).onchange = aplicar; aplicar();
+  if (al) { var stSel = $("#rs-st", box); var sug = g.st; if (al.tipo === "cliente") sug = { descartado: "encerrado", fechado: "ativo", reuniao: al.obj.status, respondeu: al.obj.status }[g.st] || al.obj.status; stSel.value = sug; if (al.obj && al.obj.status === sug) $("#rs-st-on", box).checked = false; }
+  $("#rs-copiar", box).onclick = function () { copiar(tx.value); };
+  $("#rs-salvar", box).onclick = function () { concluirResposta(box, false); };
+  $("#rs-wa", box).onclick = function () { concluirResposta(box, true); };
+}
+async function concluirResposta(box, enviar) {
+  var res = S.resp.resultado, g = res.g, al = alvoResp(), txt = $("#rs-txt", box).value.trim();
+  var m = S.modelos.find(function (x) { return x.id === $("#rs-mod", box).value; });
+  if (enviar) {
+    var d = telWa($("#rs-num", box).value);
+    if (!d) { toast("Digite o número com DDD para enviar no WhatsApp."); $("#rs-num", box).focus(); return; }
+    window.open("https://wa.me/" + d + "?text=" + encodeURIComponent(txt), "_blank");
+    if (al && al.obj && d !== numeroDe(al.tipo, al.obj) && !(al.tipo === "lead" && d === al.obj.tel_digitos)) { if (al.tipo === "lead") { var nl = await salvarLead(al.obj, { whatsapp: d }); if (nl) al.obj = nl; } else { var rc = await sb.from("clientes").update({ telefone: d }).eq("id", al.obj.id).select().single(); if (!rc.error) { S.clientes = S.clientes.map(function (x) { return x.id === al.obj.id ? rc.data : x; }); al.obj = rc.data; } } }
+  }
+  var feito = [], agora = new Date();
+  try {
+    if (al && al.obj) {
+      var stOn = $("#rs-st-on", box) && $("#rs-st-on", box).checked, st = $("#rs-st", box) ? $("#rs-st", box).value : "";
+      if (al.tipo === "lead") {
+        var l = al.obj, dados = Object.assign({}, l.dados || {}), c = dados.ciclo || {};
+        var respostas = (c.respostas || []).concat([{ t: agora.toISOString(), tipo: g.tipo4, txt: S.resp.texto.slice(0, 1000) }]);
+        var envios = c.envios || []; if (enviar) envios = envios.concat([{ t: agora.toISOString(), etapa: g.tipo4, dow: agora.getDay(), h: agora.getHours(), txt: txt.slice(0, 1000) }]);
+        dados.ciclo = { envios: envios, respostas: respostas, encerrado: !!c.encerrado || g.id === "remover" };
+        if (g.id === "remover") dados.nao_contatar = true;
+        var hist = (l.historico || []).concat([{ t: agora.toISOString(), tipo: "resposta", txt: "Cliente respondeu (" + g.nome.toLowerCase() + "): " + S.resp.texto.slice(0, 300) }]);
+        if (enviar) hist.push({ t: agora.toISOString(), tipo: "whatsapp", txt: "Resposta enviada pela Central: " + (m ? m.nome : "") });
+        var mud = { dados: dados, historico: hist, ultimo_contato: agora.toISOString() };
+        if (stOn && st && st !== l.status) { mud.status = st; feito.push("status " + LEAD_ST.find(function (s) { return s[0] === st; })[1].toLowerCase()); }
+        await salvarLead(l, mud);
+        if (stOn && st === "fechado" && !S.clientes.some(function (x) { return x.lead_id === l.id; })) { var nc = await sb.from("clientes").insert({ nome: l.nome, empresa: l.nome, nicho: l.nicho || l.categoria || "", telefone: l.whatsapp || l.telefone || "", email: l.email || "", origem: "prospecção", lead_id: l.id, status: "ativo" }).select().single(); if (!nc.error) { S.clientes.unshift(nc.data); feito.push("virou cliente"); } }
+      } else {
+        var cl = al.obj, mc = { historico: (cl.historico || []).concat([{ t: agora.toISOString(), tipo: "resposta", txt: "Cliente respondeu (" + g.nome.toLowerCase() + "): " + S.resp.texto.slice(0, 300) }]), ultimo_contato: agora.toISOString(), atualizado_em: agora.toISOString() };
+        if (stOn && st && st !== cl.status) { mc.status = st; feito.push("status " + st); }
+        var ru = await sb.from("clientes").update(mc).eq("id", cl.id).select().single(); if (ru.error) throw ru.error; S.clientes = S.clientes.map(function (x) { return x.id === cl.id ? ru.data : x; });
+      }
+      if (enviar) { var dp = await sb.from("disparos").insert({ publico: al.tipo, destinatario_id: al.obj.id, canal: "whatsapp", modelo_id: m ? m.id : null, objetivo: "resposta", nicho: al.obj.nicho || al.obj.categoria || "" }).select().single(); if (!dp.error) S.disparos.push(dp.data); }
+    }
+    if ($("#rs-ag-on", box).checked && $("#rs-ag-q", box).value) {
+      var ag = { tipo: g.agendaReuniao ? "reuniao" : "retomada", quando: new Date($("#rs-ag-q", box).value).toISOString(), titulo: g.nome, obs: "Cliente disse: " + S.resp.texto.slice(0, 300), origem: "resposta" };
+      if (al && al.obj) ag[al.tipo === "lead" ? "lead_id" : "cliente_id"] = al.obj.id; else ag.titulo = "Retomar: " + S.resp.texto.slice(0, 60);
+      if (await criarAgenda(ag)) feito.push((g.agendaReuniao ? "reunião " : "retomada ") + diaLongo(ag.quando).toLowerCase());
+    }
+    if (enviar) feito.unshift("resposta enviada");
+    S.resp = { texto: "", alvo: "", resultado: null };
+    montarMenu(); render();
+    toast(feito.length ? "Pronto: " + feito.join(", ") + "." : "Registrado.");
+  } catch (e) { erro(e); }
+}
+function lerCompartilhado() {
+  var q = new URLSearchParams(location.search);
+  if (!q.has("compartilhado") && !q.has("texto")) return false;
+  var txt = [q.get("titulo"), q.get("texto"), q.get("link")].filter(Boolean).join("\n").trim();
+  try { history.replaceState(null, "", "/#responder"); } catch (e) {}
+  if (txt) { S.resp.texto = txt; }
+  if (q.get("compartilhado") === "img" && window.caches) {
+    caches.open("central-compartilhado").then(function (c) { return c.match("/__compartilhado").then(function (r) { if (!r) return; return r.blob().then(function (b) { c.delete("/__compartilhado"); processarPrint(b); }); }); }).catch(function () {});
+  } else if (txt) setTimeout(analisar, 300);
+  return true;
+}
+
+
 /* ═════════════ ASSISTENTE DE VOZ (gratuito, por regras) ═════════════ */
 function norm(s) { return String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9$:,./\s-]/g, " ").replace(/\s+/g, " ").trim(); }
 var STOP = { de: 1, da: 1, do: 1, das: 1, dos: 1, e: 1, a: 1, o: 1, as: 1, os: 1, em: 1, na: 1, no: 1, com: 1, para: 1, pra: 1, ltda: 1, me: 1, eireli: 1, the: 1, and: 1 };
 function radical(t) { return t.length > 3 && /s$/.test(t) ? t.replace(/(oes|aes|ais|eis|s)$/, function (x) { return x === "oes" || x === "aes" ? "ao" : x === "ais" ? "al" : x === "eis" ? "el" : ""; }) : t; }
-function tokensNome(s) { return norm(s).split(" ").filter(function (t) { return t.length >= 3 && !STOP[t]; }).map(radical); }
+function tokensNome(s) { return norm(s).split(" ").filter(function (t) { return (t.length >= 3 || /^\d+$/.test(t)) && !STOP[t]; }).map(radical); }
 function candidatos(texto) {
   var nt = norm(texto), tn = " " + nt + " ", toks = {}; nt.split(" ").forEach(function (t) { toks[t] = 1; toks[radical(t)] = 1; });
   var melhor = {};
