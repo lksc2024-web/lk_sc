@@ -89,9 +89,9 @@ svg{stroke-linecap:round;stroke-linejoin:round}
 .side .brand-row{padding:2px 8px}
 .menu{display:grid;gap:2px}
 .menu .grp{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--side-muted);padding:12px 10px 4px}
-.menu button,.side-btn{display:flex;align-items:center;gap:10px;border:0;background:transparent;color:var(--side-ink);padding:9px 10px;border-radius:9px;cursor:pointer;text-align:left;font-size:13.5px;width:100%}
-.menu button svg,.side-btn svg{width:18px;height:18px;flex:none;stroke:currentColor;fill:none;stroke-width:1.7;opacity:.8}
-.menu button:hover,.side-btn:hover{background:rgba(255,255,255,.06)}
+.menu button,.menu .menu-link,.side-btn{text-decoration:none;display:flex;align-items:center;gap:10px;border:0;background:transparent;color:var(--side-ink);padding:9px 10px;border-radius:9px;cursor:pointer;text-align:left;font-size:13.5px;width:100%}
+.menu button svg,.menu .menu-link svg,.side-btn svg{width:18px;height:18px;flex:none;stroke:currentColor;fill:none;stroke-width:1.7;opacity:.8}
+.menu button:hover,.menu .menu-link:hover,.side-btn:hover{background:rgba(255,255,255,.06)}
 .menu button[aria-current="page"]{background:rgba(255,255,255,.1);color:#fff}
 .menu button[aria-current="page"] svg{opacity:1;stroke:var(--accent)}
 .menu .badge{margin-left:auto;font:500 11px var(--font-num);background:rgba(255,255,255,.1);border-radius:6px;padding:1px 6px;color:var(--side-ink)}
@@ -396,3 +396,19 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 .aviso-card{display:flex;gap:14px;align-items:center;justify-content:space-between;flex-wrap:wrap;border-color:color-mix(in srgb,var(--accent) 40%,var(--line))}
 .aviso-card p{margin-top:2px;max-width:62ch}
 @media (max-width:900px){.fab{right:16px;bottom:calc(80px + env(safe-area-inset-bottom));width:56px;height:56px}}
+
+/* portfólio */
+.port-cmd{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:start}
+.mic-mini{width:46px;height:46px;padding:0;border-radius:12px;background:var(--accent);border-color:var(--accent);color:#fff;position:relative}
+.mic-mini svg{width:20px;height:20px}
+.mic-mini.ouvindo::after{content:"";position:absolute;inset:-4px;border-radius:14px;border:2px solid var(--accent);animation:onda 1.4s ease-out infinite}
+.port-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}
+.port-card{border:1px solid var(--line);border-radius:13px;overflow:hidden;background:var(--panel-2);display:grid;grid-template-rows:auto 1fr auto}
+.port-card.on{border-color:color-mix(in srgb,var(--accent) 55%,var(--line));box-shadow:0 0 0 1px color-mix(in srgb,var(--accent) 30%,transparent)}
+.port-img{display:block;aspect-ratio:16/10;background:var(--line);overflow:hidden}
+.port-img img{width:100%;height:100%;object-fit:cover;object-position:top;display:block}
+.port-info{padding:10px 12px 4px;display:grid;gap:2px}
+.port-info b{font-size:14px}
+.port-acoes{display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding:8px 12px 12px}
+.tg{display:flex;align-items:center;gap:6px;font-size:12.5px;margin-right:auto;cursor:pointer}
+.tg input{accent-color:var(--accent);width:16px;height:16px}

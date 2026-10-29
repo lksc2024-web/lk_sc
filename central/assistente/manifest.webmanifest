@@ -1,0 +1,17 @@
+{
+  "name": "Assistente Luka",
+  "short_name": "Assistente",
+  "description": "Seu assistente pessoal por voz ou texto: agenda, reuniões, prospecção e organização.",
+  "lang": "pt-BR",
+  "id": "/assistente/",
+  "start_url": "/assistente/",
+  "scope": "/assistente/",
+  "display": "standalone",
+  "background_color": "#0E1110",
+  "theme_color": "#0E1110",
+  "icons": [
+    { "src": "/assistente/icone-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/assistente/icone-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/assistente/icone-512-mask.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Luka · Trabalhos</title>
+<meta name="description" content="Sites, landing pages e presença digital para negócios. Alguns trabalhos de Luka.">
+<meta property="og:title" content="Luka · Trabalhos">
+<meta property="og:description" content="Sites, landing pages e presença digital para negócios.">
+<link rel="icon" href="/icone-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* layout: cabeçalho curto e grade de trabalhos; a imagem de cada site é o que importa */
+  --bg:#F4F4F1;--panel:#FFFFFF;--ink:#121413;--muted:#626864;--line:#E2E4E0;--accent:#E8552B;
+  --font:"Geist",system-ui,-apple-system,"Segoe UI",sans-serif;--mono:"Geist Mono",ui-monospace,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){:root{--bg:#0D100F;--panel:#151918;--ink:#EAEDEB;--muted:#9AA29E;--line:#252B29;--accent:#FF6A3D;color-scheme:dark}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 var(--font);-webkit-font-smoothing:antialiased}
+.wrap{max-width:1120px;margin:0 auto;padding:56px 20px 64px}
+header{display:grid;gap:14px;margin-bottom:40px;max-width:720px}
+.eyebrow{font:500 12px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+h1{font-size:clamp(34px,6vw,58px);line-height:1.02;letter-spacing:-.035em;margin:0;font-weight:600;text-wrap:balance}
+header p{margin:0;color:var(--muted);font-size:18px;max-width:58ch}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:22px}
+.item{display:grid;background:var(--panel);border:1px solid var(--line);border-radius:16px;overflow:hidden;text-decoration:none;color:inherit;transition:transform .25s ease,box-shadow .25s ease}
+.item:hover{transform:translateY(-3px);box-shadow:0 20px 40px -24px rgba(0,0,0,.35)}
+.item:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.img{aspect-ratio:16/10;background:var(--line);overflow:hidden}
+.img img{width:100%;height:100%;object-fit:cover;object-position:top;display:block;transition:transform .6s ease}
+.item:hover .img img{transform:scale(1.03)}
+.info{padding:16px 18px 18px;display:grid;gap:6px}
+.info .nicho{font:500 12px var(--mono);color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.info b{font-size:19px;letter-spacing:-.01em}
+.info p{margin:0;color:var(--muted);font-size:14.5px}
+.info .ver{margin-top:6px;font-size:14px;font-weight:600;color:var(--accent)}
+.vazio{color:var(--muted);padding:40px 0}
+footer{margin-top:56px;padding-top:20px;border-top:1px solid var(--line);color:var(--muted);font-size:14px;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <span class="eyebrow">Portfólio</span>
+    <h1>Sites que trazem clientes para negócios de verdade.</h1>
+    <p>Sou o Luka. Crio sites, landing pages e vitrines digitais para empresas do Rio de Janeiro, pensados para funcionar bem no celular.</p>
+  </header>
+  <main class="grid" id="grid" aria-live="polite"><p class="vazio">Carregando trabalhos…</p></main>
+  <footer><span>Luka · Sites e presença digital</span><span id="ano"></span></footer>
+</div>
+<script>
+(function(){
+  var URL_SB="https://bxjyxfoisqjkijxoeysu.supabase.co", KEY="sb_publishable_em9lB9ZwTDvfHV3kds9jpg_D0oxdWJA";
+  document.getElementById("ano").textContent=new Date().getFullYear();
+  function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
+  fetch(URL_SB+"/rest/v1/rpc/portfolio_publico",{method:"POST",headers:{apikey:KEY,Authorization:"Bearer "+KEY,"Content-Type":"application/json"},body:"{}"})
+    .then(function(r){if(!r.ok)throw new Error();return r.json()})
+    .then(function(itens){
+      var g=document.getElementById("grid");
+      if(!itens.length){g.innerHTML='<p class="vazio">Em breve, novos trabalhos por aqui.</p>';return}
+      g.innerHTML=itens.map(function(p){var host=p.url.replace(/^https?:\/\//,"").replace(/\/$/,"");
+        return '<a class="item" href="'+esc(p.url)+'" target="_blank" rel="noopener"><div class="img"><img loading="lazy" alt="Página inicial de '+esc(p.nome)+'" src="https://s.wordpress.com/mshots/v1/'+encodeURIComponent(p.url)+'?w=800&h=500"></div><div class="info">'+(p.nicho?'<span class="nicho">'+esc(p.nicho)+'</span>':'')+'<b>'+esc(p.nome)+'</b>'+(p.descricao?'<p>'+esc(p.descricao)+'</p>':'')+'<span class="ver">Ver o site · '+esc(host)+'</span></div></a>'}).join("");
+    })
+    .catch(function(){document.getElementById("grid").innerHTML='<p class="vazio">Não deu para carregar agora. Tente de novo em instantes.</p>'});
+})();
+</script>
+</body>
+</html>

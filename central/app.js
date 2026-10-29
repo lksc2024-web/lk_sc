@@ -57,6 +57,7 @@ var ICON = {
   conexoes: '<svg viewBox="0 0 24 24"><path d="M9 7V3M15 7V3"/><path d="M6 7h12v4a6 6 0 01-12 0V7z"/><path d="M12 17v4"/></svg>',
   agenda: '<svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/><path d="M8 14h3"/></svg>',
   responder: '<svg viewBox="0 0 24 24"><path d="M4 5h16v11H8l-4 4V5z"/><path d="M13 8l-3 2.5 3 2.5"/><path d="M10 10.5h4.5a2 2 0 012 2v.5"/></svg>',
+  portfolio: '<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M3 13l5-4 4 3 3-2 6 4"/><path d="M8 21h8M12 17v4"/></svg>',
   mic: '<svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0013 0M12 17.5V21M8.5 21h7"/></svg>',
   mais: '<svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>',
   mais_: '<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>',
@@ -71,7 +72,7 @@ var PLATAFORMAS = ["Kiwify", "Hotmart", "Eduzz", "Pix / direto", "Instagram", "T
 var CANAIS = ["TikTok", "Instagram", "YouTube", "Anúncios", "WhatsApp", "Indicação", "Google", "Geral"];
 var LEAD_ST = [["novo", "Novo", "--muted"], ["contatado", "Contatado", "--info"], ["respondeu", "Respondeu", "--warn"], ["reuniao", "Reunião", "--accent"], ["fechado", "Fechado", "--ok"], ["descartado", "Descartado", "--bad"]];
 var CLI_ST = [["ativo", "Ativo", "--ok"], ["recorrente", "Recorrente", "--info"], ["retomar", "Retomar", "--warn"], ["encerrado", "Encerrado", "--muted"]];
-var OBJETIVOS = { prospeccao: "Prospecção", captacao: "Captação", retomada: "Retomada", continuidade: "Continuidade", pos_venda: "Pós-venda", resposta: "Resposta ao cliente" };
+var OBJETIVOS = { prospeccao: "Prospecção", captacao: "Captação", retomada: "Retomada", continuidade: "Continuidade", pos_venda: "Pós-venda", resposta: "Resposta ao cliente", portfolio: "Envio de projeto" };
 
 /* ───────────── estado ───────────── */
 var S = {
@@ -84,6 +85,16 @@ var S = {
 };
 var CH = {}, CENA = { login: null, hero: null };
 function matarGraficos() { Object.keys(CH).forEach(function (id) { CH[id].destroy(); delete CH[id]; }); if (CENA.hero) { CENA.hero.parar(); CENA.hero = null; } }
+
+
+/* núcleo compartilhado (nucleo.js) */
+var NUC = window.Nucleo;
+var norm = NUC.norm, radical = NUC.radical, tokensNome = NUC.tokensNome, numero = NUC.numero, somaDias = NUC.somaDias,
+  extrairData = NUC.extrairData, extrairValor = NUC.extrairValor, extrairNomeNovo = NUC.extrairNomeNovo,
+  GATILHOS = NUC.GATILHOS, classificar = NUC.classificar, limparOCR = NUC.limparOCR, grupoNicho = NUC.grupoNicho;
+function baseNomes() { return { leads: S.leads, clientes: S.clientes, projetos: projetosNegocio() }; }
+function candidatos(t) { return NUC.candidatos(t, baseNomes()); }
+function interpretar(t) { return NUC.interpretar(t, baseNomes()); }
 
 /* ───────────── login ───────────── */
 function mostrarLogin() {
@@ -238,6 +249,7 @@ var VIEWS = [
   ["investir", "Investimento", "Investir", "Negócio"],
   ["agenda", "Agenda", "Agenda", "Relacionamento"],
   ["responder", "Responder cliente", "Responder", "Relacionamento"],
+  ["portfolio", "Portfólio", "Portfólio", "Relacionamento"],
   ["prospeccao", "Prospecção e leads", "Leads", "Relacionamento"],
   ["clientes", "Clientes", "Clientes", "Relacionamento"],
   ["mensagens", "Mensagens", "Mensagens", "Relacionamento"],
@@ -251,6 +263,7 @@ function montarMenu() {
     var badge = gA ? gA.atrasados.length + gA.hoje.length : v[0] === "prospeccao" ? S.leads.filter(function (l) { return l.status === "novo"; }).length : v[0] === "clientes" ? S.clientes.filter(function (c) { return c.status === "retomar"; }).length : 0;
     h += '<button type="button" data-v="' + v[0] + '">' + ICON[v[0]] + v[1] + (badge ? '<span class="badge">' + badge + "</span>" : "") + "</button>";
   });
+  h += '<div class="grp">Fora do painel</div><a class="menu-link" href="/assistente/">' + ICON.mic + "Assistente</a>";
   $("#menu").innerHTML = h;
   var bot = ["geral", "agenda", "prospeccao", "clientes"];
   $("#bottom").innerHTML = bot.map(function (id) { var v = VIEWS.find(function (x) { return x[0] === id; }); return '<button type="button" data-v="' + id + '">' + ICON[id] + "<span>" + v[2] + "</span></button>"; }).join("") + '<button type="button" id="bot-mais">' + ICON.mais + "<span>Mais</span></button>";
@@ -258,15 +271,15 @@ function montarMenu() {
 }
 function marcarMenu() {
   $$("[data-v]").forEach(function (b) { if (b.dataset.v === S.view) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current"); });
-  var bm = $("#bot-mais"); if (bm) { if (["responder", "projetos", "hospedagens", "investir", "mensagens", "conexoes"].indexOf(S.view) >= 0) bm.setAttribute("aria-current", "page"); else bm.removeAttribute("aria-current"); }
+  var bm = $("#bot-mais"); if (bm) { if (["responder", "portfolio", "projetos", "hospedagens", "investir", "mensagens", "conexoes"].indexOf(S.view) >= 0) bm.setAttribute("aria-current", "page"); else bm.removeAttribute("aria-current"); }
 }
 document.addEventListener("click", function (e) {
   var b = e.target.closest("[data-v]"); if (b && !b.closest(".modal")) { ir(b.dataset.v); return; }
   if (e.target.closest("#bot-mais")) abrirMais();
 });
 function abrirMais() {
-  modal("Mais", '<div class="cl">' + ["responder", "projetos", "hospedagens", "mensagens", "investir", "conexoes"].map(function (id) { var v = VIEWS.find(function (x) { return x[0] === id; }); return '<button type="button" class="btn" style="justify-content:flex-start;padding:12px" data-ir="' + id + '">' + ICON[id] + v[1] + "</button>"; }).join("") +
-    '<button type="button" class="btn danger" style="justify-content:flex-start;padding:12px" id="m-sair">Sair da conta</button></div>', function (box) {
+  modal("Mais", '<div class="cl">' + ["responder", "portfolio", "projetos", "hospedagens", "mensagens", "investir", "conexoes"].map(function (id) { var v = VIEWS.find(function (x) { return x[0] === id; }); return '<button type="button" class="btn" style="justify-content:flex-start;padding:12px" data-ir="' + id + '">' + ICON[id] + v[1] + "</button>"; }).join("") +
+    '<a class="btn" style="justify-content:flex-start;padding:12px" href="/assistente/">' + ICON.mic + 'Assistente (app separado)</a><button type="button" class="btn danger" style="justify-content:flex-start;padding:12px" id="m-sair">Sair da conta</button></div>', function (box) {
     $$("[data-ir]", box).forEach(function (b) { b.onclick = function () { fecharModal(); ir(b.dataset.ir); }; });
     $("#m-sair", box).onclick = function () { fecharModal(); sb.auth.signOut(); };
   });
@@ -289,7 +302,7 @@ function render() {
   $("#seg-dias").hidden = !usaPeriodo;
   $("#btn-custom").hidden = S.view !== "geral";
   acaoTopo(null);
-  var fn = { geral: vGeral, projetos: vProjetos, hospedagens: vHospedagens, investir: vInvestir, prospeccao: vProspeccao, clientes: vClientes, mensagens: vMensagens, conexoes: vConexoes, agenda: vAgenda, responder: vResponder }[S.view];
+  var fn = { geral: vGeral, projetos: vProjetos, hospedagens: vHospedagens, investir: vInvestir, prospeccao: vProspeccao, clientes: vClientes, mensagens: vMensagens, conexoes: vConexoes, agenda: vAgenda, responder: vResponder, portfolio: vPortfolio }[S.view];
   try { fn($("#conteudo")); } catch (e) { console.error(e); $("#conteudo").innerHTML = '<div class="card vazio"><b>Algo deu errado nesta tela.</b>Recarregue a página. Se continuar, me avise.</div>'; }
 }
 
@@ -723,7 +736,7 @@ function blocoMensagem(publico, alvo, objetivosPref, contexto) {
   var num = numeroDe(publico, alvo), fixo = publico === "lead" && !alvo.whatsapp && alvo.tel_tipo === "fixo";
   var reun = contexto === "reuniao" || emReuniao(publico, alvo);
   var pref = reun ? ["retomada"] : objetivosPref;
-  var mods = S.modelos.filter(function (m) { return m.objetivo !== "resposta"; }).sort(function (a, b) { return (pref.indexOf(a.objetivo) < 0) - (pref.indexOf(b.objetivo) < 0); });
+  var mods = S.modelos.filter(function (m) { return m.objetivo !== "resposta" && m.objetivo !== "portfolio"; }).sort(function (a, b) { return (pref.indexOf(a.objetivo) < 0) - (pref.indexOf(b.objetivo) < 0); });
   var canalPref = num || !alvo.email ? "whatsapp" : "email";
   var esc0 = reun ? (mods.find(function (m) { return m.nome.indexOf(NOME_RETOMAR) === 0 && m.canal === canalPref; }) || mods.find(function (m) { return m.nome.indexOf(NOME_RETOMAR) === 0; })) : null;
   var selId = esc0 ? esc0.id : (mods[0] ? mods[0].id : "");
@@ -883,7 +896,7 @@ function tabCampanha(el) {
   var nichos = {}; base.forEach(function (x) { var nn = x.nicho || x.categoria || ""; if (nn) nichos[nn] = (nichos[nn] || 0) + 1; });
   var alvo = base.filter(function (x) { return c.st.indexOf(x.status) >= 0 && (!c.nicho || (x.nicho || x.categoria) === c.nicho); });
   var comCanal = alvo.filter(function (x) { return ehLead ? (x.whatsapp || x.tel_digitos || x.email) : (telWa(x.telefone) || x.email); });
-  var mods = S.modelos.filter(function (m) { return m.objetivo !== "resposta" && (!m.nicho || !c.nicho || m.nicho === c.nicho); });
+  var mods = S.modelos.filter(function (m) { return m.objetivo !== "resposta" && m.objetivo !== "portfolio" && (!m.nicho || !c.nicho || m.nicho === c.nicho); });
   if (!c.modeloManual) { var querRetomar = (ehLead && c.st.indexOf("reuniao") >= 0) || (!ehLead && c.st.indexOf("retomar") >= 0); var mr = querRetomar && mods.find(function (m) { return m.nome.indexOf(NOME_RETOMAR) === 0 && m.canal === "whatsapp"; }); if (mr) c.modelo = mr.id; }
   if (!mods.some(function (m) { return m.id === c.modelo; })) c.modelo = mods[0] ? mods[0].id : "";
   var mod = S.modelos.find(function (m) { return m.id === c.modelo; });
@@ -1091,37 +1104,7 @@ function resumoDoDia() {
 
 /* ═════════════ RESPONDER CLIENTE ═════════════ */
 // Cada gatilho: como reconhecer, o que significa, o status sugerido e o que agendar. O texto da resposta vem dos modelos (editáveis).
-var GATILHOS = [
-  { id: "remover", nome: "Pediu para não receber mais", rx: /(para|pare|parem) de (me )?mand|n[aã]o (me )?mand(e|em)|me (tira|remov)|sair da lista|bloque|denunci|n[aã]o (me )?(chama|ligue|liga|chamem) mais/, st: "descartado", tipo4: "rejeicao", cor: "bad", dica: "Respeite o pedido e não volte a chamar." },
-  { id: "quem_e", nome: "Perguntou quem é você", rx: /quem (e|seria|fala|est[aá] falando)|como (voc[eê] |vc )?(conseguiu|achou|pegou|tem) (meu|o|esse|este) (n[uú]mero|contato|telefone)|de onde (voc[eê]|vc|[eé])|[eé] golpe|golpe/, st: "respondeu", tipo4: "atencao", cor: "warn", dica: "Desconfiança: apresente-se com clareza e ofereça parar." },
-  { id: "ja_tem", nome: "Já tem site ou alguém cuidando", rx: /j[aá] (temos|tenho|possu\w*|fizemos|contratamos|tem)|temos (um |uma )?(site|ag[eê]ncia|pessoa|algu[eé]m|designer|programador|empresa)|j[aá] (cuida|faz|est[aá] (feito|resolvido))/, st: "descartado", tipo4: "rejeicao", cor: "bad", dica: "Negativa educada: deixe a porta aberta para o futuro.", agendaDias: 90 },
-  { id: "horario", nome: "Sugeriu dia ou horário", rx: /que horas|qual (o )?(melhor )?hor[aá]rio|pode ser (amanh|hoje|segunda|ter[cç]a|quarta|quinta|sexta|s[aá]bado|depois)|(as|às) \d{1,2}(h|:| horas| da)|\d{1,2}h\d{0,2}\b|(amanh[aã]|segunda|ter[cç]a|quarta|quinta|sexta).{0,25}(pode|serve|fica bom|t[aá] bom|combinado)/, st: "reuniao", tipo4: "desejo", cor: "ok", dica: "Ótimo sinal: confirme e marque na agenda.", agendaReuniao: true },
-  { id: "aprovacao", nome: "Aprovou", rx: /vamos (fazer|fechar)|pode (fazer|come[cç]ar|seguir|mandar a proposta|mandar o contrato)|\bfechado\b|\bfechou\b|quero contratar|manda (a proposta|o contrato|o pix|os dados)|\baceito\b|\bbora\b|t[oô] dentro/, st: "fechado", tipo4: "aprovacao", cor: "ok", dica: "Fechamento: peça os dados e mande a proposta." },
-  { id: "caro", nome: "Achou caro ou sem verba", rx: /\bcaro\b|sem (verba|dinheiro|grana|or[cç]amento)|n[aã]o (tenho|temos) (como pagar|dinheiro|verba|grana)|fora do (or[cç]amento|meu or[cç]amento|nosso or[cç]amento)|apertad|n[aã]o cabe/, st: "respondeu", tipo4: "atencao", cor: "warn", dica: "Objeção de preço: ofereça algo menor ou parcelado." },
-  { id: "sem_tempo", nome: "Sem tempo agora", rx: /(agora|momento|no momento) n[aã]o|n[aã]o [eé] (o|um bom) momento|depois (a gente|eu|conversa|vejo|falamos)|mais (pra|para) frente|semana que vem|m[eê]s que vem|sem tempo|correria|corrido|ocupad|me (chama|procura|liga|manda mensagem) (depois|mais tarde|outro dia|semana|no m[eê]s|daqui)|daqui a \w+ (dias|semanas|meses)|ano que vem/, st: "respondeu", tipo4: "atencao", cor: "warn", dica: "Não é um não: agende a retomada.", agendaDias: 15 },
-  { id: "sem_interesse", nome: "Sem interesse", rx: /n[aã]o (tenho|temos) interesse|sem interesse|n[aã]o (quero|queremos|preciso|precisamos|vou querer|vamos querer)|n[aã]o,? obrigad|dispenso|n[aã]o rola|n[aã]o faz sentido|n[aã]o tenho necessidade/, st: "descartado", tipo4: "rejeicao", cor: "bad", dica: "Negativa: agradeça e pergunte o motivo, sem insistir." },
-  { id: "pensar", nome: "Vai pensar ou consultar alguém", rx: /vou (pensar|ver|analisar|conversar|falar|consultar|avaliar)|preciso (pensar|ver|conversar|falar|consultar|avaliar)|deixa eu (ver|pensar)|vou te (falar|retornar|avisar|dar um retorno)|(meu|minha) (s[oó]ci|espos|marido|mulher|chefe|gerente|dono)/, st: "respondeu", tipo4: "atencao", cor: "warn", dica: "Está considerando: facilite a decisão e marque a retomada.", agendaDias: 3 },
-  { id: "exemplos", nome: "Pediu exemplos", rx: /exemplo|portf[oó]lio|trabalhos (seus|anteriores|feitos)|j[aá] fez|mostra (algum|alguns|uns)|ver (algum|um|uns) (site|trabalho)/, st: "respondeu", tipo4: "atencao", cor: "info", dica: "Interesse com dúvida: mostre trabalhos parecidos." },
-  { id: "preco", nome: "Perguntou o preço", rx: /quanto|valor|pre[cç]o|custa|or[cç]amento|investimento|cobra/, st: "respondeu", tipo4: "atencao", cor: "info", dica: "Pergunta de preço: dê uma faixa e puxe para o diagnóstico." },
-  { id: "como_funciona", nome: "Perguntou como funciona", rx: /como funciona|como seria|o que (seria|[eé] isso)|explica|me fala mais|mais detalhes|mais informa|prazo|quanto tempo|como (voc[eê]s|vc) trabalha/, st: "respondeu", tipo4: "atencao", cor: "info", dica: "Dúvida: explique o processo em poucas linhas." },
-  { id: "interesse", nome: "Mostrou interesse", rx: /\bquero\b|me manda|manda sim|pode mandar|gostei|tenho interesse|temos interesse|interessante|quero ver|me mostra|pode sim|sim,? pode|faz sentido|\bshow\b|\btop\b|\blegal\b|\bsim\b|\bclaro\b|\bok\b|beleza|\bblz\b/, st: "respondeu", tipo4: "desejo", cor: "ok", dica: "Interesse: avance para a conversa ou chamada." },
-  { id: "outro", nome: "Resposta geral", rx: /.^/, st: "respondeu", tipo4: "atencao", cor: "info", dica: "Não reconheci o tipo: confira a resposta sugerida." }
-];
-function classificar(texto) {
-  var t = norm(texto).replace(/\s+/g, " ");
-  var tOrig = String(texto || "").toLowerCase();
-  for (var i = 0; i < GATILHOS.length - 1; i++) { if (GATILHOS[i].rx.test(t) || GATILHOS[i].rx.test(tOrig)) return GATILHOS[i]; }
-  return GATILHOS[GATILHOS.length - 1];
-}
 function respostasDe(gatilho) { return S.modelos.filter(function (m) { return m.objetivo === "resposta" && m.gatilho === gatilho; }); }
-function limparOCR(txt) {
-  return String(txt || "").split(/\n+/).map(function (l) { return l.trim(); }).filter(function (l) {
-    if (l.length < 2) return false;
-    if (/^\d{1,2}[:.]\d{2}(\s*[✓v√]+)?$/i.test(l)) return false;
-    if (/^(hoje|ontem|online|digitando|visto por|mensagem|digite uma mensagem|as mensagens|criptografad|toque para)/i.test(norm(l))) return false;
-    return true;
-  }).map(function (l) { return l.replace(/\s+\d{1,2}[:.]\d{2}\s*[✓v√]*$/i, ""); }).join("\n").trim();
-}
 function carregarOCR() {
   if (window.Tesseract) return Promise.resolve(window.Tesseract);
   return new Promise(function (ok, falha) { var s = document.createElement("script"); s.src = "https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js"; s.onload = function () { ok(window.Tesseract); }; s.onerror = function () { falha(new Error("não deu para carregar o leitor de prints")); }; document.head.appendChild(s); });
@@ -1273,108 +1256,122 @@ function lerCompartilhado() {
 }
 
 
-/* ═════════════ ASSISTENTE DE VOZ (gratuito, por regras) ═════════════ */
-function norm(s) { return String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9$:,./\s-]/g, " ").replace(/\s+/g, " ").trim(); }
-var STOP = { de: 1, da: 1, do: 1, das: 1, dos: 1, e: 1, a: 1, o: 1, as: 1, os: 1, em: 1, na: 1, no: 1, com: 1, para: 1, pra: 1, ltda: 1, me: 1, eireli: 1, the: 1, and: 1 };
-function radical(t) { return t.length > 3 && /s$/.test(t) ? t.replace(/(oes|aes|ais|eis|s)$/, function (x) { return x === "oes" || x === "aes" ? "ao" : x === "ais" ? "al" : x === "eis" ? "el" : ""; }) : t; }
-function tokensNome(s) { return norm(s).split(" ").filter(function (t) { return (t.length >= 3 || /^\d+$/.test(t)) && !STOP[t]; }).map(radical); }
-function candidatos(texto) {
-  var nt = norm(texto), tn = " " + nt + " ", toks = {}; nt.split(" ").forEach(function (t) { toks[t] = 1; toks[radical(t)] = 1; });
-  var melhor = {};
-  function testar(tipo, obj, nome) {
-    if (!nome) return; var ts = tokensNome(nome); if (!ts.length) return;
-    var hit = ts.filter(function (t) { return toks[t]; }).length; if (!hit) return;
-    var sc = hit / ts.length, full = norm(nome);
-    if (full.length >= 4 && tn.indexOf(" " + full + " ") >= 0) sc = Math.max(sc, 1.2);
-    if (tipo === "cliente" && /\bcliente\b/.test(nt)) sc += 0.15;
-    if (tipo === "lead" && /\blead\b/.test(nt)) sc += 0.15;
-    if (tipo === "projeto" && /\b(projeto|produto|kit|pack|curso|venda|vendi)\b/.test(nt)) sc += 0.1;
-    var k = tipo + ":" + obj.id;
-    if (!melhor[k] || melhor[k].sc < sc) melhor[k] = { tipo: tipo, obj: obj, nome: nome, sc: sc, hit: hit };
+/* ═════════════ PORTFÓLIO ═════════════ */
+function vitrine() { return S.projetos.filter(function (p) { return p.dados && p.dados.vitrine && p.url; }).sort(function (a, b) { return (b.dados.destaque ? 1 : 0) - (a.dados.destaque ? 1 : 0); }); }
+function urlPortfolio() { return location.origin + "/portfolio"; }
+function thumb(url) { return "https://s.wordpress.com/mshots/v1/" + encodeURIComponent(url) + "?w=640&h=400"; }
+function rankProjetos(alvo, textoExtra) {
+  var base = ((alvo && (alvo.nicho || alvo.categoria)) || "") + " " + ((alvo && alvo.nome) || "");
+  var g = grupoNicho(textoExtra || "") || grupoNicho(base), tk = tokensNome(base + " " + (textoExtra || ""));
+  return vitrine().map(function (p) {
+    var desc = (p.dados && p.dados.descricao_vitrine) || "", gp = grupoNicho(p.nicho + " " + p.nome + " " + desc);
+    var sc = g && gp === g ? 3 : 0, tp = tokensNome(p.nicho + " " + p.nome + " " + desc);
+    tk.forEach(function (t) { if (tp.indexOf(t) >= 0) sc += 1; });
+    if (p.dados.destaque) sc += 0.5;
+    return { p: p, sc: sc, mesmo: !!(g && gp === g) };
+  }).sort(function (a, b) { return b.sc - a.sc; });
+}
+S.port = { texto: "", alvo: "", projeto: "", modelo: "" };
+function alvoPort() { var p = (S.port.alvo || "").split(":"); if (p[0] === "lead") return { tipo: "lead", obj: S.leads.find(function (x) { return x.id === p[1]; }) }; if (p[0] === "cliente") return { tipo: "cliente", obj: S.clientes.find(function (x) { return x.id === p[1]; }) }; return null; }
+function opcoesPessoas(sel) {
+  return '<option value="">Escolha o lead ou cliente</option><optgroup label="Leads">' + S.leads.slice().sort(function (a, b) { return a.nome.localeCompare(b.nome); }).map(function (l) { return '<option value="lead:' + l.id + '"' + (sel === "lead:" + l.id ? " selected" : "") + ">" + esc(l.nome) + (l.nicho || l.categoria ? " · " + esc(l.nicho || l.categoria) : "") + "</option>"; }).join("") + '</optgroup><optgroup label="Clientes">' + S.clientes.map(function (c) { return '<option value="cliente:' + c.id + '"' + (sel === "cliente:" + c.id ? " selected" : "") + ">" + esc(c.nome || c.empresa) + "</option>"; }).join("") + "</optgroup>";
+}
+function vPortfolio(box) {
+  var vt = vitrine(), todos = S.projetos.filter(function (p) { return p.url; }).sort(function (a, b) { return ((b.dados && b.dados.vitrine) ? 1 : 0) - ((a.dados && a.dados.vitrine) ? 1 : 0) || a.nome.localeCompare(b.nome); });
+  box.innerHTML = '<div class="det"><div class="card" style="align-self:start"><div class="card-h"><div><h2>Enviar um projeto</h2><p>Fale ou escreva para quem e de que tipo</p></div></div>' +
+    '<div class="port-cmd"><textarea class="inp" id="pf-txt" style="min-height:70px" placeholder="Ex.: manda um projeto de padaria para a Padaria Vera Cruz">' + esc(S.port.texto) + '</textarea><button type="button" class="btn mic-mini" id="pf-mic" aria-label="Falar">' + ICON.mic + '</button></div>' +
+    '<div class="acoes" style="margin-top:8px"><button class="btn" type="button" id="pf-ok">Entender</button></div>' +
+    '<div class="form" style="margin-top:6px"><div class="f full"><label for="pf-alvo">Para quem</label><select class="inp" id="pf-alvo">' + opcoesPessoas(S.port.alvo) + "</select></div>" +
+    '<div class="f full"><label for="pf-proj">Projeto</label><select class="inp" id="pf-proj"></select></div>' +
+    '<div class="f full"><label for="pf-mod">Mensagem</label><select class="inp" id="pf-mod">' + S.modelos.filter(function (m) { return m.objetivo === "portfolio"; }).map(function (m) { return '<option value="' + m.id + '"' + (m.id === S.port.modelo ? " selected" : "") + ">" + esc(m.nome) + "</option>"; }).join("") + "</select></div>" +
+    '<div class="f full"><textarea class="inp" id="pf-msg" style="min-height:120px"></textarea></div>' +
+    '<div class="f"><label for="pf-num">WhatsApp</label><input class="inp" id="pf-num" type="tel" inputmode="tel" placeholder="(21) 99999-9999"></div></div>' +
+    '<div class="acoes"><button class="btn ghost" type="button" id="pf-copiar">' + ICON.copia + 'Copiar</button><button class="btn wa" type="button" id="pf-wa">' + ICON.wa + "Enviar no WhatsApp</button></div></div>" +
+    '<div style="display:grid;gap:16px;align-content:start"><div class="card"><div class="card-h"><div><h2>Seu portfólio público</h2><p>' + vt.length + (vt.length === 1 ? " projeto à mostra" : " projetos à mostra") + '</p></div></div>' +
+    (vt.length ? '<div class="code"><span>' + esc(urlPortfolio()) + '</span><button class="btn sm" type="button" data-cp="' + esc(urlPortfolio()) + '">' + ICON.copia + 'Copiar</button><a class="btn sm" href="/portfolio" target="_blank" rel="noopener">' + ICON.ext + "Abrir</a></div>" : '<p class="hint">Você ainda não marcou nenhum projeto para mostrar. Marque abaixo os que podem ir para clientes.</p>') +
+    '<p class="hint" style="margin-top:10px">Uma página só com os projetos marcados, para mandar a qualquer cliente. Prévias feitas para clientes reais só devem ir para o portfólio com a autorização deles.</p></div>' +
+    '<div class="card"><div class="card-h"><div><h2>Nichos cobertos</h2><p>Para ter sempre um exemplo parecido com o cliente</p></div></div>' + coberturaNichos() + "</div></div></div>" +
+    '<div class="card"><div class="card-h"><div><h2>Projetos hospedados</h2><p>Marque o que pode ser mostrado. A estrela coloca no topo.</p></div></div><div class="port-grid">' + todos.map(function (p) { var on = p.dados && p.dados.vitrine; return '<div class="port-card' + (on ? " on" : "") + '"><a class="port-img" href="' + esc(p.url) + '" target="_blank" rel="noopener"><img loading="lazy" alt="Prévia de ' + esc(p.nome) + '" src="' + esc(thumb(p.url)) + '"></a><div class="port-info"><b>' + esc(p.nome) + '</b><span class="sub">' + esc(p.nicho || "Sem nicho definido") + "</span>" + (p.dados && p.dados.descricao_vitrine ? '<span class="sub">' + esc(p.dados.descricao_vitrine) + "</span>" : "") + '</div><div class="port-acoes"><label class="tg"><input type="checkbox" data-vt="' + p.id + '"' + (on ? " checked" : "") + '> No portfólio</label><button class="btn sm ghost" type="button" data-dq="' + p.id + '" aria-label="Destaque">' + (p.dados && p.dados.destaque ? "★" : "☆") + '</button><button class="btn sm ghost" type="button" data-pe="' + p.id + '">Editar</button>' + (on ? '<button class="btn sm" type="button" data-envia="' + p.id + '">Enviar</button>' : "") + "</div></div>"; }).join("") + "</div></div>";
+  ligarPortfolio(box);
+}
+function coberturaNichos() {
+  var nomes = { comida: "Alimentação", pet: "Pet", beleza: "Beleza e estética", saude: "Saúde e bem-estar", imoveis: "Imóveis e arquitetura", auto: "Automotivo", loja: "Lojas", servicos: "Serviços" };
+  var tem = {}; vitrine().forEach(function (p) { var g = grupoNicho(p.nicho + " " + p.nome + " " + ((p.dados && p.dados.descricao_vitrine) || "")); if (g) tem[g] = (tem[g] || 0) + 1; });
+  var leadsPor = {}; S.leads.forEach(function (l) { var g = grupoNicho((l.nicho || "") + " " + (l.categoria || "")); if (g) leadsPor[g] = (leadsPor[g] || 0) + 1; });
+  return '<div class="stat-list">' + Object.keys(nomes).map(function (g) { return "<div><span>" + nomes[g] + (leadsPor[g] ? ' <span class="sub">· ' + leadsPor[g] + " leads</span>" : "") + "</span><b class=\"" + (tem[g] ? "up" : leadsPor[g] ? "down" : "") + "\">" + (tem[g] ? tem[g] + (tem[g] > 1 ? " projetos" : " projeto") : leadsPor[g] ? "falta exemplo" : "—") + "</b></div>"; }).join("") + "</div>";
+}
+function ligarPortfolio(box) {
+  var al = $("#pf-alvo", box), pj = $("#pf-proj", box), md = $("#pf-mod", box), msg = $("#pf-msg", box), num = $("#pf-num", box), tx = $("#pf-txt", box);
+  function encherProjetos(textoExtra) {
+    var a = alvoPort(), rk = rankProjetos(a && a.obj, textoExtra);
+    var sel = S.port.projeto || (rk[0] ? rk[0].p.id : "todos");
+    pj.innerHTML = '<option value="todos"' + (sel === "todos" ? " selected" : "") + ">Portfólio completo (" + vitrine().length + " projetos)</option>" + rk.map(function (r) { return '<option value="' + r.p.id + '"' + (r.p.id === sel ? " selected" : "") + ">" + esc(r.p.nome) + (r.mesmo ? " · mesmo nicho" : "") + "</option>"; }).join("");
+    if (!vitrine().length) pj.innerHTML = '<option value="todos">Nenhum projeto marcado ainda</option>';
   }
-  S.leads.forEach(function (l) { testar("lead", l, l.nome); });
-  S.clientes.forEach(function (c) { testar("cliente", c, c.nome); if (c.empresa && c.empresa !== c.nome) testar("cliente", c, c.empresa); });
-  projetosNegocio().forEach(function (p) { testar("projeto", p, p.nome); });
-  return Object.keys(melhor).map(function (k) { return melhor[k]; }).filter(function (o) { return o.sc >= 0.5; }).sort(function (a, b) { return (b.sc - a.sc) || (b.hit - a.hit); }).slice(0, 8);
-}
-var NUMPAL = { um: 1, uma: 1, dois: 2, duas: 2, tres: 3, quatro: 4, cinco: 5, seis: 6, sete: 7, oito: 8, nove: 9, dez: 10, quinze: 15, trinta: 30 };
-function numero(s) { return /^\d+$/.test(s) ? +s : (NUMPAL[s] || 1); }
-function somaDias(d, q) { var x = new Date(d); x.setDate(x.getDate() + q); return x; }
-function extrairData(texto) {
-  var t = norm(texto), agora = new Date(), base = inicioDoDia(agora), d = null, m;
-  var DOW = { domingo: 0, segunda: 1, terca: 2, quarta: 3, quinta: 4, sexta: 5, sabado: 6 };
-  var MES = { janeiro: 0, fevereiro: 1, marco: 2, abril: 3, maio: 4, junho: 5, julho: 6, agosto: 7, setembro: 8, outubro: 9, novembro: 10, dezembro: 11 };
-  if (/\bdepois de amanha\b/.test(t)) d = somaDias(base, 2);
-  else if (/\bamanha\b/.test(t)) d = somaDias(base, 1);
-  else if (/\bhoje\b/.test(t)) d = base;
-  else if ((m = t.match(/\b(?:em|daqui a|daqui)\s+(\d+|um|uma|dois|duas|tres|quatro|cinco|seis|sete|quinze|trinta)\s+(dias?|semanas?|mes|meses)\b/))) { var q = numero(m[1]); d = /^dia/.test(m[2]) ? somaDias(base, q) : /^semana/.test(m[2]) ? somaDias(base, 7 * q) : new Date(base.getFullYear(), base.getMonth() + q, base.getDate()); }
-  else if (/\b(semana que vem|proxima semana)\b/.test(t) && !/\b(segunda|terca|quarta|quinta|sexta|sabado|domingo)\b/.test(t)) d = somaDias(base, 7);
-  else if (/\b(mes que vem|proximo mes)\b/.test(t)) d = new Date(base.getFullYear(), base.getMonth() + 1, base.getDate());
-  else if ((m = t.match(/\b(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?\b/))) { var ano = m[3] ? (+m[3] < 100 ? 2000 + +m[3] : +m[3]) : base.getFullYear(); d = new Date(ano, +m[2] - 1, +m[1]); if (!m[3] && d < base) d.setFullYear(d.getFullYear() + 1); }
-  else if ((m = t.match(/\bdia\s+(\d{1,2})(?:\s+de\s+([a-z]+))?/))) { var mes = m[2] && MES[m[2]] != null ? MES[m[2]] : base.getMonth(); d = new Date(base.getFullYear(), mes, +m[1]); if (d < base) { if (m[2] && MES[m[2]] != null) d.setFullYear(d.getFullYear() + 1); else d = new Date(base.getFullYear(), base.getMonth() + 1, +m[1]); } }
-  else { for (var k in DOW) { if (new RegExp("\\b" + k + "\\b").test(t)) { var dif = (DOW[k] - base.getDay() + 7) % 7; var mesmoDia = dif === 0; if (mesmoDia) dif = 7; if (/\b(semana que vem|proxima semana)\b/.test(t) && dif < 7) dif += 7; d = somaDias(base, dif); if (mesmoDia && !/\b(semana que vem|proxima semana|que vem)\b/.test(t)) d.mesmoDia = true; break; } } }
-  var h = null, mi = 0;
-  if (/\bmeio[- ]?dia\b/.test(t)) h = 12;
-  else if ((m = t.match(/\b(\d{1,2})(?::|h)(\d{2})\b/))) { h = +m[1]; mi = +m[2]; }
-  else if ((m = t.match(/\b(?:as|a)\s+(\d{1,2})(?:\s*h(?:oras?)?)?(?:\s+e\s+(meia|\d{1,2}))?(?:\s+(?:da|de)\s+(manha|tarde|noite))?\b/))) { h = +m[1]; mi = m[2] === "meia" ? 30 : (m[2] ? +m[2] : 0); if ((m[3] === "tarde" || m[3] === "noite") && h < 12) h += 12; }
-  else if ((m = t.match(/\b(\d{1,2})\s*h(?:oras?)?\b/))) h = +m[1];
-  else if ((m = t.match(/\b(\d{1,2})\s+(?:da|de)\s+(manha|tarde|noite)\b/))) { h = +m[1]; if (m[2] !== "manha" && h < 12) h += 12; }
-  if (h != null && (h > 23 || mi > 59)) { h = null; mi = 0; }
-  if (!d && h == null) return null;
-  if (d && d.mesmoDia && h != null) { var hj = new Date(base); hj.setHours(h, mi, 0, 0); if (hj > agora) d = base; }
-  if (!d) { var teste = new Date(base); teste.setHours(h, mi, 0, 0); d = teste < agora ? somaDias(base, 1) : base; }
-  var r = new Date(d); r.setHours(h == null ? 10 : h, h == null ? 0 : mi, 0, 0);
-  return { data: r, semHora: h == null };
-}
-function extrairValor(texto) {
-  var t = norm(texto).replace(/(\d)\.(\d{3})(?!\d)/g, "$1$2");
-  var m = t.match(/r\$\s*(\d+(?:,\d{1,2})?)(\s*mil)?/) || t.match(/(\d+(?:,\d+)?)\s*(mil)?\s*(?:reais|real|conto)\b/) || t.match(/\b(?:por|valor de|valor|orcamento de|orcamento|proposta de|fechou em|fechamos em|pagou)\s+(\d+(?:,\d+)?)\s*(mil)?\b/) || t.match(/\b(\d+(?:,\d+)?)\s+(mil)\b/);
-  if (!m) return /\bmil reais\b/.test(t) ? 1000 : null;
-  var v = parseFloat(m[1].replace(",", ".")); if (m[2]) v *= 1000; return v > 0 ? v : null;
-}
-function extrairNomeNovo(texto) {
-  var m = texto.match(/(?:novo cliente|cliente novo|cadastr\w* (?:o |a )?cliente|novo lead|lead novo|cadastr\w* (?:o |a )?lead|reuni[aã]o com|marquei com|agendei com|falei com|liguei (?:para|pra)|conversei com|fechei com|fechou com)\s+(?:o |a |os |as |com )?(.+)/i);
-  if (!m) return "";
-  var resto = m[1].split(/\s+(?:hoje|amanh[ãa]|depois|na |no |segunda|ter[çc]a|quarta|quinta|sexta|s[áa]bado|domingo|dia\s+\d|[àa]s\s+\d|\d{1,2}h|\d{1,2}:\d{2}|por\s|r\$|no valor|valor|quer|querem|precisa|precisam|para\s|pra\s|que\s|e\s+(?:quer|vai|ficou|pediu))|[,.;]/i)[0];
-  return resto.trim().split(/\s+/).slice(0, 6).map(function (w) { return w.length > 2 ? w.charAt(0).toUpperCase() + w.slice(1) : w; }).join(" ");
-}
-function interpretar(texto) {
-  var t = norm(texto);
-  var I = {
-    reuniao: /\b(reuniao|reunioes|agendei|agendad\w*|marquei|marcad\w*|encontro|call|visita|apresentacao)\b/.test(t),
-    fechou: /\b(fechou|fechamos|fechei|fechad\w*|contratou|contrataram|aprovou|aprovaram|pagou|pagaram|recebi)\b/.test(t),
-    respondeu: /\b(respondeu|responderam|retornou|retornaram|me chamou|me chamaram|interessad\w*|gostou|gostaram)\b/.test(t),
-    descartar: /\b(descart\w*|sem interesse|nao tem interesse|nao quer|nao querem|recusou|recusaram|desistiu|desistiram)\b/.test(t),
-    retomar: /\b(retomar|retomada|cobrar|voltar a falar|follow|lembrar de falar|lembra de falar|me lembra de falar|chamar de novo|falar de novo|recontatar|ligar de novo)\b/.test(t),
-    tarefa: /\b(lembrete|me lembra|lembrar de|tarefa|nao esquecer|preciso)\b/.test(t),
-    novoCliente: /\b(novo cliente|cliente novo|cadastr\w* (o |a )?cliente)\b/.test(t),
-    novoLead: /\b(novo lead|lead novo|cadastr\w* (o |a )?lead)\b/.test(t),
-    venda: /\b(vendi|venda|vendas|vendemos)\b/.test(t)
+  function montar() {
+    var a = alvoPort(), m = S.modelos.find(function (x) { return x.id === md.value; }), pid = pj.value;
+    var p = pid !== "todos" ? S.projetos.find(function (x) { return x.id === pid; }) : null;
+    if (m && !p && m.corpo.indexOf("{portfolio}") < 0) { var mc = S.modelos.find(function (x) { return x.objetivo === "portfolio" && x.corpo.indexOf("{portfolio}") >= 0; }); if (mc) { md.value = mc.id; m = mc; } }
+    var link = p ? p.url : urlPortfolio();
+    var corpo = m ? m.corpo : "Olá, {nome}! Segue: {link}";
+    var t = preencher(corpo, (a && a.obj) || { nome: "" }, a ? a.tipo : "lead").replace(/\{link\}/g, link).replace(/\{projeto\}/g, p ? p.nome : "meus trabalhos").replace(/\{portfolio\}/g, urlPortfolio());
+    if (!a || !a.obj) t = t.replace(/^(Olá|Oi),?\s+([!,])/, "$1$2");
+    msg.value = t;
+    num.value = a && a.obj ? telVisivel(numeroDe(a.tipo, a.obj)) : num.value;
+  }
+  encherProjetos(S.port.texto); montar();
+  al.onchange = function () { S.port.alvo = al.value; S.port.projeto = ""; encherProjetos(tx.value); montar(); };
+  pj.onchange = function () { S.port.projeto = pj.value; montar(); };
+  md.onchange = function () { S.port.modelo = md.value; montar(); };
+  tx.oninput = function () { S.port.texto = tx.value; };
+  $("#pf-ok", box).onclick = function () {
+    var t = tx.value.trim(); if (!t) { toast("Diga para quem e que tipo de projeto."); return; }
+    var c = candidatos(t).filter(function (x) { return x.tipo !== "projeto"; })[0];
+    if (c) { S.port.alvo = c.tipo + ":" + c.obj.id; al.value = S.port.alvo; }
+    S.port.projeto = ""; encherProjetos(t.replace(c ? new RegExp(c.nome.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i") : /$^/, ""));
+    if (/\b(despedi|encerr|sem compromisso|porta aberta|ultim)/.test(norm(t))) { var mp = S.modelos.find(function (x) { return x.objetivo === "portfolio" && /porta/i.test(x.nome); }); if (mp) md.value = mp.id; }
+    if (/\b(todos|portfolio|varios|alguns)\b/.test(norm(t))) { pj.value = "todos"; }
+    montar(); toast(c ? "Entendi: " + c.nome + "." : "Não achei o nome. Escolha na lista.");
   };
-  var cands = candidatos(texto), quando = extrairData(texto), valor = extrairValor(texto);
-  var plano = { texto: texto, cands: cands, alvo: null, novoNome: "", status: "", agenda: null, valor: valor, nota: texto, venda: null, resumo: [] };
-  var nomeNovo = extrairNomeNovo(texto);
-  if (cands.length && !I.novoCliente && !I.novoLead && cands[0].sc >= 0.65) plano.alvo = cands[0];
-  else if (nomeNovo) { plano.novoNome = nomeNovo; plano.novoTipo = I.novoCliente || I.fechou ? "cliente" : "lead"; }
-  else if (cands.length) plano.alvo = cands[0];
-  var tipoAlvo = plano.alvo ? plano.alvo.tipo : plano.novoNome ? plano.novoTipo : "";
-  if (tipoAlvo === "projeto" && (I.venda || I.fechou)) {
-    var mq = t.match(/\b(\d+|um|uma|dois|duas|tres|quatro|cinco)\s+(?:venda|vendas|unidade|unidades|kit|kits|pack|packs|curso|cursos)\b/);
-    var qtd = mq ? numero(mq[1]) : 1;
-    plano.venda = { qtd: qtd, receita: valor != null ? valor : qtd * n(plano.alvo.obj.preco) };
-  } else {
-    if (I.descartar) plano.status = "descartado";
-    else if (I.fechou) plano.status = "fechado";
-    else if (I.reuniao) plano.status = "reuniao";
-    else if (I.respondeu) plano.status = "respondeu";
-    else if (I.retomar && tipoAlvo === "cliente") plano.status = "retomar";
-  }
-  if (I.reuniao && !I.descartar) plano.agenda = { tipo: "reuniao", quando: quando ? quando.data : null, semHora: quando ? quando.semHora : true };
-  else if (I.retomar || (quando && (tipoAlvo === "lead" || tipoAlvo === "cliente") && !I.fechou && !I.descartar)) { var q = quando ? quando.data : (function () { var x = somaDias(inicioDoDia(new Date()), 3); x.setHours(10, 0, 0, 0); return x; })(); plano.agenda = { tipo: "retomada", quando: q, semHora: quando ? quando.semHora : true }; }
-  else if (I.tarefa && quando) plano.agenda = { tipo: "tarefa", quando: quando.data, semHora: quando.semHora };
-  if (plano.agenda && !plano.agenda.quando) { var amanha = somaDias(inicioDoDia(new Date()), 1); amanha.setHours(10, 0, 0, 0); plano.agenda.quando = amanha; plano.agenda.semData = true; }
-  return plano;
+  var SR = window.SpeechRecognition || window.webkitSpeechRecognition, mic = $("#pf-mic", box);
+  if (!SR) mic.hidden = true; else mic.onclick = function () {
+    var rec = new SR(); rec.lang = "pt-BR"; rec.interimResults = true; mic.classList.add("ouvindo");
+    rec.onresult = function (e) { var s = ""; for (var i = 0; i < e.results.length; i++) s += e.results[i][0].transcript; tx.value = s; S.port.texto = s; };
+    rec.onend = function () { mic.classList.remove("ouvindo"); if (tx.value.trim()) $("#pf-ok", box).click(); };
+    rec.onerror = function () { mic.classList.remove("ouvindo"); };
+    try { rec.start(); } catch (e) { mic.classList.remove("ouvindo"); }
+  };
+  $("#pf-copiar", box).onclick = function () { copiar(msg.value); };
+  $("#pf-wa", box).onclick = async function () {
+    var d = telWa(num.value); if (!d) { toast("Digite o número com DDD."); num.focus(); return; }
+    var a = alvoPort(), m = S.modelos.find(function (x) { return x.id === md.value; });
+    window.open("https://wa.me/" + d + "?text=" + encodeURIComponent(msg.value), "_blank");
+    if (a && a.obj) { await registrarDisparo(a.tipo, a.obj, m, "whatsapp", msg.value); }
+    toast("Projeto enviado e registrado.");
+  };
+  $$("[data-cp]", box).forEach(function (b) { b.onclick = function () { copiar(b.dataset.cp); }; });
+  $$("[data-vt]", box).forEach(function (c) { c.onchange = function () { mudarVitrine(c.dataset.vt, { vitrine: c.checked }); }; });
+  $$("[data-dq]", box).forEach(function (b) { b.onclick = function () { var p = S.projetos.find(function (x) { return x.id === b.dataset.dq; }); mudarVitrine(p.id, { destaque: !(p.dados && p.dados.destaque) }); }; });
+  $$("[data-pe]", box).forEach(function (b) { b.onclick = function () { editarVitrine(S.projetos.find(function (x) { return x.id === b.dataset.pe; })); }; });
+  $$("[data-envia]", box).forEach(function (b) { b.onclick = function () { S.port.projeto = b.dataset.envia; render(); window.scrollTo({ top: 0, behavior: REDUZ ? "auto" : "smooth" }); }; });
 }
+async function mudarVitrine(id, campos, extra) {
+  var p = S.projetos.find(function (x) { return x.id === id; }); if (!p) return;
+  var d = Object.assign({}, p.dados || {}, campos), mud = Object.assign({ dados: d, atualizado_em: new Date().toISOString() }, extra || {});
+  var r = await sb.from("projetos").update(mud).eq("id", id).select().single(); if (r.error) return erro(r.error);
+  S.projetos = S.projetos.map(function (x) { return x.id === id ? r.data : x; });
+  if (campos.vitrine === true && !p.nicho && !(extra && extra.nicho)) { toast("Marcado. Defina o nicho para a Central sugerir certo."); editarVitrine(r.data); return; }
+  toast(campos.vitrine === false ? "Saiu do portfólio." : "Portfólio atualizado."); render();
+}
+function editarVitrine(p) {
+  modal("Projeto no portfólio", '<form class="form" novalidate><div class="f full"><label for="ev-nicho">Nicho</label><input class="inp" id="ev-nicho" value="' + esc(p.nicho || "") + '" placeholder="Ex.: Padaria, Pet shop, Clínica, Oficina"></div><div class="f full"><label for="ev-desc">Descrição curta</label><textarea class="inp" id="ev-desc" style="min-height:80px" placeholder="Ex.: Site com cardápio, pedidos pelo WhatsApp e mapa">' + esc((p.dados && p.dados.descricao_vitrine) || "") + '</textarea></div><div class="f full"><label for="ev-url">Endereço</label><input class="inp" id="ev-url" type="url" value="' + esc(p.url || "") + '"></div><div class="f full chk"><label><input type="checkbox" id="ev-on"' + (p.dados && p.dados.vitrine ? " checked" : "") + "> Mostrar no portfólio</label></div></form>" +
+    '<div class="acoes"><button class="btn" type="button" data-fechar>Cancelar</button><button class="btn pri" type="button" id="ev-ok">Salvar</button></div>', function (bx) {
+    $("#ev-ok", bx).onclick = async function () { fecharModal(); await mudarVitrine(p.id, { vitrine: $("#ev-on", bx).checked, descricao_vitrine: $("#ev-desc", bx).value.trim() }, { nicho: $("#ev-nicho", bx).value.trim(), url: $("#ev-url", bx).value.trim() || p.url }); };
+  });
+}
+
+
+/* ═════════════ ASSISTENTE DE VOZ (gratuito, por regras) ═════════════ */
 var STATUS_TXT = { reuniao: "Reunião", fechado: "Fechado", respondeu: "Respondeu", descartado: "Descartado", retomar: "Retomar", contatado: "Contatado" };
 function opcoesAlvoVoz(plano) {
   var h = '<option value="">Sem vínculo (só agenda ou anotação)</option>';
