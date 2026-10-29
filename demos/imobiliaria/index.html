@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Mirante Imóveis · Casas e apartamentos na Zona Oeste</title>
+<title>Varanda Imóveis · Casas e apartamentos na Zona Oeste</title>
 <meta name="description" content="Imóveis para comprar e alugar em Campo Grande, Bangu, Realengo e Recreio. Veja a planta antes de visitar e simule o financiamento.">
 <meta name="theme-color" content="#2B4C9B">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -123,7 +123,7 @@ dialog::backdrop{background:rgba(30,36,34,.6)}
 <body>
 <header class="topo">
   <div class="wrap">
-    <a class="marca" href="#"><svg viewBox="0 0 30 30" aria-hidden="true"><path d="M3 26V12l12-8 12 8v14z" fill="none" stroke="#2B4C9B" stroke-width="2.5" stroke-linejoin="round"/><path d="M3 18h10v8M17 12h10" stroke="#2B4C9B" stroke-width="2.5"/><circle cx="22" cy="20" r="3" fill="#D9A441"/></svg>Mirante Imóveis</a>
+    <a class="marca" href="#"><svg viewBox="0 0 30 30" aria-hidden="true"><path d="M3 26V12l12-8 12 8v14z" fill="none" stroke="#2B4C9B" stroke-width="2.5" stroke-linejoin="round"/><path d="M3 18h10v8M17 12h10" stroke="#2B4C9B" stroke-width="2.5"/><circle cx="22" cy="20" r="3" fill="#D9A441"/></svg>Varanda Imóveis</a>
     <nav aria-label="Seções"><a href="#imoveis">Imóveis</a><a href="#simulador">Simular financiamento</a><a href="#bairros">Bairros</a><a href="#anunciar">Anunciar</a></nav>
     <a class="btn ocre" href="#anunciar">Anunciar imóvel</a>
   </div>
@@ -193,7 +193,7 @@ dialog::backdrop{background:rgba(30,36,34,.6)}
 </section>
 </main>
 
-<footer><div class="wrap"><span>Mirante Imóveis é um negócio fictício e os imóveis são exemplos. Site demonstrativo feito por Luka.</span><a href="https://central-lk.vercel.app/portfolio">Quero um site assim</a></div></footer>
+<footer><div class="wrap"><span>Varanda Imóveis é um negócio fictício e os imóveis são exemplos. Site demonstrativo feito por Luka.</span><a href="https://central-lk.vercel.app/portfolio">Quero um site assim</a></div></footer>
 
 <dialog id="dlg" aria-labelledby="dlg-t"><div class="dlg"><h3 id="dlg-t">Pedido pronto</h3><p style="margin:0;color:var(--suave)">No site de verdade, esta mensagem abre direto no WhatsApp do corretor:</p><div class="wpp" id="dlg-msg"></div><button class="btn" type="button" id="dlg-ok">Entendi</button></div></dialog>
 
@@ -283,7 +283,7 @@ dialog::backdrop{background:rgba(30,36,34,.6)}
   var dlg=$("#dlg");$("#dlg-ok").onclick=function(){dlg.close()};
   function abrir(msg){$("#dlg-msg").textContent=msg;if(dlg.showModal)dlg.showModal();else alert(msg)}
   $("#grade").addEventListener("click",function(e){var b=e.target.closest("[data-visita]");if(!b)return;var i=IM.find(function(x){return x.id==b.dataset.visita});
-    abrir("Olá! Quero agendar uma visita:\n"+i.t+" em "+i.b+", "+i.q+(i.q>1?" quartos":" quarto")+", "+i.a+" m²\n"+brl(i.p)+(i.m==="aluguel"?" por mês":"")+"\nCódigo do imóvel: MI-"+String(i.id).padStart(3,"0"))});
+    abrir("Olá! Quero agendar uma visita:\n"+i.t+" em "+i.b+", "+i.q+(i.q>1?" quartos":" quarto")+", "+i.a+" m²\n"+brl(i.p)+(i.m==="aluguel"?" por mês":"")+"\nCódigo do imóvel: VI-"+String(i.id).padStart(3,"0"))});
   $("#form-anuncio").addEventListener("submit",function(e){e.preventDefault();var n=$("#a-nome").value.trim();if(!n){$("#a-erro").textContent="Escreva seu nome para o corretor saber com quem falar.";$("#a-nome").focus();return}$("#a-erro").textContent="";
     abrir("Olá! Sou "+n+" e quero "+$("#a-quero").value.toLowerCase()+" um imóvel.\n"+$("#a-tipo").value+" em "+$("#a-bairro").value+".\nPodem fazer a avaliação?")});
 })();
