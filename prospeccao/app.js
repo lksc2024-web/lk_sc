@@ -125,6 +125,7 @@ async function iniciar(sessao) {
   await Promise.all([carregarConfig(), carregarBuscas(), carregarLeads()]);
   recalcular();
   renderBuscar();
+  if (location.hash === "#mapa") irPara("mapa"); // a Central abre direto no mapa
 }
 
 // ── Dados ──────────────────────────────────────────────────────────────────────
@@ -353,10 +354,14 @@ function atualizarCusto() {
     `(este mês: ${usado} de ${COTA_GRATIS} grátis).` + (n > 60 ? " Busca grande: comece com um tipo só." : "");
 }
 
-function progresso(fracao, etapa, titulo) {
+function progressoForm(fracao, etapa, titulo) {
   $("#prog-barra").style.width = `${Math.round(fracao * 100)}%`;
   if (etapa != null) $("#prog-etapa").textContent = etapa;
   if (titulo) $("#prog-titulo").textContent = titulo;
+}
+// O progresso vai para quem pediu a busca (formulário ou mapa).
+function progresso(fracao, etapa, titulo) {
+  (estado.ui?.progresso || progressoForm)(fracao, etapa, titulo);
 }
 
 async function buscar(e) {
@@ -371,26 +376,43 @@ async function buscar(e) {
   if (estado.onde === "cidade" && !estado.cidade) estado.cidade = cidadeDigitada();
   const n = nichos.length * plano.partes.length * plano.paginas;
   if (n > 60 && !confirm(`Esta busca pode usar até ${n} chamadas do Google. Continuar?`)) return;
-  const quando = estado.horario === "em" ? { dia: +$("#b-dia").value, min: (([h, m]) => h * 60 + m)($("#b-hora").value.split(":").map(Number)) } : null;
+  const quando = estado.horario === "em" ? { dia: +$("#b-dia").value, min: (([h, m]) => h * 60 + m)($("#b-hora").value.split(":").map(Number)), hora: $("#b-hora").value } : null;
+
+  $("#b-erro").hidden = true;
+  $("#btn-buscar").disabled = true;
+  $("#painel-progresso").hidden = false;
+  const r = await executarBusca({ nichos, plano, horario: estado.horario, quando, notaMin: estado.notaMin, tamanho: estado.tamanho },
+    { progresso: (f, etapa, titulo) => progressoForm(f, etapa, titulo) });
+  $("#btn-buscar").disabled = false;
+  $("#painel-progresso").hidden = true;
+  if (!r.ok) { $("#b-erro").hidden = false; $("#b-erro").textContent = r.msg; $("#b-erro").scrollIntoView({ block: "center" }); return; }
+  toast(r.msg);
+  estado.filtro = { ...estado.filtro, busca: r.buscaId, status: "" };
+  estado.mostrar = POR_PAGINA;
+  estado.mapaBusca = r.buscaId;
+  irPara("mapa");
+}
+
+// Faz a busca de verdade (usada pelo formulário e pelo mapa): Google → salva os leads → visita os sites.
+// Devolve { ok, msg, buscaId, ids }.
+async function executarBusca({ nichos, plano, horario = "", quando = null, notaMin = 0, tamanho = "padrao" }, ui) {
+  if (estado.buscando) return { ok: false, msg: "Já tem uma busca em andamento." };
+  estado.buscando = true;
+  estado.ui = ui;
+  const trava = await navigator.wakeLock?.request("screen").catch(() => null);
+  const fim = (r) => { trava?.release?.(); estado.buscando = false; estado.ui = null; return r; };
+  progresso(0, "Começando…", `Buscando ${nichos.join(", ")}`);
   const filtroPos = (l) => {
     if (plano.centro && !(l.geo && Regiao.distKm(plano.centro, l.geo) <= plano.raio)) return false;
     if (quando && !(l.geo && Regiao.abertoEm(l.geo.per, quando.dia, quando.min) === true)) return false;
     return true;
   };
-  const area = { ...plano.area, notaMin: estado.notaMin, horario: estado.horario,
-    ...(quando ? { dia: quando.dia, hora: $("#b-hora").value } : {}) };
+  const area = { ...plano.area, notaMin, horario, ...(quando ? { dia: quando.dia, hora: quando.hora } : {}) };
   const regioes = plano.partes, onde = plano.area.rotulo;
 
-  estado.buscando = true;
-  $("#b-erro").hidden = true;
-  $("#btn-buscar").disabled = true;
-  $("#painel-progresso").hidden = false;
-  progresso(0, "Começando…", `Buscando ${nichos.join(", ")}`);
-  const trava = await navigator.wakeLock?.request("screen").catch(() => null);
-
   const { data: busca, error } = await sb.from("buscas")
-    .insert({ nichos, cidade: plano.rotulo, uf: plano.uf, bairro: plano.bairro, tamanho: estado.tamanho, area }).select().single();
-  if (error) { fimBusca(trava, "Não consegui iniciar a busca. Verifique a internet."); return; }
+    .insert({ nichos, cidade: plano.rotulo, uf: plano.uf || "", bairro: plano.bairro || "", tamanho, area }).select().single();
+  if (error) return fim({ ok: false, msg: "Não consegui iniciar a busca. Verifique a internet." });
 
   let chamadas = 0, total = 0, novos = 0, falhas = 0, ultimoErro = "";
   const ids = new Set(), passos = nichos.length * regioes.length;
@@ -402,7 +424,7 @@ async function buscar(e) {
         ? `“${nicho}” — ${caixa.onde ? caixa.onde : `parte ${i + 1}`} (${i + 1} de ${regioes.length})` : `Procurando “${nicho}” em ${onde}…`);
       try {
         const r = await api("/api/buscar", { consulta: caixa.consulta(nicho), nicho, retangulo: caixa.retangulo, circulo: caixa.circulo,
-          restrito: caixa.restrito, paginas: plano.paginas, abertoAgora: estado.horario === "agora", notaMin: estado.notaMin });
+          restrito: caixa.restrito, paginas: plano.paginas, abertoAgora: horario === "agora", notaMin });
         chamadas += r.chamadas;
         for (const l of r.leads) if (!vistos.has(l.place_id) && filtroPos(l)) vistos.set(l.place_id, l);
       } catch (err) {
@@ -422,16 +444,13 @@ async function buscar(e) {
   await Promise.all([carregarBuscas(), carregarLeads()]);
   renderBuscar();
 
-  if (!total) { fimBusca(trava, falhas ? ultimoErro : "Nenhuma empresa encontrada. Tente outro termo, aumente a área ou tire um filtro.", true); return; }
+  if (!total) return fim({ ok: false, msg: falhas ? ultimoErro : "Nenhuma empresa encontrada. Tente outro termo, aumente a área ou tire um filtro.", buscaId: busca.id });
   await enriquecer([...ids]);
   estado.medianas = Vendas.contextoComparacao(estado.leads);
   recalcular();
   const g = contarGrupos(estado.leads.filter((l) => ids.has(l.id)));
-  fimBusca(trava, `Pronto! ${total} empresas: ${g.sem} sem presença, ${g.melhorar} a melhorar e ${g.boa} com presença boa.`);
-  estado.filtro = { ...estado.filtro, busca: busca.id, status: "" };
-  estado.mostrar = POR_PAGINA;
-  estado.mapaBusca = busca.id;
-  irPara("mapa");
+  return fim({ ok: true, buscaId: busca.id, ids,
+    msg: `Pronto! ${total} empresas (${novos} novas): ${g.sem} sem presença, ${g.melhorar} a melhorar e ${g.boa} com presença boa.` });
 }
 
 // ── Mapa dos melhores ─────────────────────────────────────────────────────────
@@ -443,30 +462,46 @@ function rotuloBusca(b) {
 function renderMapa() {
   const sel = $("#m-busca");
   if (estado.mapaBusca && estado.mapaBusca !== "todos" && !estado.buscas.some((b) => b.id === estado.mapaBusca)) estado.mapaBusca = "";
-  if (!estado.mapaBusca && estado.buscas[0]) estado.mapaBusca = estado.buscas[0].id;
+  if (!estado.mapaBusca) estado.mapaBusca = "todos";
   sel.innerHTML = `<option value="todos">Todos os meus leads</option>` +
-    estado.buscas.slice(0, 40).map((b) => `<option value="${b.id}">${esc(rotuloBusca(b))}</option>`).join("");
-  sel.value = estado.mapaBusca || "todos";
+    estado.buscas.slice(0, 40).map((b) => `<option value="${b.id}">Só a busca: ${esc(rotuloBusca(b))}</option>`).join("");
+  sel.value = estado.mapaBusca;
   const b = estado.buscas.find((x) => x.id === estado.mapaBusca);
   const leads = b ? estado.leads.filter((l) => (l.buscas || []).includes(b.id)) : estado.leads;
   const dados = { leads, area: b?.area || null };
   if (!estado.painelMapa) {
-    estado.painelMapa = Regiao.painelMapa($("#m-painel"), { ...dados, chance: (l) => chanceDe(l).pct, onAbrir: (id) => abrirLead(id) });
+    estado.painelMapa = Regiao.painelMapa($("#m-painel"), { ...dados, estado: estado.mapaEstado || (estado.mapaEstado = {}),
+      chance: (l) => chanceDe(l).pct, onAbrir: (id) => abrirLead(id), municipios, buscar: buscarDoMapa });
   } else {
     estado.painelMapa.atualizar(dados);
     estado.painelMapa.redimensionar();
   }
 }
 
-// Erros ficam fixos na tela (o aviso rápido some antes de dar tempo de ler).
-function fimBusca(trava, msg, fixo = false) {
-  trava?.release?.();
-  estado.buscando = false;
-  $("#btn-buscar").disabled = false;
-  $("#painel-progresso").hidden = true;
-  $("#b-erro").hidden = !fixo;
-  if (fixo) { $("#b-erro").textContent = msg; $("#b-erro").scrollIntoView({ block: "center" }); }
-  else toast(msg);
+// Busca no Google a partir do mapa: a área vem do mapa (raio, região, bairro ou o que está na tela).
+function planoDoMapa(sp) {
+  const base = { modo: sp.modo, rotulo: sp.rotulo, uf: sp.uf || "", bairro: sp.bairro || "", paginas: sp.paginas };
+  if (sp.modo === "raio") {
+    const { lat, lng, raio } = sp.circ;
+    return { ...base, centro: { lat, lng }, raio,
+      partes: [{ consulta: (n) => n, retangulo: sp.ret, restrito: true, circulo: { lat, lng, raio: raio * 1000 } }],
+      area: { modo: "raio", rotulo: sp.rotulo, circ: sp.circ } };
+  }
+  if (sp.modo === "bairro")
+    return { ...base, partes: [{ consulta: (n) => `${n} em ${sp.rotulo}`, retangulo: sp.ret, restrito: false }], area: { modo: "bairro", rotulo: sp.rotulo } };
+  const cel = Regiao.dividir(sp.ret, sp.grade || 0);
+  return { ...base, partes: cel.map((c) => ({ consulta: (n) => n, retangulo: c, restrito: true })), area: { modo: sp.modo, rotulo: sp.rotulo, ret: sp.ret } };
+}
+
+async function buscarDoMapa(sp, prog) {
+  if (!estado.config?.google_key) return { ok: false, msg: "Cadastre a chave do Google em Ajustes." };
+  if (estado.buscando) return { ok: false, msg: "Já tem uma busca em andamento." };
+  const r = await executarBusca({ nichos: sp.nichos, plano: planoDoMapa(sp), horario: sp.horario, quando: sp.quando, notaMin: sp.notaMin,
+    tamanho: sp.paginas > 1 ? "padrao" : "rapida" }, { progresso: (f, etapa) => prog(f, etapa) });
+  estado.mapaBusca = "todos";
+  renderMapa();
+  if (r.ok) toast(r.msg);
+  return r;
 }
 
 // Visita os sites: e-mail, WhatsApp, redes e o raio-X do site. Só preenche o que está vazio.
