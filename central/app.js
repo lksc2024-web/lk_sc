@@ -150,7 +150,7 @@ async function carregarTudo() {
     sb.from("metricas").select("*").gte("data", desde),
     sb.from("vendas").select("id,projeto_id,cliente_id,origem,status,produto_nome,valor_bruto,valor_liquido,cliente_nome,cliente_email,cliente_tel,canal,criado_em").gte("criado_em", desde).order("criado_em", { ascending: false }),
     sb.from("clientes").select("*").order("criado_em", { ascending: false }),
-    sb.from("leads").select("id,nome,categoria,nicho,telefone,tel_digitos,tel_tipo,whatsapp,email,site,instagram,endereco,bairro,cidade,uf,nota,avaliacoes,maps,status,obs,historico,ultimo_contato,criado_em,atualizado_em,dados"),
+    sb.from("leads").select("id,nome,categoria,nicho,telefone,tel_digitos,tel_tipo,whatsapp,email,site,instagram,endereco,bairro,cidade,uf,nota,avaliacoes,maps,fechado,enriquecido,buscas,whatsapp_origem,facebook,linkedin,status,obs,historico,ultimo_contato,criado_em,atualizado_em,dados"),
     sb.from("links").select("*").order("criado_em"),
     sb.from("cliques").select("link_id,projeto_id,canal,criado_em").gte("criado_em", addDias(hoje(), -120)),
     sb.from("modelos").select("*").order("criado_em"),
@@ -674,12 +674,42 @@ function vProspeccao(box) {
   var cont = c.contatado + c.respondeu + c.reuniao + c.fechado, resp = c.respondeu + c.reuniao + c.fechado;
   box.innerHTML = '<div class="kpis"><div class="kpi"><span class="l">Leads</span><span class="v num">' + int(lista.length) + '</span><span class="d flat">' + c.novo + ' ainda sem contato</span></div><div class="kpi"><span class="l">Contatados</span><span class="v num">' + int(cont) + '</span><span class="d flat">' + pct(lista.length ? cont / lista.length * 100 : 0, 0) + ' do total</span></div><div class="kpi"><span class="l">Responderam</span><span class="v num">' + int(resp) + '</span><span class="d flat">' + pct(cont ? resp / cont * 100 : 0, 0) + ' dos contatados</span></div><div class="kpi"><span class="l">Reuniões</span><span class="v num">' + int(c.reuniao) + '</span><span class="d flat">em andamento</span></div><div class="kpi"><span class="l">Fechados</span><span class="v num up">' + int(c.fechado) + '</span><span class="d flat">' + pct(cont ? c.fechado / cont * 100 : 0, 1) + ' de fechamento</span></div></div>' +
     '<div class="toolbar"><div class="chips" id="l-nichos"><button class="chip" type="button" data-n="" aria-pressed="' + (!f.lnicho) + '">Todos os nichos<span class="n">' + S.leads.length + "</span></button>" + Object.keys(nichos).sort(function (a, b) { return nichos[b] - nichos[a]; }).map(function (nn) { return '<button class="chip" type="button" data-n="' + esc(nn) + '" aria-pressed="' + (f.lnicho === nn) + '">' + esc(nn) + '<span class="n">' + nichos[nn] + "</span></button>"; }).join("") + '</div></div>' +
-    '<div class="toolbar"><input class="inp busca" id="l-busca" type="search" placeholder="Buscar por nome, bairro ou cidade" value="' + esc(f.lbusca) + '"><div class="seg" id="l-modo"><button type="button" data-m="kanban" aria-pressed="' + (f.lmodo === "kanban") + '">Funil</button><button type="button" data-m="lista" aria-pressed="' + (f.lmodo === "lista") + '">Lista</button></div></div>' +
-    (S.leads.length ? (f.lmodo === "kanban" ? kanbanLeads(lista) : listaLeads(lista)) : '<div class="card vazio"><b>Nenhum lead ainda.</b>Use o app de Prospecção para buscar empresas por nicho e cidade. Eles aparecem aqui sozinhos.<a class="btn pri" href="' + PROSPECCAO_URL + '" target="_blank" rel="noopener">Abrir Prospecção</a></div>');
+    '<div class="toolbar"><input class="inp busca" id="l-busca" type="search" placeholder="Buscar por nome, bairro ou cidade" value="' + esc(f.lbusca) + '"><div class="seg" id="l-modo"><button type="button" data-m="kanban" aria-pressed="' + (f.lmodo === "kanban") + '">Funil</button><button type="button" data-m="lista" aria-pressed="' + (f.lmodo === "lista") + '">Lista</button><button type="button" data-m="mapa" aria-pressed="' + (f.lmodo === "mapa") + '">Mapa</button></div></div>' +
+    (S.leads.length ? (f.lmodo === "kanban" ? kanbanLeads(lista) : f.lmodo === "mapa" ? '<div class="card" style="padding:14px"><div class="toolbar" style="margin:0 0 10px"><select class="inp" id="l-mbusca" style="max-width:100%"><option value="">Todos os leads filtrados</option></select></div><p class="sub" style="margin:0 0 10px;font-size:12.5px;color:var(--muted)">A porcentagem é o índice de destaque: nota no Google pesada pelo número de avaliações, comparada com os outros da mesma área. A chance de fechar vem das mesmas regras do app de Prospecção.</p><div id="l-mapa"></div></div>' : listaLeads(lista)) : '<div class="card vazio"><b>Nenhum lead ainda.</b>Use o app de Prospecção para buscar empresas por nicho e cidade. Eles aparecem aqui sozinhos.<a class="btn pri" href="' + PROSPECCAO_URL + '" target="_blank" rel="noopener">Abrir Prospecção</a></div>');
   $("#l-nichos").onclick = function (e) { var b = e.target.closest("[data-n]"); if (b) { f.lnicho = b.dataset.n; render(); } };
   $("#l-modo").onclick = function (e) { var b = e.target.closest("[data-m]"); if (b) { f.lmodo = b.dataset.m; render(); } };
   var bu = $("#l-busca"); bu.oninput = function () { f.lbusca = bu.value; clearTimeout(bu._t); bu._t = setTimeout(function () { render(); var x = $("#l-busca"); x.focus(); x.setSelectionRange(x.value.length, x.value.length); }, 300); };
   $$("[data-lead]", box).forEach(function (el) { el.onclick = function () { abrirLead(el.dataset.lead); }; });
+  if (f.lmodo === "mapa" && S.leads.length) mapaLeads(lista);
+}
+// Modo mapa: ranking dos melhores por área, raio e horário (regiao.js) + chance de fechar (vendas.js da Prospecção).
+var MAPA = { buscas: null, vendas: null };
+function carregarVendas() {
+  if (window.Vendas) return Promise.resolve(window.Vendas);
+  if (MAPA.vendas) return MAPA.vendas;
+  MAPA.vendas = fetch(PROSPECCAO_URL + "/vendas.js").then(function (r) { if (!r.ok) throw new Error(r.status); return r.text(); })
+    .then(function (txt) { new Function(txt)(); return window.Vendas; }) // roda isolado: os nomes de lá não colidem com os daqui
+    .catch(function () { MAPA.vendas = null; return null; });
+  return MAPA.vendas;
+}
+async function mapaLeads(lista) {
+  var el = $("#l-mapa"), sel = $("#l-mbusca"), f = S.filtro;
+  if (!MAPA.buscas) { var r = await sb.from("buscas").select("id,nichos,cidade,uf,bairro,area,criado_em").order("criado_em", { ascending: false }).limit(40); MAPA.buscas = r.data || []; }
+  var V = await carregarVendas();
+  if (!el.isConnected) return;
+  sel.innerHTML = '<option value="">Todos os leads filtrados</option>' + MAPA.buscas.map(function (b) {
+    var onde = (b.area && b.area.rotulo) || ((b.bairro ? b.bairro + ", " : "") + b.cidade + " - " + b.uf);
+    return '<option value="' + b.id + '"' + (f.lmbusca === b.id ? " selected" : "") + ">" + esc((b.nichos || []).join(", ") + " · " + onde + " · " + new Date(b.criado_em).toLocaleDateString("pt-BR")) + "</option>";
+  }).join("");
+  sel.onchange = function () { f.lmbusca = sel.value; render(); };
+  var b = MAPA.buscas.find(function (x) { return x.id === f.lmbusca; });
+  var leads = b ? lista.filter(function (l) { return (l.buscas || []).indexOf(b.id) >= 0; }) : lista;
+  var chance = null;
+  if (V) {
+    var ctx = V.contextoComparacao(S.leads), taxas = V.taxasReais(S.leads);
+    chance = function (l) { try { return V.chanceFechamento(l, V.analisar(l, ctx), taxas).pct; } catch (e) { return null; } };
+  }
+  Regiao.painelMapa(el, { leads: leads, area: b ? b.area : null, chance: chance, onAbrir: function (id) { abrirLead(id); } });
 }
 function tagsLead(l) { var t = []; if (l.whatsapp) t.push("WhatsApp"); if (!l.site) t.push("sem site"); if (l.instagram) t.push("Instagram"); return t; }
 function kanbanLeads(lista) {
@@ -704,7 +734,7 @@ function preencher(txt, alvo, tipo) {
 }
 async function salvarLead(l, mud) {
   mud.atualizado_em = new Date().toISOString();
-  var r = await sb.from("leads").update(mud).eq("id", l.id).select("id,nome,categoria,nicho,telefone,tel_digitos,tel_tipo,whatsapp,email,site,instagram,endereco,bairro,cidade,uf,nota,avaliacoes,maps,status,obs,historico,ultimo_contato,criado_em,atualizado_em,dados").single();
+  var r = await sb.from("leads").update(mud).eq("id", l.id).select("id,nome,categoria,nicho,telefone,tel_digitos,tel_tipo,whatsapp,email,site,instagram,endereco,bairro,cidade,uf,nota,avaliacoes,maps,fechado,enriquecido,buscas,whatsapp_origem,facebook,linkedin,status,obs,historico,ultimo_contato,criado_em,atualizado_em,dados").single();
   if (r.error) { erro(r.error); return null; }
   S.leads = S.leads.map(function (x) { return x.id === l.id ? r.data : x; }); return r.data;
 }
@@ -1435,7 +1465,7 @@ async function executarPlano(box, plano) {
     var tipo = "", obj = null, feito = [];
     if (v.indexOf("novo-") === 0) {
       var nome = $("#vp-nome", box).value.trim(); if (!nome) { toast("Diga o nome do novo contato."); b.disabled = false; b.textContent = "Confirmar e salvar"; return; }
-      if (v === "novo-lead") { var rl = await sb.from("leads").insert({ place_id: "manual-" + Date.now(), nome: nome, status: "novo", historico: [{ t: new Date().toISOString(), tipo: "voz", txt: "Criado por voz na Central" }] }).select("id,nome,categoria,nicho,telefone,tel_digitos,tel_tipo,whatsapp,email,site,instagram,endereco,bairro,cidade,uf,nota,avaliacoes,maps,status,obs,historico,ultimo_contato,criado_em,atualizado_em,dados").single(); if (rl.error) throw rl.error; S.leads.push(rl.data); tipo = "lead"; obj = rl.data; feito.push("lead criado"); }
+      if (v === "novo-lead") { var rl = await sb.from("leads").insert({ place_id: "manual-" + Date.now(), nome: nome, status: "novo", historico: [{ t: new Date().toISOString(), tipo: "voz", txt: "Criado por voz na Central" }] }).select("id,nome,categoria,nicho,telefone,tel_digitos,tel_tipo,whatsapp,email,site,instagram,endereco,bairro,cidade,uf,nota,avaliacoes,maps,fechado,enriquecido,buscas,whatsapp_origem,facebook,linkedin,status,obs,historico,ultimo_contato,criado_em,atualizado_em,dados").single(); if (rl.error) throw rl.error; S.leads.push(rl.data); tipo = "lead"; obj = rl.data; feito.push("lead criado"); }
       else { var rc = await sb.from("clientes").insert({ nome: nome, origem: "voz", status: "ativo" }).select().single(); if (rc.error) throw rc.error; S.clientes.unshift(rc.data); tipo = "cliente"; obj = rc.data; feito.push("cliente criado"); }
     } else if (v) {
       var p = v.split(":"); tipo = p[0];

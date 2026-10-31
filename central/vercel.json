@@ -25,7 +25,7 @@
       ]
     },
     {
-      "source": "/(app.js|styles.css|cena3d.js|nucleo.js|assistente/assistente.js)",
+      "source": "/(app.js|styles.css|cena3d.js|nucleo.js|regiao.js|assistente/assistente.js)",
       "headers": [
         {
           "key": "Cache-Control",
