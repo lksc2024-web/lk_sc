@@ -36,17 +36,27 @@ export function geoDe(lugar) {
   return { lat: +loc.latitude.toFixed(6), lng: +loc.longitude.toFixed(6), per, txt, aberto, quando: new Date().toISOString() };
 }
 
-export function leadDe(lugar, nicho) {
-  const { digitos, tipo } = telefoneBr(lugar.internationalPhoneNumber || lugar.nationalPhoneNumber);
+// Fora do Brasil: guarda o número no formato internacional (só dígitos, com o código do país).
+function telefoneIntl(bruto) {
+  const d = String(bruto || "").replace(/\D/g, "");
+  return { digitos: d.length >= 8 ? d : "", tipo: d.length >= 8 ? "intl" : "" };
+}
+
+// extra: { pais (ISO2), tz (fuso da cidade buscada) } nas buscas fora do Brasil.
+export function leadDe(lugar, nicho, extra = {}) {
+  const fora = !!extra.pais && extra.pais !== "BR";
+  const { digitos, tipo } = fora ? telefoneIntl(lugar.internationalPhoneNumber)
+    : telefoneBr(lugar.internationalPhoneNumber || lugar.nationalPhoneNumber);
   const site = lugar.websiteUri || "";
   let whatsapp = whatsappEm(site), origem = whatsapp ? "site" : "";
   if (!whatsapp && tipo === "celular") { whatsapp = digitos; origem = "telefone"; }
+  if (!whatsapp && fora && digitos) { whatsapp = digitos; origem = "telefone-intl"; }
   return {
     place_id: lugar.id,
     nome: (lugar.displayName && lugar.displayName.text) || "",
     categoria: (lugar.primaryTypeDisplayName && lugar.primaryTypeDisplayName.text) || "",
     nicho,
-    telefone: tipo === "celular" || tipo === "fixo" ? formataTel(digitos)
+    telefone: fora ? lugar.internationalPhoneNumber || "" : tipo === "celular" || tipo === "fixo" ? formataTel(digitos)
       : lugar.nationalPhoneNumber || lugar.internationalPhoneNumber || "",
     tel_digitos: digitos,
     tel_tipo: tipo,
@@ -61,7 +71,7 @@ export function leadDe(lugar, nicho) {
     avaliacoes: lugar.userRatingCount || 0,
     maps: lugar.googleMapsUri || "",
     fechado: lugar.businessStatus === "CLOSED_PERMANENTLY",
-    geo: geoDe(lugar),
+    geo: (() => { const g = geoDe(lugar); return g && fora ? { ...g, pais: extra.pais, tz: extra.tz || "" } : g; })(),
   };
 }
 
@@ -96,8 +106,9 @@ export default async function handler(req, res) {
   const chave = await chaveGoogle(sessao.token);
   if (!chave) return responder(res, 400, { erro: "Cadastre a chave do Google em Ajustes." });
 
-  const { consulta, nicho = "", retangulo, circulo, restrito = false, paginas = 3, abertoAgora = false, notaMin = 0 }
+  const { consulta, nicho = "", retangulo, circulo, restrito = false, paginas = 3, abertoAgora = false, notaMin = 0, pais = "", tz = "" }
     = await lerCorpo(req);
+  const regiao = /^[A-Z]{2}$/.test(String(pais)) ? String(pais) : "BR";
   if (!consulta || (!retangulo && !circulo)) return responder(res, 400, { erro: "Busca incompleta." });
   const ret = retangulo && { rectangle: {
     low: { latitude: +retangulo.s, longitude: +retangulo.w },
@@ -108,7 +119,7 @@ export default async function handler(req, res) {
     center: { latitude: +circulo.lat, longitude: +circulo.lng },
     radius: Math.min(50000, Math.max(100, +circulo.raio || 5000)),
   } };
-  const corpo = { textQuery: String(consulta).slice(0, 200), languageCode: "pt-BR", regionCode: "BR", pageSize: 20 };
+  const corpo = { textQuery: String(consulta).slice(0, 200), languageCode: "pt-BR", regionCode: regiao, pageSize: 20 };
   if (restrito && ret) corpo.locationRestriction = ret;
   else corpo.locationBias = circ || ret;
   if (abertoAgora) corpo.openNow = true;
@@ -131,7 +142,7 @@ export default async function handler(req, res) {
       if (leads.length) break; // devolve o que já veio
       return responder(res, r.status === 403 || r.status === 400 ? 400 : 502, { erro, chamadas });
     }
-    for (const p of dados.places || []) leads.push(leadDe(p, nicho));
+    for (const p of dados.places || []) leads.push(leadDe(p, nicho, { pais: regiao, tz: String(tz).slice(0, 60) }));
     token = dados.nextPageToken;
     if (!token) break;
   }

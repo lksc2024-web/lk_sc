@@ -39,7 +39,7 @@ const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "
 const norm = (s) => String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
 
 const FILTRO_PADRAO = { status: "", texto: "", wa: false, email: false, mensal: false, grupo: "", nota: false, busca: "", ordem: "recentes" };
-const TELAS = { buscar: "Buscar empresas", leads: "Meus leads", mapa: "Mapa dos melhores", contatos: "Em contato", painel: "Painel de vendas", ajustes: "Ajustes" };
+const TELAS = { buscar: "Buscar empresas", melhores: "Melhores do momento", leads: "Meus leads", mapa: "Mapa dos melhores", contatos: "Em contato", painel: "Painel de vendas", ajustes: "Ajustes" };
 const estado = {
   usuario: null, config: null, leads: [], buscas: [], municipios: null, medianas: {}, analisandoSites: false,
   intervalos: null, taxas: {},
@@ -68,13 +68,29 @@ function irPara(tela) {
   if (tela === "contatos") renderContatos();
   if (tela === "ajustes") renderAjustes();
   if (tela === "mapa") renderMapa();
+  if (tela === "melhores") renderMelhores();
   window.scrollTo(0, 0);
 }
 
-function aplicarTema(t) {
-  if (t) document.documentElement.dataset.theme = t; else delete document.documentElement.dataset.theme;
+// Tema: escuro por padrão (também no computador); "auto" segue o aparelho.
+function temaSalvo() {
+  try { const v = localStorage.getItem("tema"); return v === "light" || v === "auto" ? v : "dark"; } catch { return "dark"; }
 }
-try { aplicarTema(localStorage.getItem("tema") || ""); } catch { /* sem armazenamento */ }
+function aplicarTema(t) {
+  if (t && t !== "auto") document.documentElement.dataset.theme = t; else delete document.documentElement.dataset.theme;
+  const escuro = t === "dark" || (t === "auto" && matchMedia("(prefers-color-scheme: dark)").matches);
+  const meta = document.querySelector('meta[name="theme-color"]'); if (meta) meta.content = escuro ? "#11372e" : "#0f5f4f";
+  const b = document.getElementById("btn-tema");
+  if (b) b.innerHTML = escuro
+    ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4.5"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>'
+    : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>';
+}
+function trocarTema(t) {
+  try { localStorage.setItem("tema", t); } catch { /* sem armazenamento */ }
+  aplicarTema(t);
+  const sel = document.getElementById("a-tema"); if (sel) sel.value = t;
+}
+aplicarTema(temaSalvo());
 
 async function api(rota, corpo) {
   const { data } = await sb.auth.getSession();
@@ -116,6 +132,7 @@ async function iniciar(sessao) {
   const logado = !!estado.usuario;
   $("#tela-login").hidden = logado;
   $("#abas").hidden = !logado;
+  $("#btn-responder").hidden = !logado;
   if (!logado) {
     for (const s of Object.keys(TELAS)) $(`#tela-${s}`).hidden = true;
     $("#titulo").textContent = "Prospecção";
@@ -126,6 +143,15 @@ async function iniciar(sessao) {
   recalcular();
   renderBuscar();
   if (location.hash === "#mapa") irPara("mapa"); // a Central abre direto no mapa
+  if (location.hash === "#melhores") irPara("melhores");
+  // A Central manda /?buscar=nicho&pais=XX&area=...&raio=N para abrir a busca já preenchida.
+  const q = new URLSearchParams(location.search);
+  if (q.get("buscar") && typeof buscarNichoDaqui === "function") {
+    if (q.get("pais")) { await carregarMundo(); if (estado.mundoDados?.paises[q.get("pais")]) mel.mercado = q.get("pais"); }
+    mel.area = q.get("area") || ""; mel.raio = +q.get("raio") || 0;
+    try { history.replaceState(null, "", "/"); } catch { /* sem histórico */ }
+    buscarNichoDaqui(q.get("buscar"));
+  }
 }
 
 // ── Dados ──────────────────────────────────────────────────────────────────────
@@ -244,7 +270,45 @@ const DICAS_ONDE = {
   raio: "Um círculo em volta de um ponto: escolha a cidade, toque no mapa ou use sua localização.",
   estado: "O estado inteiro, dividido em partes. Traz os mais conhecidos de cada parte.",
   brasil: "As 27 capitais. Bom para achar os melhores do país num nicho.",
+  mundo: "Fora do Brasil: continente, país, estado e cidade. O nicho é traduzido para o idioma do país.",
 };
+
+// ── Mundo: países, estados e maiores cidades (mundo.json), com fuso de cada cidade ──
+const ORDEM_CONTINENTES = ["América do Sul", "América do Norte", "América Central e Caribe", "Europa", "África", "Ásia", "Oceania"];
+const PREP = { pt: "em", en: "in", es: "en", fr: "à", it: "a", de: "in" };
+async function carregarMundo() {
+  if (!estado.mundoDados) estado.mundoDados = await (await fetch("/mundo.json")).json();
+  return estado.mundoDados;
+}
+function preencherMundo(nivel = "continente") {
+  const M = estado.mundoDados; if (!M) return;
+  const selC = $("#b-continente"), selP = $("#b-pais"), selE = $("#b-estado-mundo");
+  if (nivel === "continente") {
+    if (!selC.options.length) { selC.innerHTML = ORDEM_CONTINENTES.filter((c) => M.continentes[c]).map((c) => `<option>${c}</option>`).join(""); selC.value = "Europa"; }
+    nivel = "pais";
+  }
+  if (nivel === "pais") {
+    const atual = selP.value;
+    selP.innerHTML = M.continentes[selC.value].map((iso) => `<option value="${iso}">${esc(M.paises[iso].nome)}</option>`).join("");
+    const padrao = { Europa: "PT", "América do Norte": "US", "América do Sul": "AR", Ásia: "JP", África: "ZA", Oceania: "AU", "América Central e Caribe": "PA" }[selC.value];
+    selP.value = M.continentes[selC.value].includes(atual) ? atual : padrao || selP.options[0].value;
+    nivel = "estado";
+  }
+  const P = M.paises[selP.value];
+  if (nivel === "estado") {
+    selE.innerHTML = `<option value="">Todo o país (maiores cidades)</option>` + P.estados.map((e) => `<option value="${esc(e.cod)}">${esc(e.nome)}</option>`).join("");
+    $("#b-cidade-mundo").value = "";
+  }
+  const est = P.estados.find((e) => e.cod === selE.value);
+  $("#b-cidades-mundo").innerHTML = (est ? est.cidades : P.cidades).map((c) => `<option value="${esc(c[0])}">`).join("");
+  const tz = (est ? est.cidades[0] : P.cidades[0])?.[4];
+  const agora = Vendas.horaEm(tz), dif = Vendas.difFuso(tz);
+  const exemplo = nichosDigitados()[0];
+  $("#b-mundo-dica").innerHTML = `Agora lá: <b>${agora.h}h de ${Vendas.DIAS_CURTO[agora.dow].toLowerCase()}</b>` +
+    (dif ? ` (${Math.abs(dif)}h ${dif > 0 ? "à frente de" : "atrás de"} Brasília)` : " (mesmo horário de Brasília)") +
+    (exemplo && P.idioma !== "pt" ? `. A busca vai como “${esc(Vendas.traduzirNicho(exemplo, P.idioma))}”.` : ".");
+  atualizarCusto();
+}
 
 function cidadeDigitada() {
   if (estado.cidade) return estado.cidade;
@@ -299,6 +363,29 @@ function planoBusca(silencioso = false) {
       partes: dividir(ret, n).map((c) => ({ consulta: (x) => x, retangulo: c, restrito: true })),
       area: { modo, rotulo: Regiao.UFS[uf], ret } };
   }
+  if (modo === "mundo") {
+    const M = estado.mundoDados;
+    if (!M) return falta("Carregando a lista de países…");
+    const iso = $("#b-pais").value, P = M.paises[iso];
+    if (!P) return falta("Escolha o país.");
+    const est = P.estados.find((e) => e.cod === $("#b-estado-mundo").value);
+    const pool = est ? est.cidades : P.cidades;
+    const txt = norm($("#b-cidade-mundo").value);
+    let cidades;
+    if (txt) {
+      const todas = [...pool, ...P.cidades, ...P.estados.flatMap((e) => e.cidades)];
+      const c = todas.find((x) => norm(x[0]) === txt);
+      cidades = [c || [$("#b-cidade-mundo").value.trim(), est?.lat ?? P.lat, est?.lng ?? P.lng, 0, pool[0]?.[4] || ""]];
+    } else cidades = pool.slice(0, { rapida: 2, padrao: 4, cidade: 8 }[estado.tamanho]);
+    const idioma = P.idioma, prep = PREP[idioma] || "in";
+    const rotulo = txt ? `${cidades[0][0]}, ${P.nome}` : est ? `${est.nome}, ${P.nome}` : P.nome;
+    return { modo, rotulo, uf: est?.cod || iso, bairro: "", paginas: TAMANHOS[estado.tamanho].paginas, pais: iso,
+      partes: cidades.map((c) => ({
+        consulta: (n) => `${Vendas.traduzirNicho(n, idioma)} ${prep} ${c[0]}${est ? ", " + est.nome : ""}, ${P.en}`,
+        retangulo: { s: c[1] - 0.15, n: c[1] + 0.15, w: c[2] - 0.15, e: c[2] + 0.15 }, restrito: false, onde: c[0], pais: iso, tz: c[4] || "",
+      })),
+      area: { modo, rotulo, pontos: cidades.map((c) => ({ lat: c[1], lng: c[2] })) } };
+  }
   const caps = Regiao.capitais(mun);
   if (!caps.length) return falta("Carregando a lista de cidades…");
   return { modo: "brasil", rotulo: "Brasil (27 capitais)", uf: "BR", bairro: "", paginas: estado.tamanho === "cidade" ? 2 : 1,
@@ -314,6 +401,7 @@ function mudarOnde(modo) {
   $("#b-cidade-rotulo").textContent = modo === "raio" ? "Centro do raio (cidade)" : "Cidade";
   if ((modo === "regiao" || modo === "estado") && !$("#b-uf").value) $("#b-uf").value = estado.cidade?.uf || "RJ";
   if (modo === "regiao") preencherRegioes();
+  if (modo === "mundo") carregarMundo().then(() => { preencherMundo("continente"); previaArea(); }).catch(() => toast("Não consegui carregar a lista de países."));
   atualizarCusto();
   previaArea();
 }
@@ -423,7 +511,7 @@ async function executarBusca({ nichos, plano, horario = "", quando = null, notaM
       progresso(passo / passos, regioes.length > 1
         ? `“${nicho}” — ${caixa.onde ? caixa.onde : `parte ${i + 1}`} (${i + 1} de ${regioes.length})` : `Procurando “${nicho}” em ${onde}…`);
       try {
-        const r = await api("/api/buscar", { consulta: caixa.consulta(nicho), nicho, retangulo: caixa.retangulo, circulo: caixa.circulo,
+        const r = await api("/api/buscar", { consulta: caixa.consulta(nicho), nicho, retangulo: caixa.retangulo, circulo: caixa.circulo, pais: caixa.pais, tz: caixa.tz,
           restrito: caixa.restrito, paginas: plano.paginas, abertoAgora: horario === "agora", notaMin });
         chamadas += r.chamadas;
         for (const l of r.leads) if (!vistos.has(l.place_id) && filtroPos(l)) vistos.set(l.place_id, l);
@@ -448,9 +536,11 @@ async function executarBusca({ nichos, plano, horario = "", quando = null, notaM
   await enriquecer([...ids]);
   estado.medianas = Vendas.contextoComparacao(estado.leads);
   recalcular();
-  const g = contarGrupos(estado.leads.filter((l) => ids.has(l.id)));
+  const daBusca = estado.leads.filter((l) => ids.has(l.id));
+  const g = contarGrupos(daBusca), semContato = daBusca.filter((l) => !Vendas.temContato(l)).length;
   return fim({ ok: true, buscaId: busca.id, ids,
-    msg: `Pronto! ${total} empresas (${novos} novas): ${g.sem} sem presença, ${g.melhorar} a melhorar e ${g.boa} com presença boa.` });
+    msg: `Pronto! ${total} empresas (${novos} novas): ${g.sem} sem presença, ${g.melhorar} a melhorar e ${g.boa} com presença boa.` +
+      (semContato ? ` ${semContato} sem nenhuma forma de contato ficaram no fim da lista.` : "") });
 }
 
 // ── Mapa dos melhores ─────────────────────────────────────────────────────────
@@ -580,7 +670,8 @@ function filtrados(ignorarGrupo = false) {
     nota: (a, b) => b.nota - a.nota || b.avaliacoes - a.avaliacoes,
     nome: (a, b) => a.nome.localeCompare(b.nome),
   }[f.ordem];
-  return lista.sort(ord);
+  // quem tem alguma forma de contato vem antes: lead sem contato não dá para prospectar
+  return lista.sort((a, b) => (Vendas.temContato(b) - Vendas.temContato(a)) || ord(a, b));
 }
 
 function corStatus(s) { return `var(--s-${s})`; }
@@ -602,7 +693,8 @@ function cartaoLead(l) {
   const medidor = contatado
     ? `${Vendas.termometro(ch.pct).icone} Chance de fechar: <b>${ch.pct}%</b>`
     : a.grupo === "analisando" ? "Analisando o site…" : `Potencial de abordagem: <b>${a.potencial}%</b>`;
-  const acaoBtn = prox?.acao === "responder" ? "Responder" : prox?.acao === "lembrete" ? "Enviar lembrete" : "WhatsApp";
+  const canal = Vendas.canais(l)[0];
+  const acaoBtn = prox?.acao === "responder" ? "Responder" : prox?.acao === "lembrete" ? "Enviar lembrete" : NOME_CANAL[canal] || "Sem contato";
   return `<article class="lead" data-id="${l.id}">
     <div class="cab" data-abrir>
       <div>
@@ -611,12 +703,12 @@ function cartaoLead(l) {
       </div>
       <span class="status" style="--cor:${corStatus(l.status)}">${NOME_STATUS[l.status]}</span>
     </div>
-    <div class="selos">${seloGrupo(a.grupo)}${selos.map((s) => `<span class="selo">${s}</span>`).join("")}</div>
+    <div class="selos">${seloGrupo(a.grupo)}${selos.map((s) => `<span class="selo">${s}</span>`).join("")}${canal ? "" : `<span class="sem-contato">Sem forma de contato</span>`}</div>
     ${a.principal ? `<p class="oport">💡 ${esc(cap(blocoCurto(l, a)))}</p>` : ""}
     ${(() => { const pl = Vendas.planoMensal(l, a, perfil()); return pl?.recomendado ? `<p class="mensal">🔁 Vale plano mensal (${pl.nivel}): ${Vendas.fmtReais(pl.valor[0])} a ${Vendas.fmtReais(pl.valor[1])}/mês</p>` : ""; })()}
     <div class="medidor">${medidor}${prox?.urgente ? ` · <span class="urgente">${esc(prox.texto)} hoje</span>` : ""}</div>
     <div class="acoes">
-      <button class="btn wa" data-acao="wa" ${l.whatsapp ? "" : "disabled"}>${acaoBtn}</button>
+      <button class="btn ${CLASSE_CANAL[canal] || "wa"}" data-acao="wa" ${canal ? "" : "disabled"}>${acaoBtn}</button>
       <a class="btn" data-acao="ligar" ${l.tel_digitos ? `href="tel:+${esc(l.tel_digitos)}"` : 'aria-disabled="true" style="opacity:.45"'}>Ligar</a>
       <button class="btn" data-abrir>Detalhes</button>
     </div>
@@ -701,15 +793,45 @@ function etapaSugerida(l) {
   return respostas.length ? respostas[respostas.length - 1].tipo : l.status === "novo" ? "abordagem" : "retomar";
 }
 
-async function enviarEtapa(l, etapa, texto, nome) {
-  window.open(`https://wa.me/${l.whatsapp}?text=${encodeURIComponent(texto)}`, "_blank");
+// Canais de contato: WhatsApp abre com a mensagem; Instagram e Facebook não aceitam texto pronto no link,
+// então a mensagem vai para a área de transferência e o direct abre; e-mail abre o programa de e-mail.
+const NOME_CANAL = { whatsapp: "WhatsApp", instagram: "Instagram", email: "E-mail", telefone: "Ligar", facebook: "Facebook" };
+const CLASSE_CANAL = { whatsapp: "wa", instagram: "ig", email: "pri", telefone: "", facebook: "pri" };
+const ROTULO_ENVIO = { whatsapp: "Abrir no WhatsApp", instagram: "Copiar e abrir o Instagram", email: "Enviar por e-mail", telefone: "Ligar (copia o roteiro)", facebook: "Copiar e abrir o Facebook" };
+async function copiarTexto(t) {
+  try { await navigator.clipboard.writeText(t); return true; }
+  catch { const a = document.createElement("textarea"); a.value = t; document.body.appendChild(a); a.select(); let ok = false; try { ok = document.execCommand("copy"); } catch { /* sem cópia */ } a.remove(); return ok; }
+}
+function abrirCanal(l, canal, texto) {
+  if (canal === "whatsapp") { window.open(`https://wa.me/${l.whatsapp}?text=${encodeURIComponent(texto)}`, "_blank"); return; }
+  if (canal === "instagram") {
+    copiarTexto(texto);
+    const u = Vendas.usuarioInstagram(l);
+    window.open(u ? `https://ig.me/m/${u}` : (l.instagram || l.site), "_blank");
+    toast("Mensagem copiada. No direct do Instagram, é só colar e enviar.");
+    return;
+  }
+  if (canal === "facebook") { copiarTexto(texto); window.open(l.facebook, "_blank"); toast("Mensagem copiada. Cole no Messenger da página."); return; }
+  if (canal === "email") {
+    const para = String(l.email || "").split(/[,;\s]+/)[0];
+    const assunto = `Uma ideia para a ${l.nome}`;
+    window.open(`mailto:${para}?subject=${encodeURIComponent(assunto)}&body=${encodeURIComponent(texto)}`, "_blank");
+    return;
+  }
+  if (canal === "telefone") { copiarTexto(texto); location.href = `tel:+${l.tel_digitos || String(l.telefone).replace(/\D/g, "")}`; toast("Roteiro copiado para ter em mãos na ligação."); }
+}
+
+async function enviarEtapa(l, etapa, texto, nome, canal) {
+  canal ||= Vendas.canais(l)[0] || "whatsapp";
+  abrirCanal(l, canal, texto);
   const agora = new Date();
   const c = Vendas.ciclo(l);
   const envio = { t: agora.toISOString(), etapa, dow: agora.getDay(), h: agora.getHours(), txt: texto.slice(0, 1000) };
   const dados = { ...(l.dados || {}), ciclo: { ...c, envios: [...c.envios, envio], encerrado: c.encerrado || etapa === "encerramento" } };
   const extra = { dados, ultimo_contato: envio.t };
   if (l.status === "novo" && estado.config.auto_contatado !== false) extra.status = "contatado";
-  await registrar(l, "whatsapp", `WhatsApp enviado: ${nome || Vendas.NOME_ETAPA[etapa] || etapa}`, extra);
+  envio.canal = canal;
+  await registrar(l, canal === "telefone" ? "ligacao" : canal, `${canal === "telefone" ? "Ligação" : NOME_CANAL[canal]} — ${nome || Vendas.NOME_ETAPA[etapa] || etapa}`, extra);
   recalcular();
   if (!$("#tela-leads").hidden) renderLeads();
   if (!$("#tela-painel").hidden) renderPainel();
@@ -860,7 +982,7 @@ function abrirLead(id, opcoes = {}) {
 
       <div class="cartao">
         <h2>Mensagem</h2>
-        ${l.whatsapp ? `
+        ${Vendas.temContato(l) ? `
           <label class="campo" for="l-etapa" style="margin-top:0">Etapa do ciclo</label>
           <select id="l-etapa">
             ${ETAPAS_MSG.map((e) => `<option value="${e}" ${e === etapa ? "selected" : ""}>${Vendas.NOME_ETAPA[e]}</option>`).join("")}
@@ -869,17 +991,20 @@ function abrirLead(id, opcoes = {}) {
           ${perfil().nome ? "" : `<p class="aviso" style="margin:8px 0 0">Para a mensagem dizer quem você é, preencha seu nome em <a href="#" data-ir="ajustes">Ajustes → Seu perfil</a>.</p>`}
           <textarea id="l-msg" style="margin-top:8px; min-height:170px">${esc(msgDe(etapa))}</textarea>
           <div class="grade2" style="margin-top:8px">
-            <button class="btn wa" id="l-enviar">Abrir no WhatsApp</button>
+            ${Vendas.canais(l).map((c) => `<button class="btn ${CLASSE_CANAL[c]}" data-canal="${c}">${ROTULO_ENVIO[c]}</button>`).join("")}
             <button class="btn" id="l-ia-msg" ${temIa ? "" : "hidden"}>✨ Reescrever com IA</button>
           </div>
+          ${!l.whatsapp && Vendas.canais(l)[0] === "instagram" ? `<p class="dica">Sem WhatsApp: o contato é pelo Instagram. A mensagem é copiada e o direct abre; é só colar.</p>` : ""}
           <p class="dica" id="l-ia-status"></p>
-          ${l.whatsapp_origem === "telefone" ? `<p class="dica">Número de celular do Google; confirme se é WhatsApp.</p>` : ""}`
-        : `<p class="dica" style="margin:0">Sem WhatsApp encontrado${l.tel_tipo === "fixo" ? " (o telefone é fixo: ligue)" : ""}.</p>`}
+          ${l.whatsapp_origem === "telefone" ? `<p class="dica">Número de celular do Google; confirme se é WhatsApp.</p>` : ""}
+          ${l.whatsapp_origem === "telefone-intl" ? `<p class="dica">Número internacional do Google: o WhatsApp abre se a empresa usar o app nesse número.</p>` : ""}`
+        : `<p class="dica" style="margin:0">Nenhuma forma de contato encontrada (sem WhatsApp, telefone, Instagram ou e-mail). Pule este lead.</p>`}
       </div>
 
       <div class="cartao">
         <h2>O cliente respondeu?</h2>
         <textarea id="l-resposta" placeholder="Cole aqui a resposta dele (opcional): o app sugere o tipo e prepara a próxima mensagem"></textarea>
+        <button class="btn peq" type="button" id="l-print" style="margin:8px 0 4px">📷 Enviar print ou colar a conversa</button>
         <div class="tipos-resposta" role="group" aria-label="Tipo de resposta">
           ${["rejeicao", "atencao", "desejo", "aprovacao"].map((t) => `<button class="btn" data-tipo="${t}">${Vendas.ICONE_RESPOSTA[t]} ${Vendas.NOME_RESPOSTA[t]}</button>`).join("")}
         </div>
@@ -942,10 +1067,10 @@ function abrirLead(id, opcoes = {}) {
   const selEtapa = $("#l-etapa", dlg);
   if (selEtapa) {
     selEtapa.onchange = () => { etapa = selEtapa.value; $("#l-msg", dlg).value = msgDe(etapa); };
-    $("#l-enviar", dlg).onclick = () => {
+    $$("[data-canal]", dlg).forEach((b) => (b.onclick = () => {
       const nome = etapa.startsWith("extra:") ? estado.config.templates.find((t) => t.id === etapa.slice(6))?.nome : null;
-      enviarEtapa(l, etapa.startsWith("extra:") ? "extra" : etapa, $("#l-msg", dlg).value, nome).then(() => abrirLead(l.id));
-    };
+      enviarEtapa(l, etapa.startsWith("extra:") ? "extra" : etapa, $("#l-msg", dlg).value, nome, b.dataset.canal).then(() => abrirLead(l.id));
+    }));
   }
   const atualizarValor = () => {
     const box = $("#l-valor", dlg);
@@ -972,6 +1097,7 @@ function abrirLead(id, opcoes = {}) {
     });
   }
   const campoResp = $("#l-resposta", dlg);
+  $("#l-print", dlg).onclick = () => { dlg.close(); abrirResponder({ lead: l.id, texto: campoResp.value }); };
   campoResp.oninput = () => {
     const t = Vendas.classificarResposta(campoResp.value);
     $$("[data-tipo]", dlg).forEach((b) => b.classList.toggle("sugerido", b.dataset.tipo === t));
@@ -1421,7 +1547,7 @@ function renderAjustes() {
   renderPortfolio(pf.portfolio_itens?.length ? pf.portfolio_itens : Vendas.PORTFOLIO_PADRAO);
   $("#a-ia-chave").value = c.ia_key || "";
   $("#a-ia-status").textContent = c.ia_key ? "IA ligada." : "IA desligada (sem custo).";
-  try { $("#a-tema").value = localStorage.getItem("tema") || ""; } catch { /* sem armazenamento */ }
+  $("#a-tema").value = temaSalvo();
 }
 
 function lerTemplates() {
@@ -1512,7 +1638,7 @@ $("#b-cidade").addEventListener("input", sugerirCidades);
 $("#b-cidade").addEventListener("blur", () => setTimeout(() => ($("#b-sugestoes").hidden = true), 200));
 $("#b-sugestoes").addEventListener("mousedown", (e) => e.preventDefault());
 $("#b-sugestoes").addEventListener("click", (e) => { const li = e.target.closest("li"); if (li) escolherCidade(sugestoesAtuais[+li.dataset.i]); });
-$("#b-nichos").addEventListener("input", atualizarCusto);
+$("#b-nichos").addEventListener("input", () => { atualizarCusto(); if (estado.onde === "mundo" && estado.mundoDados) preencherMundo("cidade"); });
 $("#b-bairro").addEventListener("input", () => { atualizarCusto(); previaArea(); });
 $("#b-tamanho").addEventListener("click", (e) => {
   const b = e.target.closest("button"); if (!b) return;
@@ -1530,6 +1656,10 @@ $("#b-uf").innerHTML = Object.entries(Regiao.UFS).map(([uf, nome]) => `<option v
 $("#b-uf").value = "";
 $("#b-uf").addEventListener("change", () => { if (estado.onde === "regiao") preencherRegioes(); atualizarCusto(); previaArea(); });
 $("#b-regiao").addEventListener("change", () => { atualizarCusto(); previaArea(); });
+$("#b-continente").addEventListener("change", () => { preencherMundo("pais"); previaArea(); });
+$("#b-pais").addEventListener("change", () => { preencherMundo("estado"); previaArea(); });
+$("#b-estado-mundo").addEventListener("change", () => { $("#b-cidade-mundo").value = ""; preencherMundo("cidade"); previaArea(); });
+$("#b-cidade-mundo").addEventListener("change", () => { atualizarCusto(); previaArea(); });
 $("#b-raio").addEventListener("input", (e) => { $("#b-raio-v").textContent = `${e.target.value} km`; atualizarCusto(); previaArea(); });
 $("#b-gps").addEventListener("click", () => {
   if (!navigator.geolocation) { toast("Este aparelho não informa a localização."); return; }
@@ -1651,9 +1781,11 @@ $("#btn-salvar-templates").addEventListener("click", () => {
   const padrao = $("input[name=padrao]:checked")?.value || templates[0].id;
   salvarConfig({ templates, padrao, auto_contatado: $("#a-auto").checked }, "Mensagens salvas.");
 });
-$("#a-tema").addEventListener("change", (e) => {
-  try { localStorage.setItem("tema", e.target.value); } catch { /* sem armazenamento */ }
-  aplicarTema(e.target.value);
+$("#a-tema").addEventListener("change", (e) => trocarTema(e.target.value));
+$("#btn-tema").addEventListener("click", () => {
+  const escuro = document.documentElement.dataset.theme === "dark" ||
+    (!document.documentElement.dataset.theme && matchMedia("(prefers-color-scheme: dark)").matches);
+  trocarTema(escuro ? "light" : "dark");
 });
 $("#btn-sair").addEventListener("click", () => sb.auth.signOut());
 $("#btn-trocar-senha").addEventListener("click", async () => {

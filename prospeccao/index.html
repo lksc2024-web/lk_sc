@@ -78,7 +78,8 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--pri); outli
 .chips::-webkit-scrollbar { display: none; }
 .chip { flex: none; border: 1px solid var(--linha); background: var(--card); border-radius: 999px;
   padding: 7px 13px; font-size: 14px; cursor: pointer; white-space: nowrap; }
-.segmento.onde { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
+.segmento.onde { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+@media (min-width: 560px) { .segmento.onde { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
 .segmento.onde button { min-height: 44px; padding: 8px 2px; }
 .segmento.onde button b { font-size: 14px; }
 .previa-mapa { margin-top: 12px; }
@@ -300,12 +301,83 @@ nav.abas button { position: relative; }
 .proj span { font-size: 12px; color: var(--pri); word-break: break-all; }
 .proj-edit { border-top: 1px solid var(--linha); padding: 12px 0; }
 .proj-edit input[type=text] { min-height: 42px; padding: 8px 10px; font-size: 14px; }
+/* Topo: botões rápidos (responder e tema) */
+.topo-btn { flex: none; display: inline-flex; align-items: center; gap: 6px; min-height: 38px; padding: 0 12px; border-radius: 10px;
+  border: 1px solid rgba(255,255,255,.28); background: rgba(255,255,255,.08); color: #fff; font-weight: 600; font-size: 14px; cursor: pointer; }
+.topo-btn svg { width: 18px; height: 18px; }
+.topo-btn.icone { padding: 0 9px; }
+@media (max-width: 520px) { .topo-btn .rot { display: none; } .topo-btn { padding: 0 9px; } }
+
+/* Melhores do momento */
+.mel-filtros .linha-rotulo { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.mel-filtros .linha-rotulo small { color: var(--sub); font-size: 12px; }
+.mel-fuso { margin: 8px 0 0; font-size: 13px; padding: 8px 10px; border-radius: 10px; background: var(--pri-suave); }
+.mel-periodos { display: grid; gap: 12px; }
+.mel-per { border: 1px solid var(--linha); border-radius: 12px; padding: 12px; background: var(--bg); }
+.mel-per.sel { border-color: var(--pri); box-shadow: 0 0 0 1px var(--pri) inset; }
+.mel-per h3 { margin: 0 0 4px; font-size: 15px; display: flex; justify-content: space-between; gap: 8px; }
+.mel-per h3 small { color: var(--sub); font-weight: 500; font-size: 12px; }
+.mel-linha { display: grid; grid-template-columns: minmax(0, 1fr) 46px; gap: 4px 10px; align-items: center; width: 100%;
+  text-align: left; background: none; border: 0; border-top: 1px solid var(--linha); padding: 9px 0; cursor: pointer; color: var(--txt); }
+.mel-linha:first-of-type { border-top: 0; }
+.mel-linha b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; }
+.mel-linha .pct { font-weight: 700; text-align: right; font-variant-numeric: tabular-nums; }
+.mel-linha .trilho { grid-column: 1 / -1; height: 6px; border-radius: 3px; background: var(--card); overflow: hidden; }
+.mel-linha .trilho i { display: block; height: 100%; background: var(--pri); border-radius: 3px; }
+.mel-linha small { grid-column: 1 / -1; color: var(--sub); font-size: 12px; }
+.mel-linha .novo-nicho { color: var(--amarelo); font-weight: 600; }
+.semana { display: grid; grid-template-columns: 40px repeat(3, minmax(0, 1fr)); gap: 4px; font-size: 12px; }
+.semana .cab { color: var(--sub); text-align: center; font-weight: 600; padding-bottom: 2px; }
+.semana .dia { color: var(--sub); align-self: center; font-weight: 600; }
+.semana .dia.hoje { color: var(--pri); }
+.semana button { border: 0; border-radius: 8px; min-height: 48px; padding: 4px 6px; cursor: pointer; text-align: left; color: var(--txt);
+  display: flex; flex-direction: column; justify-content: center; gap: 1px; overflow: hidden; }
+.semana button b { font-size: 13px; }
+.semana button span { font-size: 11px; opacity: .85; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.semana button.n0 { background: var(--mapa-0); } .semana button.n1 { background: var(--mapa-1); }
+.semana button.n2 { background: var(--mapa-2); color: #fff; } .semana button.n3 { background: var(--mapa-3); color: #fff; } .semana button.n4 { background: var(--mapa-4); color: #fff; }
+.semana button.sel { outline: 2px solid var(--txt); outline-offset: -2px; }
+.mel-resumo { margin: 12px 0 0; font-size: 14px; }
+.mel-lead { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 12px; padding: 12px 0; border-top: 1px solid var(--linha); }
+.mel-lead:first-child { border-top: 0; }
+.mel-lead h3 { margin: 0; font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mel-lead .meta { color: var(--sub); font-size: 12px; }
+.mel-lead .pct-grande { font-size: 22px; font-weight: 800; text-align: right; font-variant-numeric: tabular-nums; line-height: 1; }
+.mel-lead .pct-grande small { display: block; font-size: 11px; font-weight: 500; color: var(--sub); }
+.mel-lead .acao-txt { grid-column: 1 / -1; font-size: 13px; }
+.mel-lead .acoes { grid-column: 1 / -1; display: flex; gap: 8px; }
+.mel-lead .acoes .btn { min-height: 40px; flex: 1; font-size: 14px; }
+.btn.ig { background: linear-gradient(90deg, #8a3ab9, #e95950, #fccc63); color: #fff; border-color: transparent; }
+.canal-ic { font-size: 12px; color: var(--sub); }
+.explorar { display: grid; gap: 8px; }
+.explorar .linha { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--linha); border-radius: 12px; }
+.explorar .linha small { display: block; color: var(--sub); font-size: 12px; }
+.sem-contato { color: var(--perigo); font-size: 12px; font-weight: 600; }
+
+/* Responder cliente */
+#folha-responder .corpo, #folha-lead .corpo { padding: 16px; }
+.r-cands { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.r-tipo { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px; background: var(--pri-suave); margin: 12px 0 0; font-size: 14px; }
+.r-tipo b { font-size: 15px; }
+.r-tipo.auto { background: color-mix(in srgb, var(--amarelo) 18%, transparent); }
+.r-tipo.ruim { background: color-mix(in srgb, var(--perigo) 15%, transparent); }
+
+@media (min-width: 900px) {
+  #tela-melhores:not([hidden]) { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 0 18px; align-items: start; }
+  #tela-melhores > .mel-filtros { grid-column: 1 / -1; }
+  .mel-periodos { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  #tela-melhores > #mel-periodos-card { grid-column: 1 / -1; }
+}
 </style>
 </head>
 <body>
 
 <header class="topo">
   <h1 id="titulo">Prospecção</h1>
+  <button class="topo-btn" id="btn-responder" type="button" hidden aria-label="O cliente respondeu: colar mensagem ou print">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M8 9h8M8 13h5"/></svg><span class="rot">Cliente respondeu</span></button>
+  <button class="topo-btn icone" id="btn-tema" type="button" aria-label="Trocar entre tema escuro e claro">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg></button>
 </header>
 
 <main>
@@ -341,6 +413,7 @@ nav.abas button { position: relative; }
         <button type="button" data-o="raio"><b>Raio</b></button>
         <button type="button" data-o="estado"><b>Estado</b></button>
         <button type="button" data-o="brasil"><b>Brasil</b></button>
+        <button type="button" data-o="mundo"><b>Mundo</b></button>
       </div>
       <p class="dica" id="b-onde-dica">Uma cidade, com bairro opcional.</p>
       <div data-modo="cidade raio">
@@ -364,6 +437,18 @@ nav.abas button { position: relative; }
         <label class="campo" for="b-raio">Raio de busca: <b id="b-raio-v" style="color:var(--txt)">5 km</b></label>
         <input id="b-raio" type="range" min="1" max="50" value="5" style="width:100%; accent-color:var(--pri)">
         <button class="btn peq" type="button" id="b-gps" style="margin-top:8px">Usar minha localização</button>
+      </div>
+      <div data-modo="mundo" hidden>
+        <div class="grade2">
+          <div><label class="campo" for="b-continente">Continente</label><select id="b-continente"></select></div>
+          <div><label class="campo" for="b-pais">País</label><select id="b-pais"></select></div>
+        </div>
+        <label class="campo" for="b-estado-mundo">Estado ou região <span style="font-weight:400">(opcional)</span></label>
+        <select id="b-estado-mundo"></select>
+        <label class="campo" for="b-cidade-mundo">Cidade <span style="font-weight:400">(opcional)</span></label>
+        <input id="b-cidade-mundo" type="text" list="b-cidades-mundo" placeholder="Em branco = as maiores cidades">
+        <datalist id="b-cidades-mundo"></datalist>
+        <p class="dica" id="b-mundo-dica"></p>
       </div>
       <div class="previa-mapa rg" id="b-previa" hidden>
         <div class="rg-mapa peq" id="b-mapa"></div>
@@ -430,6 +515,14 @@ nav.abas button { position: relative; }
     </div>
   </section>
 
+  <section id="tela-melhores" hidden>
+    <div class="cartao mel-filtros" id="mel-filtros"></div>
+    <div class="cartao" id="mel-periodos-card"><div id="mel-periodos"></div></div>
+    <div class="cartao" id="mel-semana-card"><div id="mel-semana"></div></div>
+    <div class="cartao" id="mel-leads-card"><div id="mel-leads"></div></div>
+    <div class="cartao" id="mel-explorar-card"><div id="mel-explorar"></div></div>
+  </section>
+
   <section id="tela-leads" hidden>
     <div class="resumo" id="resumo"></div>
     <input id="f-texto" type="search" placeholder="Procurar por nome, bairro, categoria…" style="margin-bottom:10px">
@@ -461,6 +554,7 @@ nav.abas button { position: relative; }
 
   <!-- Em contato -->
   <section id="tela-contatos" hidden>
+    <button class="btn pri cheio" id="c-responder" type="button" style="margin-bottom:12px">💬 O cliente respondeu? Colar a mensagem ou enviar o print</button>
     <p class="dica" style="margin-top:0">Só quem você já abordou, separado por nicho ou por nome, com a chance de fechar e as mensagens prontas.</p>
     <div class="resumo" id="c-resumo"></div>
     <input id="c-texto" type="search" placeholder="Procurar pelo nome da empresa…" style="margin-bottom:10px">
@@ -629,9 +723,9 @@ nav.abas button { position: relative; }
     <div class="cartao">
       <h2>Aparência</h2>
       <select id="a-tema" aria-label="Tema">
-        <option value="">Igual ao celular</option>
-        <option value="light">Claro</option>
         <option value="dark">Escuro</option>
+        <option value="light">Claro</option>
+        <option value="auto">Igual ao aparelho</option>
       </select>
     </div>
 
@@ -652,6 +746,8 @@ nav.abas button { position: relative; }
 <nav class="abas" id="abas" hidden>
   <button data-tela="buscar" aria-current="page">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>Buscar</button>
+  <button data-tela="melhores">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3 6.5 7 .8-5.2 4.8 1.5 7L12 17.6 5.7 21.1l1.5-7L2 9.3l7-.8z"/></svg>Melhores</button>
   <button data-tela="leads">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>Leads</button>
   <button data-tela="mapa">
@@ -665,11 +761,15 @@ nav.abas button { position: relative; }
 </nav>
 
 <dialog class="folha" id="folha-lead"></dialog>
+<dialog class="folha" id="folha-responder"></dialog>
 <div class="toast" id="toast" hidden></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="/vendas.js"></script>
 <script src="/regiao.js"></script>
+<script src="/nucleo.js"></script>
 <script src="/app.js"></script>
+<script src="/melhores.js"></script>
+<script src="/responder.js"></script>
 </body>
 </html>

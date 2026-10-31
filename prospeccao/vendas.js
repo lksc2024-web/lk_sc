@@ -554,10 +554,19 @@ const ROTINA_GERAL = { tipo: "Outros", bons: [[9, 12], [14, 18]], evitar: [[12, 
 function rotinaDe(nicho) { return ROTINA_NICHO.find((r) => r.re.test(semAcento(nicho)) || r.re.test(nicho || "")) || ROTINA_GERAL; }
 const sobrepoe = (faixas, a, b) => faixas.some(([x, y]) => x < b && y > a);
 // 0 a 1: quanto a faixa combina com a rotina do nicho (referência, sem dados seus).
+// quanto da faixa cai dentro das janelas (0 a 1)
+const cobre = (janelas, a, b) => janelas.reduce((s, [x, y]) => s + Math.max(0, Math.min(b, y) - Math.max(a, x)), 0) / (b - a);
+// Quanto cada setor costuma responder a quem oferece site e presença digital (referência de mercado).
+const RECEPTIVIDADE = { "Saúde": 1.05, "Beleza": 1.08, "Restaurantes e bares": 0.82, "Padarias e cafés": 0.8, "Academias e estúdios": 0.95,
+  "Pet": 1, "Imobiliário": 0.97, "Escritórios": 0.9, "Automotivo": 0.88, "Obras e serviços": 0.93, "Lojas": 0.85, "Educação": 0.9, "Eventos": 1.02, "Outros": 0.85 };
+// Fim de semana: quem atende no sábado está ocupado; quem trabalha em campo responde mais.
+const FIM_DE_SEMANA = { "Restaurantes e bares": 0.3, "Padarias e cafés": 0.45, "Saúde": 0.35, "Beleza": 0.25, "Academias e estúdios": 0.45,
+  "Pet": 0.5, "Imobiliário": 0.45, "Escritórios": 0.3, "Automotivo": 0.6, "Obras e serviços": 0.65, "Lojas": 0.35, "Educação": 0.3, "Eventos": 0.2, "Outros": 0.4 };
 function encaixeReferencia(rotina, f, dow = null) {
   const [a, b] = FAIXAS[f];
-  let s = sobrepoe(rotina.bons, a, b) ? 1 : sobrepoe(rotina.evitar, a, b) ? 0.25 : 0.55;
-  if (dow != null && rotina.dias && !rotina.dias.includes(dow)) s *= dow === 0 || dow === 6 ? 0.4 : 0.8;
+  const bom = cobre(rotina.bons, a, b), ruim = cobre(rotina.evitar, a, b);
+  let s = Math.max(0.2, Math.min(1, 0.55 + 0.45 * bom - 0.32 * ruim));
+  if (dow != null && rotina.dias && !rotina.dias.includes(dow)) s *= dow === 0 || dow === 6 ? (FIM_DE_SEMANA[rotina.tipo] ?? 0.4) * (dow === 0 ? 0.75 : 1) : 0.8;
   return s;
 }
 
@@ -583,7 +592,8 @@ function desempenhoNichos(leads) {
 const TAXA_REF = 0.3, PESO_REF = 5;
 function notaNichoFaixa(nicho, f, dados, dow = null) {
   const c = dados?.[nicho]?.[f];
-  const prior = TAXA_REF * encaixeReferencia(rotinaDe(nicho), f, dow);
+  const rot = rotinaDe(nicho);
+  const prior = TAXA_REF * encaixeReferencia(rot, f, dow) * (RECEPTIVIDADE[rot.tipo] || 0.85);
   if (!c?.n) return { taxa: prior, interesse: null, n: 0, fonte: "estimativa" };
   return { taxa: (c.r + PESO_REF * prior) / (c.n + PESO_REF), interesse: c.i / c.n, n: c.n, fonte: c.n >= PESO_REF ? "seus dados" : "misto" };
 }
@@ -610,7 +620,165 @@ function melhoresNichosAgora(leads, quando = new Date()) {
   return { hora: h, dow, faixa: f, rotulo: f < 0 ? null : FAIXAS[f][2], seus, ideias };
 }
 
+// ── Melhores do momento: nicho × período × dia, mercado nacional ou de fora ─────────────
+// Períodos do dia (índices de FAIXAS). Manhã 7–13h, tarde 13–19h, noite 19–22h.
+const PERIODOS = [
+  { id: "manha", nome: "Manhã", faixas: [0, 1, 2], icone: "🌅" },
+  { id: "tarde", nome: "Tarde", faixas: [3, 4, 5], icone: "☀️" },
+  { id: "noite", nome: "Noite", faixas: [6], icone: "🌙" },
+];
+const DIAS_CURTO = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+function periodoDe(h) { const f = faixaDe(h); return f < 0 ? null : PERIODOS.find((p) => p.faixas.includes(f)); }
+
+// Hora e dia da semana num fuso (ex.: "Europe/Lisbon"). Sem fuso = horário de Brasília.
+function horaEm(tz, quando = new Date()) {
+  try {
+    const p = new Intl.DateTimeFormat("en-US", { timeZone: tz || "America/Sao_Paulo", hour: "numeric", hour12: false, weekday: "short" }).formatToParts(quando);
+    const h = +p.find((x) => x.type === "hour").value % 24;
+    const dow = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].indexOf(p.find((x) => x.type === "weekday").value);
+    return { h, dow };
+  } catch { return { h: quando.getHours(), dow: quando.getDay() }; }
+}
+// Diferença em horas entre o fuso do cliente e Brasília (positivo = o cliente está à frente).
+function difFuso(tz, quando = new Date()) {
+  const a = horaEm(tz, quando), b = horaEm("America/Sao_Paulo", quando);
+  let d = (a.dow * 24 + a.h) - (b.dow * 24 + b.h);
+  if (d > 84) d -= 168; if (d < -84) d += 168;
+  return d;
+}
+
+// Nota de um nicho num período inteiro: a melhor faixa dele (é quando vale mandar).
+function notaNichoPeriodo(nicho, periodo, dados, dow) {
+  let melhor = null;
+  for (const f of periodo.faixas) {
+    const n = notaNichoFaixa(nicho, f, dados, dow);
+    if (!melhor || n.taxa > melhor.taxa) melhor = { ...n, faixa: f, rotulo: FAIXAS[f][2] };
+  }
+  return melhor;
+}
+
+// Ranking de nichos para um dia: o melhor de cada período, em porcentagem de chance de resposta.
+function rankingPeriodos(nichos, dow, dados) {
+  return PERIODOS.map((p) => ({
+    ...p,
+    nichos: nichos.map((n) => ({ nicho: n, tipo: rotinaDe(n).tipo, nota: rotinaDe(n).nota, ...notaNichoPeriodo(n, p, dados, dow) }))
+      .sort((a, b) => b.taxa - a.taxa),
+  }));
+}
+
+// Semana inteira: para cada dia e período, o melhor nicho entre os escolhidos.
+function semanaNichos(nichos, dados) {
+  return [1, 2, 3, 4, 5, 6, 0].map((dow) => ({
+    dow, dia: DIAS_CURTO[dow],
+    periodos: PERIODOS.map((p) => {
+      const top = nichos.map((n) => ({ nicho: n, ...notaNichoPeriodo(n, p, dados, dow) })).sort((a, b) => b.taxa - a.taxa)[0];
+      return { periodo: p.id, ...top };
+    }),
+  }));
+}
+
+// Todos os nichos que dá para sugerir: os de referência (de todos os setores) mais os que você já buscou.
+function catalogoNichos(leads = []) {
+  const seus = [...new Set(leads.map((l) => l.nicho).filter(Boolean))];
+  const ref = ROTINA_NICHO.flatMap((r) => r.exemplos);
+  const vistos = new Set();
+  return [...seus, ...ref].filter((n) => { const k = semAcento(n); if (vistos.has(k)) return false; vistos.add(k); return true; });
+}
+
+// Formas de contato, na ordem em que vale usar. Sem nenhuma, o lead não serve para prospectar.
+function canais(l) {
+  const c = [];
+  if (l.whatsapp) c.push("whatsapp");
+  if (l.instagram || /instagram\.com/i.test(l.site || "")) c.push("instagram");
+  if (l.email) c.push("email");
+  if (l.tel_digitos || l.telefone) c.push("telefone");
+  if (l.facebook) c.push("facebook");
+  return c;
+}
+const temContato = (l) => canais(l).length > 0;
+function usuarioInstagram(l) {
+  const u = String(l.instagram || l.site || "").match(/instagram\.com\/([A-Za-z0-9_.]+)/i);
+  return u && !["p", "reel", "explore", "stories"].includes(u[1].toLowerCase()) ? u[1] : "";
+}
+
+// Melhores leads para um momento (dia + período ou faixa), com a chance já ajustada ao horário do cliente.
+// opc: { dow, periodo, nichos (Set de chaves sem acento ou null), filtro(l) }, analisarFn(l), chanceFn(l, a)
+function melhoresLeads(leads, opc, analisarFn, chanceFn, dados) {
+  const out = [];
+  for (const l of leads) {
+    if (["fechado", "descartado"].includes(l.status) || l.fechado) continue;
+    if (!temContato(l)) continue;
+    if (opc.nichos && opc.nichos.size && !opc.nichos.has(semAcento(l.nicho || ""))) continue;
+    if (opc.filtro && !opc.filtro(l)) continue;
+    const a = analisarFn(l);
+    if (a.grupo === "analisando") continue;
+    const contatado = l.status !== "novo" || ciclo(l).envios.length > 0;
+    const base = contatado ? chanceFn(l, a).pct : a.potencial;
+    const per = PERIODOS.find((p) => p.id === opc.periodo) || PERIODOS[0];
+    const nota = notaNichoPeriodo(l.nicho || "", per, dados, opc.dow);
+    const encaixe = Math.min(1, nota.taxa / TAXA_REF);
+    const prox = proximaAcao(l, opc.intervalos || { follow1: 3, follow2: 7, encerramento: 7 });
+    const urg = prox?.acao === "responder" ? 1.25 : prox?.urgente ? 1.1 : 1;
+    const canal = canais(l)[0];
+    const pesoCanal = { whatsapp: 1, instagram: 0.92, email: 0.85, telefone: 0.8, facebook: 0.75 }[canal] || 0.7;
+    const pct = Math.max(1, Math.min(99, Math.round(base * (0.45 + 0.55 * encaixe) * urg * pesoCanal)));
+    out.push({ l, a, pct, base, encaixe, melhor: nota.rotulo, prox, canal, contatado });
+  }
+  return out.sort((x, y) => y.pct - x.pct);
+}
+
+// Tradução dos nichos mais comuns para buscar fora do Brasil (o Google entende melhor no idioma local).
+const NICHO_TRAD = {
+  "restaurante": { en: "restaurant", es: "restaurante", fr: "restaurant", it: "ristorante", de: "Restaurant" },
+  "pizzaria": { en: "pizzeria", es: "pizzería", fr: "pizzeria", it: "pizzeria", de: "Pizzeria" },
+  "hamburgueria": { en: "burger restaurant", es: "hamburguesería", fr: "burger", it: "hamburgeria", de: "Burgerrestaurant" },
+  "padaria": { en: "bakery", es: "panadería", fr: "boulangerie", it: "panetteria", de: "Bäckerei" },
+  "cafeteria": { en: "coffee shop", es: "cafetería", fr: "café", it: "caffetteria", de: "Café" },
+  "confeitaria": { en: "pastry shop", es: "pastelería", fr: "pâtisserie", it: "pasticceria", de: "Konditorei" },
+  "dentista": { en: "dentist", es: "dentista", fr: "dentiste", it: "dentista", de: "Zahnarzt" },
+  "clínica": { en: "medical clinic", es: "clínica", fr: "clinique", it: "clinica", de: "Klinik" },
+  "fisioterapia": { en: "physical therapy", es: "fisioterapia", fr: "kinésithérapeute", it: "fisioterapia", de: "Physiotherapie" },
+  "salão de beleza": { en: "beauty salon", es: "salón de belleza", fr: "salon de beauté", it: "salone di bellezza", de: "Schönheitssalon" },
+  "barbearia": { en: "barber shop", es: "barbería", fr: "barbier", it: "barbiere", de: "Barbershop" },
+  "estética": { en: "aesthetic clinic", es: "centro de estética", fr: "institut de beauté", it: "centro estetico", de: "Kosmetikstudio" },
+  "clínica de estética": { en: "aesthetic clinic", es: "centro de estética", fr: "institut de beauté", it: "centro estetico", de: "Kosmetikstudio" },
+  "academia": { en: "gym", es: "gimnasio", fr: "salle de sport", it: "palestra", de: "Fitnessstudio" },
+  "pilates": { en: "pilates studio", es: "estudio de pilates", fr: "studio de pilates", it: "studio pilates", de: "Pilates Studio" },
+  "crossfit": { en: "crossfit gym", es: "crossfit", fr: "crossfit", it: "crossfit", de: "CrossFit" },
+  "pet shop": { en: "pet store", es: "tienda de mascotas", fr: "animalerie", it: "negozio di animali", de: "Tierhandlung" },
+  "clínica veterinária": { en: "veterinary clinic", es: "clínica veterinaria", fr: "clinique vétérinaire", it: "clinica veterinaria", de: "Tierarzt" },
+  "banho e tosa": { en: "pet grooming", es: "peluquería canina", fr: "toilettage", it: "toelettatura", de: "Hundesalon" },
+  "imobiliária": { en: "real estate agency", es: "inmobiliaria", fr: "agence immobilière", it: "agenzia immobiliare", de: "Immobilienmakler" },
+  "corretor de imóveis": { en: "real estate agent", es: "agente inmobiliario", fr: "agent immobilier", it: "agente immobiliare", de: "Immobilienmakler" },
+  "advogado": { en: "lawyer", es: "abogado", fr: "avocat", it: "avvocato", de: "Rechtsanwalt" },
+  "contabilidade": { en: "accountant", es: "contador", fr: "comptable", it: "commercialista", de: "Steuerberater" },
+  "arquitetura": { en: "architect", es: "arquitecto", fr: "architecte", it: "architetto", de: "Architekt" },
+  "oficina mecânica": { en: "auto repair shop", es: "taller mecánico", fr: "garage automobile", it: "officina meccanica", de: "Autowerkstatt" },
+  "lava-jato": { en: "car wash", es: "lavado de autos", fr: "station de lavage", it: "autolavaggio", de: "Autowaschanlage" },
+  "autopeças": { en: "auto parts store", es: "repuestos de autos", fr: "pièces auto", it: "ricambi auto", de: "Autoteile" },
+  "marcenaria": { en: "carpentry", es: "carpintería", fr: "menuiserie", it: "falegnameria", de: "Tischlerei" },
+  "vidraçaria": { en: "glass shop", es: "vidriería", fr: "vitrerie", it: "vetreria", de: "Glaserei" },
+  "material de construção": { en: "building supplies", es: "materiales de construcción", fr: "matériaux de construction", it: "materiali edili", de: "Baustoffhandel" },
+  "loja de roupas": { en: "clothing store", es: "tienda de ropa", fr: "magasin de vêtements", it: "negozio di abbigliamento", de: "Bekleidungsgeschäft" },
+  "ótica": { en: "optician", es: "óptica", fr: "opticien", it: "ottica", de: "Optiker" },
+  "loja de móveis": { en: "furniture store", es: "tienda de muebles", fr: "magasin de meubles", it: "negozio di mobili", de: "Möbelhaus" },
+  "escola": { en: "school", es: "escuela", fr: "école", it: "scuola", de: "Schule" },
+  "curso de idiomas": { en: "language school", es: "escuela de idiomas", fr: "école de langues", it: "scuola di lingue", de: "Sprachschule" },
+  "escola infantil": { en: "preschool", es: "jardín de infantes", fr: "école maternelle", it: "scuola materna", de: "Kindergarten" },
+  "buffet": { en: "catering", es: "catering", fr: "traiteur", it: "catering", de: "Catering" },
+  "fotógrafo": { en: "photographer", es: "fotógrafo", fr: "photographe", it: "fotografo", de: "Fotograf" },
+  "salão de festas": { en: "event venue", es: "salón de eventos", fr: "salle de réception", it: "sala ricevimenti", de: "Eventlocation" },
+  "lanchonete": { en: "snack bar", es: "cafetería", fr: "snack", it: "snack bar", de: "Imbiss" },
+};
+function traduzirNicho(n, idioma) {
+  if (!idioma || idioma === "pt") return n;
+  const k = Object.keys(NICHO_TRAD).find((x) => semAcento(x) === semAcento(n));
+  return (k && NICHO_TRAD[k][idioma]) || NICHO_TRAD[k]?.en || n;
+}
+
 window.Vendas = {
+  PERIODOS, DIAS_CURTO, periodoDe, horaEm, difFuso, notaNichoPeriodo, rankingPeriodos, semanaNichos, catalogoNichos,
+  canais, temContato, usuarioInstagram, melhoresLeads, traduzirNicho, TAXA_REF, semAcento,
   FAIXAS, faixaDe, ROTINA_NICHO, rotinaDe, encaixeReferencia, desempenhoNichos, notaNichoFaixa, melhoresNichosAgora,
   SERVICOS, GRUPOS, OPORTUNIDADES, ROTEIRO_PADRAO, PROFISSAO_PADRAO, NOME_ETAPA, NOME_RESPOSTA, ICONE_RESPOSTA,
   contextoComparacao, analisar, montarMensagem, classificarResposta, ciclo, intervalos, proximaAcao,
