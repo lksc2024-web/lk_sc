@@ -675,7 +675,7 @@ function vProspeccao(box) {
   box.innerHTML = '<div class="kpis"><div class="kpi"><span class="l">Leads</span><span class="v num">' + int(lista.length) + '</span><span class="d flat">' + c.novo + ' ainda sem contato</span></div><div class="kpi"><span class="l">Contatados</span><span class="v num">' + int(cont) + '</span><span class="d flat">' + pct(lista.length ? cont / lista.length * 100 : 0, 0) + ' do total</span></div><div class="kpi"><span class="l">Responderam</span><span class="v num">' + int(resp) + '</span><span class="d flat">' + pct(cont ? resp / cont * 100 : 0, 0) + ' dos contatados</span></div><div class="kpi"><span class="l">Reuniões</span><span class="v num">' + int(c.reuniao) + '</span><span class="d flat">em andamento</span></div><div class="kpi"><span class="l">Fechados</span><span class="v num up">' + int(c.fechado) + '</span><span class="d flat">' + pct(cont ? c.fechado / cont * 100 : 0, 1) + ' de fechamento</span></div></div>' +
     '<div class="toolbar"><div class="chips" id="l-nichos"><button class="chip" type="button" data-n="" aria-pressed="' + (!f.lnicho) + '">Todos os nichos<span class="n">' + S.leads.length + "</span></button>" + Object.keys(nichos).sort(function (a, b) { return nichos[b] - nichos[a]; }).map(function (nn) { return '<button class="chip" type="button" data-n="' + esc(nn) + '" aria-pressed="' + (f.lnicho === nn) + '">' + esc(nn) + '<span class="n">' + nichos[nn] + "</span></button>"; }).join("") + '</div></div>' +
     '<div class="toolbar"><input class="inp busca" id="l-busca" type="search" placeholder="Buscar por nome, bairro ou cidade" value="' + esc(f.lbusca) + '"><div class="seg" id="l-modo"><button type="button" data-m="kanban" aria-pressed="' + (f.lmodo === "kanban") + '">Funil</button><button type="button" data-m="lista" aria-pressed="' + (f.lmodo === "lista") + '">Lista</button><button type="button" data-m="mapa" aria-pressed="' + (f.lmodo === "mapa") + '">Mapa</button></div></div>' +
-    (S.leads.length ? (f.lmodo === "kanban" ? kanbanLeads(lista) : f.lmodo === "mapa" ? '<div class="card" style="padding:14px"><div class="toolbar" style="margin:0 0 10px"><select class="inp" id="l-mbusca" style="max-width:100%"><option value="">Todos os leads filtrados</option></select></div><p class="sub" style="margin:0 0 10px;font-size:12.5px;color:var(--muted)">A porcentagem é o índice de destaque: nota no Google pesada pelo número de avaliações, comparada com os outros da mesma área. A chance de fechar vem das mesmas regras do app de Prospecção.</p><div id="l-mapa"></div></div>' : listaLeads(lista)) : '<div class="card vazio"><b>Nenhum lead ainda.</b>Use o app de Prospecção para buscar empresas por nicho e cidade. Eles aparecem aqui sozinhos.<a class="btn pri" href="' + PROSPECCAO_URL + '" target="_blank" rel="noopener">Abrir Prospecção</a></div>');
+    (S.leads.length ? (f.lmodo === "kanban" ? kanbanLeads(lista) : f.lmodo === "mapa" ? '<div class="card" style="padding:14px"><div class="toolbar" style="margin:0 0 10px"><select class="inp" id="l-mbusca" style="max-width:100%"><option value="">Todos os leads filtrados</option></select></div><p class="sub" style="margin:0 0 10px;font-size:12.5px;color:var(--muted)">A porcentagem é o índice de destaque: nota no Google pesada pelo número de avaliações, comparada com os outros da mesma área. A chance de fechar vem das mesmas regras do app de Prospecção.</p><div id="l-mapa"></div><a class="btn" style="margin-top:12px" href="' + PROSPECCAO_URL + '/#mapa" target="_blank" rel="noopener">Buscar empresas novas no Google (abre a Prospecção)</a></div>' : listaLeads(lista)) : '<div class="card vazio"><b>Nenhum lead ainda.</b>Use o app de Prospecção para buscar empresas por nicho e cidade. Eles aparecem aqui sozinhos.<a class="btn pri" href="' + PROSPECCAO_URL + '" target="_blank" rel="noopener">Abrir Prospecção</a></div>');
   $("#l-nichos").onclick = function (e) { var b = e.target.closest("[data-n]"); if (b) { f.lnicho = b.dataset.n; render(); } };
   $("#l-modo").onclick = function (e) { var b = e.target.closest("[data-m]"); if (b) { f.lmodo = b.dataset.m; render(); } };
   var bu = $("#l-busca"); bu.oninput = function () { f.lbusca = bu.value; clearTimeout(bu._t); bu._t = setTimeout(function () { render(); var x = $("#l-busca"); x.focus(); x.setSelectionRange(x.value.length, x.value.length); }, 300); };
@@ -683,7 +683,11 @@ function vProspeccao(box) {
   if (f.lmodo === "mapa" && S.leads.length) mapaLeads(lista);
 }
 // Modo mapa: ranking dos melhores por área, raio e horário (regiao.js) + chance de fechar (vendas.js da Prospecção).
-var MAPA = { buscas: null, vendas: null };
+var MAPA = { buscas: null, vendas: null, estado: {}, mun: null };
+function municipiosMapa() {
+  if (!MAPA.mun) MAPA.mun = fetch(PROSPECCAO_URL + "/municipios.json").then(function (r) { return r.json(); }).catch(function () { MAPA.mun = null; return []; });
+  return MAPA.mun;
+}
 function carregarVendas() {
   if (window.Vendas) return Promise.resolve(window.Vendas);
   if (MAPA.vendas) return MAPA.vendas;
@@ -709,7 +713,7 @@ async function mapaLeads(lista) {
     var ctx = V.contextoComparacao(S.leads), taxas = V.taxasReais(S.leads);
     chance = function (l) { try { return V.chanceFechamento(l, V.analisar(l, ctx), taxas).pct; } catch (e) { return null; } };
   }
-  Regiao.painelMapa(el, { leads: leads, area: b ? b.area : null, chance: chance, onAbrir: function (id) { abrirLead(id); } });
+  Regiao.painelMapa(el, { leads: leads, area: b ? b.area : null, chance: chance, estado: MAPA.estado, municipios: municipiosMapa, onAbrir: function (id) { abrirLead(id); } });
 }
 function tagsLead(l) { var t = []; if (l.whatsapp) t.push("WhatsApp"); if (!l.site) t.push("sem site"); if (l.instagram) t.push("Instagram"); return t; }
 function kanbanLeads(lista) {
