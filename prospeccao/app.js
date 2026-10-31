@@ -39,11 +39,12 @@ const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "
 const norm = (s) => String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
 
 const FILTRO_PADRAO = { status: "", texto: "", wa: false, email: false, mensal: false, grupo: "", nota: false, busca: "", ordem: "recentes" };
-const TELAS = { buscar: "Buscar empresas", leads: "Meus leads", contatos: "Em contato", painel: "Painel de vendas", ajustes: "Ajustes" };
+const TELAS = { buscar: "Buscar empresas", leads: "Meus leads", mapa: "Mapa dos melhores", contatos: "Em contato", painel: "Painel de vendas", ajustes: "Ajustes" };
 const estado = {
   usuario: null, config: null, leads: [], buscas: [], municipios: null, medianas: {}, analisandoSites: false,
   intervalos: null, taxas: {},
   cidade: null, tamanho: "padrao", buscando: false,
+  onde: "cidade", centro: null, notaMin: 0, horario: "", mapaBusca: "", painelMapa: null,
   filtro: null, // preenchido com FILTRO_PADRAO logo abaixo
   mostrar: POR_PAGINA,
 };
@@ -66,6 +67,7 @@ function irPara(tela) {
   if (tela === "painel") renderPainel();
   if (tela === "contatos") renderContatos();
   if (tela === "ajustes") renderAjustes();
+  if (tela === "mapa") renderMapa();
   window.scrollTo(0, 0);
 }
 
@@ -200,9 +202,11 @@ async function sugerirCidades() {
 
 function escolherCidade(m) {
   estado.cidade = m;
+  estado.centro = null;
   $("#b-cidade").value = `${m.n} - ${m.uf}`;
   $("#b-sugestoes").hidden = true;
   atualizarCusto();
+  previaArea();
 }
 
 // ── Busca ──────────────────────────────────────────────────────────────────────
@@ -225,9 +229,117 @@ function dividir(caixa, n) {
 }
 
 function chamadasEstimadas() {
-  const t = TAMANHOS[estado.tamanho], nichos = Math.max(1, nichosDigitados().length);
-  const regioes = t.grade && !$("#b-bairro").value.trim() ? t.grade * t.grade : 1;
-  return nichos * regioes * t.paginas;
+  const nichos = Math.max(1, nichosDigitados().length);
+  let p = null;
+  try { p = planoBusca(true); } catch { /* área ainda incompleta */ }
+  if (!p) { const t = TAMANHOS[estado.tamanho]; return nichos * (t.grade && estado.onde === "cidade" ? t.grade * t.grade : 1) * t.paginas; }
+  return nichos * p.partes.length * p.paginas;
+}
+
+// ── Onde buscar: cidade, região, raio, estado ou Brasil ───────────────────────
+const DICAS_ONDE = {
+  cidade: "Uma cidade, com bairro opcional.",
+  regiao: "Uma zona ou região dentro do estado, como a Zona Oeste do Rio ou a Região dos Lagos.",
+  raio: "Um círculo em volta de um ponto: escolha a cidade, toque no mapa ou use sua localização.",
+  estado: "O estado inteiro, dividido em partes. Traz os mais conhecidos de cada parte.",
+  brasil: "As 27 capitais. Bom para achar os melhores do país num nicho.",
+};
+
+function cidadeDigitada() {
+  if (estado.cidade) return estado.cidade;
+  if (!estado.municipios) return null;
+  const [nome, uf] = $("#b-cidade").value.split(" - ").map((s) => s && s.trim());
+  return estado.municipios.find((x) => x.chave === norm(nome) && (!uf || x.uf === uf.toUpperCase())) || null;
+}
+
+// Monta as partes da busca (cada parte = uma área enviada ao Google) e a área para desenhar no mapa.
+// silencioso = true: devolve null em vez de reclamar (usado na estimativa de custo).
+function planoBusca(silencioso = false) {
+  const falta = (msg) => { if (silencioso) return null; throw new Error(msg); };
+  const t = TAMANHOS[estado.tamanho], modo = estado.onde, mun = estado.municipios || [];
+  if (modo === "cidade") {
+    const cidade = cidadeDigitada();
+    if (!cidade) return falta("Escolha a cidade na lista.");
+    const bairro = $("#b-bairro").value.trim(), caixa = caixaCidade(cidade);
+    const onde = bairro ? `${bairro}, ${cidade.n} - ${cidade.uf}` : `${cidade.n} - ${cidade.uf}`;
+    const cel = bairro ? [caixa] : dividir(caixa, t.grade);
+    return { modo, rotulo: cidade.n, uf: cidade.uf, bairro, paginas: t.paginas,
+      partes: cel.map((c) => ({ consulta: (n) => `${n} em ${onde}`, retangulo: c, restrito: cel.length > 1 })),
+      area: { modo, rotulo: onde, ret: caixa } };
+  }
+  if (modo === "regiao") {
+    const uf = $("#b-uf").value, r = Regiao.regioesDoEstado(uf, mun).find((x) => x.id === $("#b-regiao").value);
+    if (!r) return falta("Escolha a região.");
+    const ret = { s: r.s, n: r.n, w: r.w, e: r.e };
+    const cel = dividir(ret, estado.tamanho === "cidade" ? Regiao.gradePara(ret, 12, 4) : 0);
+    return { modo, rotulo: r.nome, uf, bairro: "", paginas: t.paginas,
+      partes: cel.map((c) => ({ consulta: (n) => n, retangulo: c, restrito: true })),
+      area: { modo, rotulo: `${r.nome} (${uf})`, ret } };
+  }
+  if (modo === "raio") {
+    const raio = +$("#b-raio").value, cidade = cidadeDigitada();
+    const centro = estado.centro || (cidade && { lat: cidade.lat, lng: cidade.lon });
+    if (!centro) return falta("Escolha a cidade, toque no mapa ou use sua localização.");
+    const ret = Regiao.caixaCirculo(centro.lat, centro.lng, raio);
+    let cel = dividir(ret, estado.tamanho === "cidade" ? Regiao.gradePara(ret, 10, 4) : 0);
+    if (cel.length > 1) cel = cel.filter((c) => Regiao.distKm(centro, {
+      lat: Math.max(c.s, Math.min(centro.lat, c.n)), lng: Math.max(c.w, Math.min(centro.lng, c.e)) }) <= raio);
+    const rotulo = `${raio} km de ${estado.centro ? "um ponto no mapa" : cidade.n}`;
+    return { modo, rotulo, uf: cidade?.uf || "", bairro: "", paginas: t.paginas, centro, raio,
+      partes: cel.map((c) => ({ consulta: (n) => n, retangulo: c, restrito: true,
+        circulo: cel.length === 1 ? { lat: centro.lat, lng: centro.lng, raio: raio * 1000 } : undefined })),
+      area: { modo, rotulo, circ: { lat: centro.lat, lng: centro.lng, raio } } };
+  }
+  if (modo === "estado") {
+    const uf = $("#b-uf").value, ret = Regiao.bboxUF(uf, mun);
+    if (!ret) return falta("Escolha o estado.");
+    const n = { rapida: 2, padrao: 3, cidade: 4 }[estado.tamanho];
+    return { modo, rotulo: Regiao.UFS[uf], uf, bairro: "", paginas: estado.tamanho === "cidade" ? 2 : 1,
+      partes: dividir(ret, n).map((c) => ({ consulta: (x) => x, retangulo: c, restrito: true })),
+      area: { modo, rotulo: Regiao.UFS[uf], ret } };
+  }
+  const caps = Regiao.capitais(mun);
+  if (!caps.length) return falta("Carregando a lista de cidades…");
+  return { modo: "brasil", rotulo: "Brasil (27 capitais)", uf: "BR", bairro: "", paginas: estado.tamanho === "cidade" ? 2 : 1,
+    partes: caps.map((m) => ({ consulta: (n) => `${n} em ${m.n} - ${m.uf}`, retangulo: caixaCidade(m), restrito: false, onde: m.n })),
+    area: { modo: "brasil", rotulo: "Brasil", pontos: caps.map((m) => ({ lat: m.lat, lng: m.lon })) } };
+}
+
+function mudarOnde(modo) {
+  estado.onde = modo;
+  $$("#b-onde button").forEach((b) => b.setAttribute("aria-pressed", b.dataset.o === modo));
+  $$("[data-modo]").forEach((el) => (el.hidden = !el.dataset.modo.split(" ").includes(modo)));
+  $("#b-onde-dica").textContent = DICAS_ONDE[modo];
+  $("#b-cidade-rotulo").textContent = modo === "raio" ? "Centro do raio (cidade)" : "Cidade";
+  if ((modo === "regiao" || modo === "estado") && !$("#b-uf").value) $("#b-uf").value = estado.cidade?.uf || "RJ";
+  if (modo === "regiao") preencherRegioes();
+  atualizarCusto();
+  previaArea();
+}
+
+function preencherRegioes() {
+  const uf = $("#b-uf").value, atual = $("#b-regiao").value;
+  const grupos = {};
+  for (const r of Regiao.regioesDoEstado(uf, estado.municipios || [])) (grupos[r.grupo] ||= []).push(r);
+  $("#b-regiao").innerHTML = Object.entries(grupos).map(([g, rs]) =>
+    `<optgroup label="${esc(g)}">${rs.map((r) => `<option value="${r.id}"${r.id === atual ? " selected" : ""}>${esc(r.nome)}</option>`).join("")}</optgroup>`).join("");
+}
+
+let previaTimer;
+function previaArea() {
+  clearTimeout(previaTimer);
+  previaTimer = setTimeout(async () => {
+    let p = null;
+    try { p = planoBusca(true); } catch { p = null; }
+    const mostrar = !!p && (estado.onde !== "cidade" || !!p.bairro === false);
+    $("#b-previa").hidden = !mostrar;
+    if (!mostrar) return;
+    $("#b-mapa-dica").textContent = estado.onde === "raio" ? "Toque no mapa para mudar o centro do raio."
+      : estado.onde === "brasil" ? "Um ponto por capital." : "Área que será pesquisada.";
+    try {
+      await Regiao.mapaArea($("#b-mapa"), p.area, estado.onde === "raio" ? { onToque: (c) => { estado.centro = c; previaArea(); atualizarCusto(); } } : {});
+    } catch (err) { console.error("previa", err); $("#b-previa").hidden = true; }
+  }, 120);
 }
 
 function usoDoMes() {
@@ -238,7 +350,7 @@ function usoDoMes() {
 function atualizarCusto() {
   const n = chamadasEstimadas(), usado = usoDoMes();
   $("#b-custo").textContent = `Usa até ${n} ${n === 1 ? "chamada" : "chamadas"} do Google ` +
-    `(este mês: ${usado} de ${COTA_GRATIS} grátis).`;
+    `(este mês: ${usado} de ${COTA_GRATIS} grátis).` + (n > 60 ? " Busca grande: comece com um tipo só." : "");
 }
 
 function progresso(fracao, etapa, titulo) {
@@ -253,17 +365,21 @@ async function buscar(e) {
   if (!estado.config?.google_key) { toast("Cadastre a chave do Google em Ajustes."); irPara("ajustes"); return; }
   const nichos = nichosDigitados();
   if (!nichos.length) { toast("Diga o que você procura."); return; }
-  if (!estado.cidade) {
-    await municipios();
-    const [nome, uf] = $("#b-cidade").value.split(" - ").map((s) => s && s.trim());
-    const m = estado.municipios.find((x) => x.chave === norm(nome) && (!uf || x.uf === uf.toUpperCase()));
-    if (!m) { toast("Escolha a cidade na lista."); $("#b-cidade").focus(); return; }
-    estado.cidade = m;
-  }
-  const cidade = estado.cidade, bairro = $("#b-bairro").value.trim(), t = TAMANHOS[estado.tamanho];
-  const regioes = bairro ? [caixaCidade(cidade)] : dividir(caixaCidade(cidade), t.grade);
-  const restrito = regioes.length > 1;
-  const onde = bairro ? `${bairro}, ${cidade.n} - ${cidade.uf}` : `${cidade.n} - ${cidade.uf}`;
+  await municipios();
+  let plano;
+  try { plano = planoBusca(); } catch (err) { toast(err.message); return; }
+  if (estado.onde === "cidade" && !estado.cidade) estado.cidade = cidadeDigitada();
+  const n = nichos.length * plano.partes.length * plano.paginas;
+  if (n > 60 && !confirm(`Esta busca pode usar até ${n} chamadas do Google. Continuar?`)) return;
+  const quando = estado.horario === "em" ? { dia: +$("#b-dia").value, min: (([h, m]) => h * 60 + m)($("#b-hora").value.split(":").map(Number)) } : null;
+  const filtroPos = (l) => {
+    if (plano.centro && !(l.geo && Regiao.distKm(plano.centro, l.geo) <= plano.raio)) return false;
+    if (quando && !(l.geo && Regiao.abertoEm(l.geo.per, quando.dia, quando.min) === true)) return false;
+    return true;
+  };
+  const area = { ...plano.area, notaMin: estado.notaMin, horario: estado.horario,
+    ...(quando ? { dia: quando.dia, hora: $("#b-hora").value } : {}) };
+  const regioes = plano.partes, onde = plano.area.rotulo;
 
   estado.buscando = true;
   $("#b-erro").hidden = true;
@@ -273,7 +389,7 @@ async function buscar(e) {
   const trava = await navigator.wakeLock?.request("screen").catch(() => null);
 
   const { data: busca, error } = await sb.from("buscas")
-    .insert({ nichos, cidade: cidade.n, uf: cidade.uf, bairro, tamanho: estado.tamanho }).select().single();
+    .insert({ nichos, cidade: plano.rotulo, uf: plano.uf, bairro: plano.bairro, tamanho: estado.tamanho, area }).select().single();
   if (error) { fimBusca(trava, "Não consegui iniciar a busca. Verifique a internet."); return; }
 
   let chamadas = 0, total = 0, novos = 0, falhas = 0, ultimoErro = "";
@@ -283,11 +399,12 @@ async function buscar(e) {
     const vistos = new Map();
     for (const [i, caixa] of regioes.entries()) {
       progresso(passo / passos, regioes.length > 1
-        ? `“${nicho}” — região ${i + 1} de ${regioes.length}` : `Procurando “${nicho}” em ${onde}…`);
+        ? `“${nicho}” — ${caixa.onde ? caixa.onde : `parte ${i + 1}`} (${i + 1} de ${regioes.length})` : `Procurando “${nicho}” em ${onde}…`);
       try {
-        const r = await api("/api/buscar", { consulta: `${nicho} em ${onde}`, nicho, retangulo: caixa, restrito, paginas: t.paginas });
+        const r = await api("/api/buscar", { consulta: caixa.consulta(nicho), nicho, retangulo: caixa.retangulo, circulo: caixa.circulo,
+          restrito: caixa.restrito, paginas: plano.paginas, abertoAgora: estado.horario === "agora", notaMin: estado.notaMin });
         chamadas += r.chamadas;
-        for (const l of r.leads) if (!vistos.has(l.place_id)) vistos.set(l.place_id, l);
+        for (const l of r.leads) if (!vistos.has(l.place_id) && filtroPos(l)) vistos.set(l.place_id, l);
       } catch (err) {
         chamadas += err.chamadas; falhas++; ultimoErro = err.message;
         if (/chave|recusou|login/i.test(err.message) && !vistos.size) break;
@@ -305,7 +422,7 @@ async function buscar(e) {
   await Promise.all([carregarBuscas(), carregarLeads()]);
   renderBuscar();
 
-  if (!total) { fimBusca(trava, falhas ? ultimoErro : "Nenhuma empresa encontrada. Tente outro termo ou cidade.", true); return; }
+  if (!total) { fimBusca(trava, falhas ? ultimoErro : "Nenhuma empresa encontrada. Tente outro termo, aumente a área ou tire um filtro.", true); return; }
   await enriquecer([...ids]);
   estado.medianas = Vendas.contextoComparacao(estado.leads);
   recalcular();
@@ -313,7 +430,32 @@ async function buscar(e) {
   fimBusca(trava, `Pronto! ${total} empresas: ${g.sem} sem presença, ${g.melhorar} a melhorar e ${g.boa} com presença boa.`);
   estado.filtro = { ...estado.filtro, busca: busca.id, status: "" };
   estado.mostrar = POR_PAGINA;
-  irPara("leads");
+  estado.mapaBusca = busca.id;
+  irPara("mapa");
+}
+
+// ── Mapa dos melhores ─────────────────────────────────────────────────────────
+function rotuloBusca(b) {
+  const onde = b.area?.rotulo || `${b.bairro ? b.bairro + ", " : ""}${b.cidade} - ${b.uf}`;
+  return `${b.nichos.join(", ")} · ${onde} · ${new Date(b.criado_em).toLocaleDateString("pt-BR")}`;
+}
+
+function renderMapa() {
+  const sel = $("#m-busca");
+  if (estado.mapaBusca && estado.mapaBusca !== "todos" && !estado.buscas.some((b) => b.id === estado.mapaBusca)) estado.mapaBusca = "";
+  if (!estado.mapaBusca && estado.buscas[0]) estado.mapaBusca = estado.buscas[0].id;
+  sel.innerHTML = `<option value="todos">Todos os meus leads</option>` +
+    estado.buscas.slice(0, 40).map((b) => `<option value="${b.id}">${esc(rotuloBusca(b))}</option>`).join("");
+  sel.value = estado.mapaBusca || "todos";
+  const b = estado.buscas.find((x) => x.id === estado.mapaBusca);
+  const leads = b ? estado.leads.filter((l) => (l.buscas || []).includes(b.id)) : estado.leads;
+  const dados = { leads, area: b?.area || null };
+  if (!estado.painelMapa) {
+    estado.painelMapa = Regiao.painelMapa($("#m-painel"), { ...dados, chance: (l) => chanceDe(l).pct, onAbrir: (id) => abrirLead(id) });
+  } else {
+    estado.painelMapa.atualizar(dados);
+    estado.painelMapa.redimensionar();
+  }
 }
 
 // Erros ficam fixos na tela (o aviso rápido some antes de dar tempo de ler).
@@ -1336,7 +1478,7 @@ $("#b-cidade").addEventListener("blur", () => setTimeout(() => ($("#b-sugestoes"
 $("#b-sugestoes").addEventListener("mousedown", (e) => e.preventDefault());
 $("#b-sugestoes").addEventListener("click", (e) => { const li = e.target.closest("li"); if (li) escolherCidade(sugestoesAtuais[+li.dataset.i]); });
 $("#b-nichos").addEventListener("input", atualizarCusto);
-$("#b-bairro").addEventListener("input", atualizarCusto);
+$("#b-bairro").addEventListener("input", () => { atualizarCusto(); previaArea(); });
 $("#b-tamanho").addEventListener("click", (e) => {
   const b = e.target.closest("button"); if (!b) return;
   estado.tamanho = b.dataset.t;
@@ -1344,12 +1486,51 @@ $("#b-tamanho").addEventListener("click", (e) => {
   atualizarCusto();
 });
 $("#form-busca").addEventListener("submit", buscar);
+$("#b-onde").addEventListener("click", async (e) => {
+  const b = e.target.closest("button"); if (!b) return;
+  await municipios();
+  mudarOnde(b.dataset.o);
+});
+$("#b-uf").innerHTML = Object.entries(Regiao.UFS).map(([uf, nome]) => `<option value="${uf}">${nome}</option>`).join("");
+$("#b-uf").value = "";
+$("#b-uf").addEventListener("change", () => { if (estado.onde === "regiao") preencherRegioes(); atualizarCusto(); previaArea(); });
+$("#b-regiao").addEventListener("change", () => { atualizarCusto(); previaArea(); });
+$("#b-raio").addEventListener("input", (e) => { $("#b-raio-v").textContent = `${e.target.value} km`; atualizarCusto(); previaArea(); });
+$("#b-gps").addEventListener("click", () => {
+  if (!navigator.geolocation) { toast("Este aparelho não informa a localização."); return; }
+  $("#b-gps").disabled = true;
+  navigator.geolocation.getCurrentPosition((p) => {
+    $("#b-gps").disabled = false;
+    estado.centro = { lat: p.coords.latitude, lng: p.coords.longitude };
+    atualizarCusto(); previaArea(); toast("Centro do raio: sua localização.");
+  }, () => { $("#b-gps").disabled = false; toast("Não consegui sua localização. Toque no mapa para marcar o centro."); }, { timeout: 12000 });
+});
+$("#b-nota").addEventListener("click", (e) => {
+  const b = e.target.closest("button"); if (!b) return;
+  estado.notaMin = +b.dataset.n;
+  $$("#b-nota button").forEach((x) => x.setAttribute("aria-pressed", x === b));
+});
+$("#b-dia").innerHTML = Regiao.DIAS.map((d, i) => `<option value="${i}">${d}</option>`).join("");
+$("#b-dia").value = String(new Date().getDay());
+$("#b-horario").addEventListener("click", (e) => {
+  const b = e.target.closest("button"); if (!b) return;
+  estado.horario = b.dataset.h;
+  $$("#b-horario button").forEach((x) => x.setAttribute("aria-pressed", x === b));
+  $("#b-quando").hidden = estado.horario !== "em";
+});
+$("#m-busca").addEventListener("change", (e) => { estado.mapaBusca = e.target.value; renderMapa(); });
 $("#btn-limpar-busca").addEventListener("click", () => {
   if (estado.buscando) return;
   $("#form-busca").reset();
   estado.cidade = null;
   estado.tamanho = "padrao";
   $$("#b-tamanho button").forEach((x) => x.setAttribute("aria-pressed", x.dataset.t === "padrao"));
+  estado.centro = null; estado.notaMin = 0; estado.horario = "";
+  $$("#b-nota button").forEach((x) => x.setAttribute("aria-pressed", x.dataset.n === "0"));
+  $$("#b-horario button").forEach((x) => x.setAttribute("aria-pressed", x.dataset.h === ""));
+  $("#b-quando").hidden = true;
+  $("#b-raio-v").textContent = "5 km";
+  mudarOnde("cidade");
   $("#b-sugestoes").hidden = true;
   $("#b-erro").hidden = true;
   atualizarCusto();

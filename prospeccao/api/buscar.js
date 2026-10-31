@@ -1,5 +1,6 @@
 // POST /api/buscar — uma busca na API oficial do Google Places (Text Search, versão nova).
-// Corpo: { consulta, nicho, retangulo: {s, n, w, e}, restrito, paginas (1–3) }
+// Corpo: { consulta, nicho, retangulo: {s, n, w, e}, circulo: {lat, lng, raio(m)}, restrito, paginas (1–3),
+//         abertoAgora, notaMin }
 // Devolve: { leads: [...], chamadas } — cada página de até 20 resultados é uma chamada cobrada.
 import { autenticar, chaveGoogle, formataTel, lerCorpo, responder, telefoneBr, whatsappEm } from "./_lib.js";
 
@@ -7,12 +8,32 @@ const CAMPOS = [
   "places.id", "places.displayName", "places.formattedAddress", "places.addressComponents",
   "places.internationalPhoneNumber", "places.nationalPhoneNumber", "places.websiteUri", "places.rating",
   "places.userRatingCount", "places.primaryTypeDisplayName", "places.googleMapsUri", "places.businessStatus",
+  "places.location", "places.regularOpeningHours", "places.currentOpeningHours",
   "nextPageToken",
 ].join(",");
 
 function componente(lugar, tipo, curto = false) {
   const c = (lugar.addressComponents || []).find((x) => (x.types || []).includes(tipo));
   return c ? (curto ? c.shortText : c.longText) || "" : "";
+}
+
+// Horário compacto: [[diaAbre, hAbre, mAbre, diaFecha, hFecha, mFecha], ...] (dia 0 = domingo).
+function horario(lugar) {
+  const h = lugar.regularOpeningHours || {};
+  const per = (h.periods || []).map((p) => {
+    const a = p.open || {}, f = p.close;
+    return f ? [a.day ?? 0, a.hour ?? 0, a.minute ?? 0, f.day ?? 0, f.hour ?? 0, f.minute ?? 0]
+      : [a.day ?? 0, a.hour ?? 0, a.minute ?? 0, a.day ?? 0, a.hour ?? 0, a.minute ?? 0]; // sem fechamento = aberto 24h, todos os dias
+  });
+  return { per, txt: h.weekdayDescriptions || [] };
+}
+
+export function geoDe(lugar) {
+  const loc = lugar.location || {};
+  if (loc.latitude == null) return null;
+  const { per, txt } = horario(lugar);
+  const aberto = lugar.currentOpeningHours ? !!lugar.currentOpeningHours.openNow : null;
+  return { lat: +loc.latitude.toFixed(6), lng: +loc.longitude.toFixed(6), per, txt, aberto, quando: new Date().toISOString() };
 }
 
 export function leadDe(lugar, nicho) {
@@ -40,6 +61,7 @@ export function leadDe(lugar, nicho) {
     avaliacoes: lugar.userRatingCount || 0,
     maps: lugar.googleMapsUri || "",
     fechado: lugar.businessStatus === "CLOSED_PERMANENTLY",
+    geo: geoDe(lugar),
   };
 }
 
@@ -74,14 +96,24 @@ export default async function handler(req, res) {
   const chave = await chaveGoogle(sessao.token);
   if (!chave) return responder(res, 400, { erro: "Cadastre a chave do Google em Ajustes." });
 
-  const { consulta, nicho = "", retangulo, restrito = false, paginas = 3 } = await lerCorpo(req);
-  if (!consulta || !retangulo) return responder(res, 400, { erro: "Busca incompleta." });
-  const area = { rectangle: {
+  const { consulta, nicho = "", retangulo, circulo, restrito = false, paginas = 3, abertoAgora = false, notaMin = 0 }
+    = await lerCorpo(req);
+  if (!consulta || (!retangulo && !circulo)) return responder(res, 400, { erro: "Busca incompleta." });
+  const ret = retangulo && { rectangle: {
     low: { latitude: +retangulo.s, longitude: +retangulo.w },
     high: { latitude: +retangulo.n, longitude: +retangulo.e },
   } };
-  const corpo = { textQuery: String(consulta).slice(0, 200), languageCode: "pt-BR", regionCode: "BR", pageSize: 20,
-    [restrito ? "locationRestriction" : "locationBias"]: area };
+  // O Google só aceita círculo como preferência (bias); para restringir, usamos o retângulo em volta do círculo.
+  const circ = circulo && { circle: {
+    center: { latitude: +circulo.lat, longitude: +circulo.lng },
+    radius: Math.min(50000, Math.max(100, +circulo.raio || 5000)),
+  } };
+  const corpo = { textQuery: String(consulta).slice(0, 200), languageCode: "pt-BR", regionCode: "BR", pageSize: 20 };
+  if (restrito && ret) corpo.locationRestriction = ret;
+  else corpo.locationBias = circ || ret;
+  if (abertoAgora) corpo.openNow = true;
+  const nota = Math.round((+notaMin || 0) * 2) / 2;
+  if (nota >= 1 && nota <= 5) corpo.minRating = nota;
 
   const leads = [];
   let chamadas = 0, token = "";

@@ -78,6 +78,11 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--pri); outli
 .chips::-webkit-scrollbar { display: none; }
 .chip { flex: none; border: 1px solid var(--linha); background: var(--card); border-radius: 999px;
   padding: 7px 13px; font-size: 14px; cursor: pointer; white-space: nowrap; }
+.segmento.onde { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
+.segmento.onde button { min-height: 44px; padding: 8px 2px; }
+.segmento.onde button b { font-size: 14px; }
+.previa-mapa { margin-top: 12px; }
+#b-uf, #b-regiao, #b-dia, #m-busca { appearance: auto; }
 .chip[aria-pressed="true"] { background: var(--pri); color: var(--pri-txt); border-color: var(--pri); }
 .chip small { opacity: .75; margin-left: 4px; }
 
@@ -329,16 +334,62 @@ nav.abas button { position: relative; }
       <label class="campo" for="b-nichos">O que você procura?</label>
       <input id="b-nichos" type="text" placeholder="ex.: padaria, pet shop, dentista" required>
       <p class="dica">Separe por vírgula para buscar vários tipos de uma vez.</p>
-      <label class="campo" for="b-cidade">Cidade</label>
-      <input id="b-cidade" type="text" placeholder="Comece a digitar…" required>
-      <div class="sugestoes"><ul id="b-sugestoes" hidden></ul></div>
-      <label class="campo" for="b-bairro">Bairro <span style="font-weight:400">(opcional)</span></label>
-      <input id="b-bairro" type="text" placeholder="ex.: Centro">
+      <label class="campo">Onde buscar</label>
+      <div class="segmento onde" id="b-onde">
+        <button type="button" data-o="cidade" aria-pressed="true"><b>Cidade</b></button>
+        <button type="button" data-o="regiao"><b>Região</b></button>
+        <button type="button" data-o="raio"><b>Raio</b></button>
+        <button type="button" data-o="estado"><b>Estado</b></button>
+        <button type="button" data-o="brasil"><b>Brasil</b></button>
+      </div>
+      <p class="dica" id="b-onde-dica">Uma cidade, com bairro opcional.</p>
+      <div data-modo="cidade raio">
+        <label class="campo" for="b-cidade" id="b-cidade-rotulo">Cidade</label>
+        <input id="b-cidade" type="text" placeholder="Comece a digitar…">
+        <div class="sugestoes"><ul id="b-sugestoes" hidden></ul></div>
+      </div>
+      <div data-modo="cidade">
+        <label class="campo" for="b-bairro">Bairro <span style="font-weight:400">(opcional)</span></label>
+        <input id="b-bairro" type="text" placeholder="ex.: Centro">
+      </div>
+      <div data-modo="regiao estado" hidden>
+        <label class="campo" for="b-uf">Estado</label>
+        <select id="b-uf"></select>
+      </div>
+      <div data-modo="regiao" hidden>
+        <label class="campo" for="b-regiao">Região</label>
+        <select id="b-regiao"></select>
+      </div>
+      <div data-modo="raio" hidden>
+        <label class="campo" for="b-raio">Raio de busca: <b id="b-raio-v" style="color:var(--txt)">5 km</b></label>
+        <input id="b-raio" type="range" min="1" max="50" value="5" style="width:100%; accent-color:var(--pri)">
+        <button class="btn peq" type="button" id="b-gps" style="margin-top:8px">Usar minha localização</button>
+      </div>
+      <div class="previa-mapa rg" id="b-previa" hidden>
+        <div class="rg-mapa peq" id="b-mapa"></div>
+        <p class="dica" id="b-mapa-dica"></p>
+      </div>
+      <label class="campo">Nota mínima no Google</label>
+      <div class="chips" id="b-nota">
+        <button type="button" class="chip" data-n="0" aria-pressed="true">Qualquer</button>
+        <button type="button" class="chip" data-n="4">4,0 ou mais</button>
+        <button type="button" class="chip" data-n="4.5">4,5 ou mais</button>
+      </div>
+      <label class="campo">Horário de funcionamento</label>
+      <div class="chips" id="b-horario">
+        <button type="button" class="chip" data-h="" aria-pressed="true">Qualquer</button>
+        <button type="button" class="chip" data-h="agora">Aberto agora</button>
+        <button type="button" class="chip" data-h="em">Aberto em…</button>
+      </div>
+      <div id="b-quando" style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:8px" hidden>
+        <select id="b-dia" aria-label="Dia da semana"></select>
+        <input id="b-hora" type="time" value="19:00" step="900" aria-label="Horário" style="width:100%; padding:12px 14px; border:1px solid var(--linha); border-radius:10px; background:var(--bg); min-height:48px">
+      </div>
       <label class="campo">Tamanho da busca</label>
       <div class="segmento" id="b-tamanho">
         <button type="button" data-t="rapida"><b>Rápida</b><span>até 20 por tipo</span></button>
         <button type="button" data-t="padrao" aria-pressed="true"><b>Padrão</b><span>até 60 por tipo</span></button>
-        <button type="button" data-t="cidade"><b>Cidade toda</b><span>varre o mapa</span></button>
+        <button type="button" data-t="cidade"><b>Varredura</b><span>varre a área toda</span></button>
       </div>
       <p class="dica" id="b-custo"></p>
       <div style="display:grid; grid-template-columns:1fr 2fr; gap:8px; margin-top:14px">
@@ -369,6 +420,16 @@ nav.abas button { position: relative; }
   </section>
 
   <!-- Leads -->
+  <section id="tela-mapa" hidden>
+    <div class="cartao">
+      <h2>Melhores negócios no mapa</h2>
+      <label class="campo" for="m-busca" style="margin-top:0">Mostrar</label>
+      <select id="m-busca"></select>
+      <p class="dica">A porcentagem é o índice de destaque: nota no Google pesada pelo número de avaliações, comparado com os outros da mesma área. “Top 5%” quer dizer que está entre os 5% melhores dali.</p>
+      <div id="m-painel" style="margin-top:12px"></div>
+    </div>
+  </section>
+
   <section id="tela-leads" hidden>
     <div class="resumo" id="resumo"></div>
     <input id="f-texto" type="search" placeholder="Procurar por nome, bairro, categoria…" style="margin-bottom:10px">
@@ -593,6 +654,8 @@ nav.abas button { position: relative; }
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>Buscar</button>
   <button data-tela="leads">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>Leads</button>
+  <button data-tela="mapa">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>Mapa</button>
   <button data-tela="contatos">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Contato</button>
   <button data-tela="painel">
@@ -606,6 +669,7 @@ nav.abas button { position: relative; }
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="/vendas.js"></script>
+<script src="/regiao.js"></script>
 <script src="/app.js"></script>
 </body>
 </html>
