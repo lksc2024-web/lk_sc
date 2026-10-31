@@ -15,6 +15,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/styles.css">
+<script>/* tema antes de pintar a tela: escuro por padrão, claro ou automático se você escolheu */
+try { var t = localStorage.getItem("central-tema") || "dark"; if (t !== "auto") document.documentElement.dataset.theme = t; } catch (e) { document.documentElement.dataset.theme = "dark"; }</script>
 </head>
 <body>
 
@@ -46,6 +48,7 @@
     <div class="brand-row"><span class="mark"><i></i><i></i><i></i></span><span><b>Central</b><small id="side-nome">—</small></span></div>
     <nav class="menu" id="menu"></nav>
     <div class="side-foot">
+      <button type="button" class="side-btn" id="btn-tema-side"><svg viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 019.5 4a8 8 0 1010.5 10.5z"/></svg><span id="tema-rot">Tema escuro</span></button>
       <button type="button" class="side-btn" id="btn-sair"><svg viewBox="0 0 24 24"><path d="M15 4h3a2 2 0 012 2v12a2 2 0 01-2 2h-3M10 17l5-5-5-5M15 12H4"/></svg>Sair</button>
     </div>
   </aside>
@@ -57,6 +60,7 @@
           <button type="button" data-d="7">7d</button><button type="button" data-d="30" aria-pressed="true">30d</button><button type="button" data-d="90">90d</button><button type="button" data-d="365">12m</button>
         </div>
         <button class="btn" type="button" id="btn-custom" hidden><svg viewBox="0 0 24 24"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg><span>Personalizar</span></button>
+        <button class="btn tema-tb" type="button" id="btn-tema" aria-label="Mudar tema" title="Mudar tema"><svg viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 019.5 4a8 8 0 1010.5 10.5z"/></svg></button>
         <button class="btn pri" type="button" id="btn-acao" hidden></button>
       </div>
     </header>

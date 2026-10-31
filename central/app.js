@@ -51,6 +51,8 @@ var ICON = {
   projetos: '<svg viewBox="0 0 24 24"><path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg>',
   hospedagens: '<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="7" rx="2"/><rect x="3" y="13" width="18" height="7" rx="2"/><path d="M7 7.5h.01M7 16.5h.01M11 7.5h6M11 16.5h6"/></svg>',
   investir: '<svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg>',
+  melhores: '<svg viewBox="0 0 24 24"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/></svg>',
+  tema: '<svg viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 019.5 4a8 8 0 1010.5 10.5z"/></svg>',
   prospeccao: '<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.3-4.3"/><path d="M11 8v6M8 11h6"/></svg>',
   clientes: '<svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.5 3.4-5.5 6.5-5.5s5.7 2 6.5 5.5"/><path d="M16 4.5a3.5 3.5 0 010 7M18 14.8c1.8.7 3 2.5 3.5 5.2"/></svg>',
   mensagens: '<svg viewBox="0 0 24 24"><path d="M4 5h16v11H8l-4 4V5z"/><path d="M8 9h8M8 12.5h5"/></svg>',
@@ -162,9 +164,16 @@ async function carregarTudo() {
   if (!S.cfg) { var c = await sb.from("central_config").insert({}).select().single(); if (c.error) throw c.error; S.cfg = c.data; }
   S.perfil = (q[1].data && q[1].data.perfil) || {};
   S.projetos = q[2].data || []; S.metricas = q[3].data || []; S.vendas = q[4].data || []; S.clientes = q[5].data || [];
-  S.leads = q[6].data || []; S.links = q[7].data || []; S.cliques = q[8].data || []; S.modelos = q[9].data || []; S.disparos = q[10].data || []; S.agenda = q[11].data || [];
+  S.leads = q[6].data || []; S.links = q[7].data || []; S.cliques = q[8].data || []; S.modelos = modelosComPadrao(q[9].data || []); S.disparos = q[10].data || []; S.agenda = q[11].data || [];
   $("#side-nome").textContent = S.perfil.nome ? "Olá, " + S.perfil.nome : (S.user.email || "");
 }
+// Modelo embutido para quando quem responde é o robô do WhatsApp Business. Some assim que você salvar um seu.
+function modelosComPadrao(lista) {
+  if (lista.some(function (m) { return m.objetivo === "resposta" && m.gatilho === "automatica"; })) return lista;
+  return lista.concat([{ id: "padrao-automatica", nome: "Depois da mensagem automática", objetivo: "resposta", gatilho: "automatica", canal: "whatsapp", nicho: "", assunto: "",
+    corpo: "Oi, tudo bem? Recebi a mensagem automática, sem pressa. Quando o responsável puder ler: dei uma olhada em como vocês aparecem no Google e tenho uma ideia simples para trazer mais clientes. Posso mandar por aqui?" }]);
+}
+function idModelo(m) { return m && m.id && String(m.id).indexOf("padrao-") !== 0 ? m.id : null; }
 function ouvirAoVivo() {
   try {
     sb.channel("central-vendas").on("postgres_changes", { event: "*", schema: "public", table: "vendas" }, function (p) {
@@ -250,6 +259,7 @@ var VIEWS = [
   ["agenda", "Agenda", "Agenda", "Relacionamento"],
   ["responder", "Responder cliente", "Responder", "Relacionamento"],
   ["portfolio", "Portfólio", "Portfólio", "Relacionamento"],
+  ["melhores", "Melhores do momento", "Melhores", "Relacionamento"],
   ["prospeccao", "Prospecção e leads", "Leads", "Relacionamento"],
   ["clientes", "Clientes", "Clientes", "Relacionamento"],
   ["mensagens", "Mensagens", "Mensagens", "Relacionamento"],
@@ -271,16 +281,17 @@ function montarMenu() {
 }
 function marcarMenu() {
   $$("[data-v]").forEach(function (b) { if (b.dataset.v === S.view) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current"); });
-  var bm = $("#bot-mais"); if (bm) { if (["responder", "portfolio", "projetos", "hospedagens", "investir", "mensagens", "conexoes"].indexOf(S.view) >= 0) bm.setAttribute("aria-current", "page"); else bm.removeAttribute("aria-current"); }
+  var bm = $("#bot-mais"); if (bm) { if (["melhores", "responder", "portfolio", "projetos", "hospedagens", "investir", "mensagens", "conexoes"].indexOf(S.view) >= 0) bm.setAttribute("aria-current", "page"); else bm.removeAttribute("aria-current"); }
 }
 document.addEventListener("click", function (e) {
   var b = e.target.closest("[data-v]"); if (b && !b.closest(".modal")) { ir(b.dataset.v); return; }
   if (e.target.closest("#bot-mais")) abrirMais();
 });
 function abrirMais() {
-  modal("Mais", '<div class="cl">' + ["responder", "portfolio", "projetos", "hospedagens", "mensagens", "investir", "conexoes"].map(function (id) { var v = VIEWS.find(function (x) { return x[0] === id; }); return '<button type="button" class="btn" style="justify-content:flex-start;padding:12px" data-ir="' + id + '">' + ICON[id] + v[1] + "</button>"; }).join("") +
-    '<a class="btn" style="justify-content:flex-start;padding:12px" href="/assistente/">' + ICON.mic + 'Assistente (app separado)</a><button type="button" class="btn danger" style="justify-content:flex-start;padding:12px" id="m-sair">Sair da conta</button></div>', function (box) {
+  modal("Mais", '<div class="cl">' + ["melhores", "responder", "portfolio", "projetos", "hospedagens", "mensagens", "investir", "conexoes"].map(function (id) { var v = VIEWS.find(function (x) { return x[0] === id; }); return '<button type="button" class="btn" style="justify-content:flex-start;padding:12px" data-ir="' + id + '">' + ICON[id] + v[1] + "</button>"; }).join("") +
+    '<a class="btn" style="justify-content:flex-start;padding:12px" href="/assistente/">' + ICON.mic + 'Assistente (app separado)</a><button type="button" class="btn" style="justify-content:flex-start;padding:12px" id="m-tema">' + ICON.tema + '<span>' + NOME_TEMA[temaAtual()] + '</span></button><button type="button" class="btn danger" style="justify-content:flex-start;padding:12px" id="m-sair">Sair da conta</button></div>', function (box) {
     $$("[data-ir]", box).forEach(function (b) { b.onclick = function () { fecharModal(); ir(b.dataset.ir); }; });
+    $("#m-tema", box).onclick = function () { trocarTema(); $("#m-tema", box).lastChild.textContent = NOME_TEMA[temaAtual()]; };
     $("#m-sair", box).onclick = function () { fecharModal(); sb.auth.signOut(); };
   });
 }
@@ -302,7 +313,7 @@ function render() {
   $("#seg-dias").hidden = !usaPeriodo;
   $("#btn-custom").hidden = S.view !== "geral";
   acaoTopo(null);
-  var fn = { geral: vGeral, projetos: vProjetos, hospedagens: vHospedagens, investir: vInvestir, prospeccao: vProspeccao, clientes: vClientes, mensagens: vMensagens, conexoes: vConexoes, agenda: vAgenda, responder: vResponder, portfolio: vPortfolio }[S.view];
+  var fn = { geral: vGeral, projetos: vProjetos, hospedagens: vHospedagens, investir: vInvestir, prospeccao: vProspeccao, clientes: vClientes, mensagens: vMensagens, conexoes: vConexoes, agenda: vAgenda, responder: vResponder, portfolio: vPortfolio, melhores: vMelhores }[S.view];
   try { fn($("#conteudo")); } catch (e) { console.error(e); $("#conteudo").innerHTML = '<div class="card vazio"><b>Algo deu errado nesta tela.</b>Recarregue a página. Se continuar, me avise.</div>'; }
 }
 
@@ -744,13 +755,13 @@ async function salvarLead(l, mud) {
 }
 async function registrarDisparo(publico, alvo, modelo, canal, txt) {
   var agora = new Date();
-  var d = { publico: publico, destinatario_id: alvo.id, canal: canal, modelo_id: modelo ? modelo.id : null, objetivo: modelo ? modelo.objetivo : "", nicho: alvo.nicho || alvo.categoria || "" };
+  var d = { publico: publico, destinatario_id: alvo.id, canal: canal, modelo_id: idModelo(modelo), objetivo: modelo ? modelo.objetivo : "", nicho: alvo.nicho || alvo.categoria || "" };
   sb.from("disparos").insert(d).select().single().then(function (r) { if (!r.error) S.disparos.push(r.data); });
   if (publico === "lead") {
     var dados = Object.assign({}, alvo.dados || {}); var c = dados.ciclo || {};
     var envio = { t: agora.toISOString(), etapa: alvo.status === "novo" ? "abordagem" : "retomar", dow: agora.getDay(), h: agora.getHours(), txt: String(txt || "").slice(0, 1000) };
     dados.ciclo = { envios: (c.envios || []).concat([envio]), respostas: c.respostas || [], encerrado: !!c.encerrado };
-    var mud = { dados: dados, ultimo_contato: envio.t, historico: (alvo.historico || []).concat([{ t: envio.t, tipo: canal, txt: (canal === "email" ? "E-mail" : "WhatsApp") + " enviado pela Central" + (modelo ? ": " + modelo.nome : "") }]) };
+    var mud = { dados: dados, ultimo_contato: envio.t, historico: (alvo.historico || []).concat([{ t: envio.t, tipo: canal, txt: ({ email: "E-mail", instagram: "Mensagem no Instagram", facebook: "Mensagem no Facebook", telefone: "Ligação" }[canal] || "WhatsApp") + " enviado pela Central" + (modelo ? ": " + modelo.nome : "") }]) };
     if (alvo.status === "novo") mud.status = "contatado";
     return salvarLead(alvo, mud);
   } else {
@@ -909,14 +920,16 @@ function formModelo(m) {
     '<div class="f full" id="fm-gat-box"><label for="fm-gat">Quando usar (tipo de resposta do cliente)</label><select class="inp" id="fm-gat">' + GATILHOS.map(function (g) { return '<option value="' + g.id + '"' + (m.gatilho === g.id ? " selected" : "") + ">" + esc(g.nome) + "</option>"; }).join("") + "</select></div>" +
     '<div class="f"><label for="fm-nicho">Nicho (opcional)</label><input class="inp" id="fm-nicho" value="' + esc(m.nicho || "") + '" placeholder="Vale para todos se vazio"></div><div class="f"><label for="fm-ass">Assunto do e-mail</label><input class="inp" id="fm-ass" value="' + esc(m.assunto || "") + '"></div>' +
     '<div class="f full"><label for="fm-corpo">Mensagem</label><textarea class="inp" id="fm-corpo" style="min-height:150px">' + esc(m.corpo || "") + '</textarea><span class="hint">Use {nome}, {empresa}, {cidade}, {nicho} ou {produto}: cada pessoa recebe com os próprios dados.</span></div></form>' +
-    '<div class="acoes">' + (m.id ? '<button class="btn danger esq" type="button" id="fm-del">Excluir</button>' : "") + '<button class="btn" type="button" data-fechar>Cancelar</button><button class="btn pri" type="button" id="fm-ok">Salvar</button></div>', function (bx) {
+    '<div class="acoes">' + (idModelo(m) ? '<button class="btn danger esq" type="button" id="fm-del">Excluir</button>' : "") + '<button class="btn" type="button" data-fechar>Cancelar</button><button class="btn pri" type="button" id="fm-ok">Salvar</button></div>', function (bx) {
     var ob = $("#fm-obj", bx); function visG() { $("#fm-gat-box", bx).hidden = ob.value !== "resposta"; } ob.addEventListener("change", visG); visG();
     $("#fm-ok", bx).onclick = async function () {
       var d = { nome: $("#fm-nome", bx).value.trim(), objetivo: $("#fm-obj", bx).value, gatilho: $("#fm-obj", bx).value === "resposta" ? $("#fm-gat", bx).value : "", canal: $("#fm-canal", bx).value, nicho: $("#fm-nicho", bx).value.trim(), assunto: $("#fm-ass", bx).value.trim(), corpo: $("#fm-corpo", bx).value.trim() };
       if (!d.nome || !d.corpo) { toast("Preencha o nome e a mensagem."); return; }
-      var r = m.id ? await sb.from("modelos").update(d).eq("id", m.id).select().single() : await sb.from("modelos").insert(d).select().single();
+      var novo = !idModelo(m);
+      var r = !novo ? await sb.from("modelos").update(d).eq("id", m.id).select().single() : await sb.from("modelos").insert(d).select().single();
       if (r.error) return erro(r.error);
       if (m.id) S.modelos = S.modelos.map(function (x) { return x.id === m.id ? r.data : x; }); else S.modelos.push(r.data);
+      S.modelos = modelosComPadrao(S.modelos.filter(function (x) { return x.id !== "padrao-automatica" || d.gatilho !== "automatica"; }));
       fecharModal(); toast("Modelo salvo."); render();
     };
     var del = $("#fm-del", bx);
@@ -1249,11 +1262,12 @@ async function concluirResposta(box, enviar) {
       var stOn = $("#rs-st-on", box) && $("#rs-st-on", box).checked, st = $("#rs-st", box) ? $("#rs-st", box).value : "";
       if (al.tipo === "lead") {
         var l = al.obj, dados = Object.assign({}, l.dados || {}), c = dados.ciclo || {};
-        var respostas = (c.respostas || []).concat([{ t: agora.toISOString(), tipo: g.tipo4, txt: S.resp.texto.slice(0, 1000) }]);
-        var envios = c.envios || []; if (enviar) envios = envios.concat([{ t: agora.toISOString(), etapa: g.tipo4, dow: agora.getDay(), h: agora.getHours(), txt: txt.slice(0, 1000) }]);
+        var robo = g.id === "automatica"; // o robô do WhatsApp Business não conta como resposta do cliente
+        var respostas = robo ? (c.respostas || []) : (c.respostas || []).concat([{ t: agora.toISOString(), tipo: g.tipo4, txt: S.resp.texto.slice(0, 1000) }]);
+        var envios = c.envios || []; if (enviar) envios = envios.concat([{ t: agora.toISOString(), etapa: robo ? "extra" : g.tipo4, dow: agora.getDay(), h: agora.getHours(), txt: txt.slice(0, 1000) }]);
         dados.ciclo = { envios: envios, respostas: respostas, encerrado: !!c.encerrado || g.id === "remover" };
         if (g.id === "remover") dados.nao_contatar = true;
-        var hist = (l.historico || []).concat([{ t: agora.toISOString(), tipo: "resposta", txt: "Cliente respondeu (" + g.nome.toLowerCase() + "): " + S.resp.texto.slice(0, 300) }]);
+        var hist = (l.historico || []).concat([{ t: agora.toISOString(), tipo: robo ? "nota" : "resposta", txt: robo ? "Caiu na mensagem automática: " + S.resp.texto.slice(0, 200) : "Cliente respondeu (" + g.nome.toLowerCase() + "): " + S.resp.texto.slice(0, 300) }]);
         if (enviar) hist.push({ t: agora.toISOString(), tipo: "whatsapp", txt: "Resposta enviada pela Central: " + (m ? m.nome : "") });
         var mud = { dados: dados, historico: hist, ultimo_contato: agora.toISOString() };
         if (stOn && st && st !== l.status) { mud.status = st; feito.push("status " + LEAD_ST.find(function (s) { return s[0] === st; })[1].toLowerCase()); }
@@ -1264,7 +1278,7 @@ async function concluirResposta(box, enviar) {
         if (stOn && st && st !== cl.status) { mc.status = st; feito.push("status " + st); }
         var ru = await sb.from("clientes").update(mc).eq("id", cl.id).select().single(); if (ru.error) throw ru.error; S.clientes = S.clientes.map(function (x) { return x.id === cl.id ? ru.data : x; });
       }
-      if (enviar) { var dp = await sb.from("disparos").insert({ publico: al.tipo, destinatario_id: al.obj.id, canal: "whatsapp", modelo_id: m ? m.id : null, objetivo: "resposta", nicho: al.obj.nicho || al.obj.categoria || "" }).select().single(); if (!dp.error) S.disparos.push(dp.data); }
+      if (enviar) { var dp = await sb.from("disparos").insert({ publico: al.tipo, destinatario_id: al.obj.id, canal: "whatsapp", modelo_id: idModelo(m), objetivo: "resposta", nicho: al.obj.nicho || al.obj.categoria || "" }).select().single(); if (!dp.error) S.disparos.push(dp.data); }
     }
     if ($("#rs-ag-on", box).checked && $("#rs-ag-q", box).value) {
       var ag = { tipo: g.agendaReuniao ? "reuniao" : "retomada", quando: new Date($("#rs-ag-q", box).value).toISOString(), titulo: g.nome, obs: "Cliente disse: " + S.resp.texto.slice(0, 300), origem: "resposta" };
@@ -1522,9 +1536,253 @@ $("#fab-voz").addEventListener("click", function () { abrirVoz(); });
 /* ───────────── início ───────────── */
 setInterval(checarLembretes, 30000);
 document.addEventListener("visibilitychange", function () { if (document.visibilityState === "visible") checarLembretes(); });
+/* ───────────── tema ───────────── */
+var NOME_TEMA = { dark: "Tema escuro", light: "Tema claro", auto: "Tema automático" };
+function temaAtual() { try { return localStorage.getItem("central-tema") || "dark"; } catch (e) { return "dark"; } }
+function aplicarTema(t) {
+  if (t === "auto") delete document.documentElement.dataset.theme; else document.documentElement.dataset.theme = t;
+  var escuro = t === "dark" || (t === "auto" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+  var mt = document.querySelector('meta[name="theme-color"]'); if (mt) mt.content = escuro ? "#0C0F0E" : "#F2F3F1";
+  var r = $("#tema-rot"); if (r) r.textContent = NOME_TEMA[t];
+  var b = $("#btn-tema"); if (b) b.title = NOME_TEMA[t] + " (clique para mudar)";
+}
+function trocarTema() {
+  var ordem = ["dark", "light", "auto"], t = ordem[(ordem.indexOf(temaAtual()) + 1) % 3];
+  try { localStorage.setItem("central-tema", t); } catch (e) {}
+  aplicarTema(t); toast(NOME_TEMA[t] + (t === "auto" ? ": segue o celular ou o computador." : "."));
+  if (S.user) render();
+}
+$("#btn-tema").addEventListener("click", trocarTema);
+$("#btn-tema-side").addEventListener("click", trocarTema);
+aplicarTema(temaAtual());
 var mq = window.matchMedia("(prefers-color-scheme: dark)"); if (mq.addEventListener) mq.addEventListener("change", function () { if (S.user) render(); });
 var rz; window.addEventListener("resize", function () { clearTimeout(rz); rz = setTimeout(function () { Object.keys(CH).forEach(function (id) { CH[id].resize(); }); }, 150); });
 setInterval(function () { if (S.user && S.view === "geral" && document.visibilityState === "visible") { var f = $("#w-feed"); if (f) wFeed(f); } }, 60000);
 if ("serviceWorker" in navigator) addEventListener("load", function () { navigator.serviceWorker.register("/sw.js").catch(function () {}); });
 sb.auth.getSession().then(function (r) { if (!r.data.session) mostrarLogin(); });
+
+// Melhores do momento (Central): o mesmo painel da Prospecção, lido com os leads daqui.
+// Qual nicho abordar de manhã, à tarde e à noite em cada dia, no Brasil ou fora, e quais leads
+// (só os que têm alguma forma de contato) valem mais agora. Regras em vendas.js da Prospecção.
+var vMelhores = (function () {
+  var MC = { dia: null, periodo: null, nichos: [], area: "", raio: 0, mercado: "BR", verTodos: false, mundo: null, mundoP: null, timer: null };
+  var NOME_CANAL = { whatsapp: "WhatsApp", instagram: "Instagram", email: "E-mail", telefone: "Ligar", facebook: "Facebook" };
+  var CLASSE_CANAL = { whatsapp: "wa", instagram: "ig", email: "pri", telefone: "", facebook: "pri" };
+  var ORDEM = ["América do Sul", "América do Norte", "América Central e Caribe", "Europa", "África", "Ásia", "Oceania"];
+
+  function carregarMundo() {
+    if (MC.mundo) return Promise.resolve(MC.mundo);
+    if (!MC.mundoP) MC.mundoP = fetch(PROSPECCAO_URL + "/mundo.json").then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+      .then(function (j) { MC.mundo = j; return j; }).catch(function () { MC.mundoP = null; return null; });
+    return MC.mundoP;
+  }
+  function fuso() {
+    if (MC.mercado === "BR" || !MC.mundo) return "America/Sao_Paulo";
+    var P = MC.mundo.paises[MC.mercado];
+    return (P && P.cidades[0] && P.cidades[0][4]) || "America/Sao_Paulo";
+  }
+  function cap(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; }
+  function aberto(l) { return ["fechado", "descartado"].indexOf(l.status) < 0 && !l.fechado; }
+
+  function leadsDoMercado() {
+    return S.leads.filter(function (l) { var p = (l.dados && l.dados.geo && l.dados.geo.pais) || "BR"; return MC.mercado === "BR" ? p === "BR" : p === MC.mercado; });
+  }
+  function areasDosLeads(leads) {
+    var cid = {}, bai = {};
+    leads.forEach(function (l) {
+      if (!l.cidade) return;
+      var g = l.dados && l.dados.geo, kc = "c:" + l.cidade + "|" + (l.uf || "");
+      (cid[kc] = cid[kc] || { n: 0, pts: [] }).n++; if (g) cid[kc].pts.push(g);
+      if (l.bairro) { var kb = "b:" + l.bairro + "|" + l.cidade; (bai[kb] = bai[kb] || { n: 0, pts: [] }).n++; if (g) bai[kb].pts.push(g); }
+    });
+    function centro(p) { if (!p.length) return null; var la = 0, ln = 0; p.forEach(function (x) { la += x.lat; ln += x.lng; }); return { lat: la / p.length, lng: ln / p.length }; }
+    function lista(o) { return Object.keys(o).sort(function (a, b) { return o[b].n - o[a].n; }).map(function (k) { return { k: k, n: o[k].n, centro: centro(o[k].pts) }; }); }
+    return { cidades: lista(cid), bairros: lista(bai).slice(0, 40) };
+  }
+  function filtroArea(areas) {
+    if (!MC.area) return null;
+    var tipo = MC.area[0], p = MC.area.slice(2).split("|"), a = p[0], b = p[1];
+    var info = areas.cidades.concat(areas.bairros).find(function (x) { return x.k === MC.area; });
+    var dentro = tipo === "c" ? function (l) { return l.cidade === a && (l.uf || "") === b; } : function (l) { return l.bairro === a && l.cidade === b; };
+    if (!MC.raio || !info || !info.centro) return dentro;
+    return function (l) { return dentro(l) || (l.dados && l.dados.geo && Regiao.distKm(info.centro, l.dados.geo) <= MC.raio); };
+  }
+  function rotuloArea() {
+    if (!MC.area) return MC.mercado === "BR" ? "todas as áreas" : (MC.mundo && MC.mundo.paises[MC.mercado] ? MC.mundo.paises[MC.mercado].nome : "");
+    var p = MC.area.slice(2).split("|"), base = MC.area[0] === "c" ? p[0] : p[0] + ", " + p[1];
+    return MC.raio ? base + " + " + MC.raio + " km" : base;
+  }
+  function horaLocal(V, rot) {
+    if (MC.mercado === "BR") return rot;
+    var dif = V.difFuso(fuso()); if (!dif) return rot;
+    var hs = rot.replace("h", "").split("–").map(function (x) { return parseInt(x, 10); });
+    function br(h) { return ((h - dif) % 24 + 24) % 24; }
+    return rot + " lá (" + br(hs[0]) + "–" + br(hs[1]) + "h em Brasília)";
+  }
+  function nichosEmJogo(V, leads) {
+    if (MC.nichos.length) return MC.nichos;
+    var seus = []; leads.forEach(function (l) { if (l.nicho && seus.indexOf(l.nicho) < 0) seus.push(l.nicho); });
+    var tipos = seus.map(function (n) { return V.rotinaDe(n).tipo; });
+    return seus.concat(V.ROTINA_NICHO.filter(function (r) { return tipos.indexOf(r.tipo) < 0; }).map(function (r) { return r.exemplos[0]; }));
+  }
+
+  // Envio pelo canal do lead: WhatsApp abre com o texto; Instagram e Facebook recebem o texto copiado.
+  function abrirCanal(V, l, canal, txt) {
+    if (canal === "whatsapp") window.open("https://wa.me/" + l.whatsapp + "?text=" + encodeURIComponent(txt), "_blank");
+    else if (canal === "instagram") { copiar(txt); var u = V.usuarioInstagram(l); window.open(u ? "https://ig.me/m/" + u : (l.instagram || l.site), "_blank"); toast("Mensagem copiada. No direct do Instagram, é só colar e enviar."); }
+    else if (canal === "facebook") { copiar(txt); window.open(l.facebook, "_blank"); toast("Mensagem copiada. Cole no Messenger da página."); }
+    else if (canal === "email") location.href = "mailto:" + encodeURIComponent(String(l.email || "").split(/[,;\s]+/)[0]) + "?subject=" + encodeURIComponent("Uma ideia para a " + l.nome) + "&body=" + encodeURIComponent(txt);
+    else { copiar(txt); location.href = "tel:+" + String(l.tel_digitos || l.telefone || "").replace(/\D/g, ""); toast("Roteiro copiado para usar na ligação."); }
+  }
+
+  async function vMelhores(box) {
+    acaoTopo("Buscar empresas", function () { window.open(PROSPECCAO_URL + "/#melhores", "_blank", "noopener"); });
+    box.innerHTML = '<div class="card vazio"><b>Calculando os melhores do momento…</b></div>';
+    var V = await carregarVendas();
+    if (MC.mercado !== "BR") await carregarMundo();
+    if (!box.isConnected || S.view !== "melhores") return;
+    if (!V) { box.innerHTML = '<div class="card vazio"><b>Não deu para carregar as regras da Prospecção.</b>Confira a internet e abra esta tela de novo.</div>'; return; }
+    try { desenhar(box, V); } catch (e) { console.error(e); box.innerHTML = '<div class="card vazio"><b>Algo deu errado nesta tela.</b>Recarregue a página.</div>'; }
+    clearInterval(MC.timer);
+    MC.timer = setInterval(function () { if (S.view === "melhores" && (MC.dia == null || MC.periodo == null) && $("#modal").hidden) render(); else if (S.view !== "melhores") clearInterval(MC.timer); }, 300000);
+  }
+
+  function desenhar(box, V) {
+    var agora = V.horaEm(fuso());
+    var dow = MC.dia == null ? agora.dow : MC.dia;
+    var perAuto = V.periodoDe(agora.h);
+    var per = MC.periodo || (perAuto ? perAuto.id : "manha");
+    var perObj = V.PERIODOS.find(function (p) { return p.id === per; });
+    var nomePer = function (id) { return V.PERIODOS.find(function (p) { return p.id === id; }).nome.toLowerCase(); };
+    var leads = leadsDoMercado(), areas = areasDosLeads(leads);
+    if (MC.area && !areas.cidades.concat(areas.bairros).some(function (x) { return x.k === MC.area; })) MC.area = "";
+    var fA = filtroArea(areas), naArea = fA ? leads.filter(fA) : leads;
+    var dados = V.desempenhoNichos(S.leads);
+    var nichos = nichosEmJogo(V, leads);
+    function comContato(n) { var k = V.semAcento(n); return naArea.filter(function (l) { return V.semAcento(l.nicho || "") === k && V.temContato(l) && aberto(l); }).length; }
+
+    // filtros
+    var catalogo = V.catalogoNichos(S.leads), vis = MC.verTodos ? catalogo : catalogo.slice(0, 16);
+    var sel = MC.nichos.map(V.semAcento), M = MC.mundo, dif = V.difFuso(fuso());
+    var paises = M ? ORDEM.filter(function (c) { return M.continentes[c]; }).map(function (c) {
+      return '<optgroup label="' + c + '">' + M.continentes[c].filter(function (x) { return x !== "BR"; }).map(function (iso) { return '<option value="' + iso + '"' + (iso === MC.mercado ? " selected" : "") + ">" + esc(M.paises[iso].nome) + "</option>"; }).join("") + "</optgroup>";
+    }).join("") : "";
+    var optArea = '<option value="">' + (MC.mercado === "BR" ? "Todas as áreas" : "Todo o país") + "</option>" +
+      (areas.cidades.length ? '<optgroup label="Cidades">' + areas.cidades.map(function (a) { return '<option value="' + esc(a.k) + '"' + (a.k === MC.area ? " selected" : "") + ">" + esc(a.k.slice(2).replace("|", " - ")) + " (" + a.n + ")</option>"; }).join("") + "</optgroup>" : "") +
+      (areas.bairros.length ? '<optgroup label="Bairros">' + areas.bairros.map(function (a) { return '<option value="' + esc(a.k) + '"' + (a.k === MC.area ? " selected" : "") + ">" + esc(a.k.slice(2).replace("|", ", ")) + " (" + a.n + ")</option>"; }).join("") + "</optgroup>" : "");
+
+    var hFiltros = '<div class="card mc-filtros"><div class="card-h"><div><h2>Onde e quando prospectar</h2><p>' + (MC.dia == null && MC.periodo == null ? "Acompanhando o dia e a hora de agora" : "Momento escolhido por você") + "</p></div></div>" +
+      '<div class="mc-grade"><div class="f"><span class="mc-rot">Mercado</span><div class="seg" id="mc-mercado"><button type="button" data-m="BR" aria-pressed="' + (MC.mercado === "BR") + '">Brasil</button><button type="button" data-m="fora" aria-pressed="' + (MC.mercado !== "BR") + '">Fora do Brasil</button></div></div>' +
+      (MC.mercado !== "BR" ? '<div class="f"><label class="mc-rot" for="mc-pais">País</label><select class="inp" id="mc-pais">' + (paises || "<option>Carregando…</option>") + "</select></div>" : "") +
+      '<div class="f"><label class="mc-rot" for="mc-area">Área</label><select class="inp" id="mc-area">' + optArea + "</select></div>" +
+      '<div class="f"><label class="mc-rot" for="mc-raio">Raio em volta: <b id="mc-raio-v">' + (MC.raio ? MC.raio + " km" : "só a área") + '</b></label><input id="mc-raio" type="range" min="0" max="30" step="1" value="' + MC.raio + '"' + (MC.area ? "" : " disabled") + "></div></div>" +
+      (MC.mercado !== "BR" ? '<p class="mc-fuso">Agora lá: <b>' + agora.h + "h de " + V.DIAS_CURTO[agora.dow].toLowerCase() + "</b>" + (dif ? " · " + Math.abs(dif) + "h " + (dif > 0 ? "à frente de" : "atrás de") + " Brasília" : "") + ". Os horários abaixo são os de lá.</p>" : "") +
+      '<span class="mc-rot">Dia</span><div class="chips" id="mc-dia"><button class="chip" type="button" data-d="" aria-pressed="' + (MC.dia == null) + '">Hoje</button>' + [1, 2, 3, 4, 5, 6, 0].map(function (d) { return '<button class="chip" type="button" data-d="' + d + '" aria-pressed="' + (MC.dia === d) + '">' + V.DIAS_CURTO[d] + "</button>"; }).join("") + "</div>" +
+      '<span class="mc-rot">Período</span><div class="chips" id="mc-periodo"><button class="chip" type="button" data-p="" aria-pressed="' + (MC.periodo == null) + '">Agora</button>' + V.PERIODOS.map(function (p) { return '<button class="chip" type="button" data-p="' + p.id + '" aria-pressed="' + (MC.periodo === p.id) + '">' + p.icone + " " + p.nome + "</button>"; }).join("") + "</div>" +
+      '<span class="mc-rot">Nichos para comparar <small>' + (MC.nichos.length ? MC.nichos.length + ' escolhidos · <a href="#" id="mc-limpar">limpar</a>' : "escolha dois ou mais") + "</small></span>" +
+      '<div class="chips" id="mc-nichos">' + vis.map(function (n) { return '<button class="chip" type="button" data-n="' + esc(n) + '" aria-pressed="' + (sel.indexOf(V.semAcento(n)) >= 0) + '">' + esc(cap(n)) + "</button>"; }).join("") +
+      '<button class="chip" type="button" id="mc-ver-todos">' + (MC.verTodos ? "Mostrar menos" : "+ " + (catalogo.length - vis.length) + " nichos") + "</button></div></div>";
+
+    // melhor nicho por período
+    var ranking = V.rankingPeriodos(nichos, dow, dados);
+    var topo = Math.max.apply(null, ranking.map(function (p) { return p.nichos[0] ? p.nichos[0].taxa : 0; }).concat([0.01]));
+    var nomeDia = MC.dia == null ? "hoje (" + V.DIAS_CURTO[dow].toLowerCase() + ")" : V.DIAS_CURTO[dow].toLowerCase();
+    var hPer = '<div class="card"><div class="card-h"><div><h2>Melhor nicho por período · ' + nomeDia + "</h2><p>Chance de resposta pela rotina de cada setor" + (Object.keys(dados).length ? " e pelos seus envios" : "") + ", em " + esc(rotuloArea()) + "</p></div></div>" +
+      '<div class="mc-pers">' + ranking.map(function (p) {
+        return '<div class="mc-per' + (p.id === per ? " sel" : "") + '"><h3>' + p.icone + " " + p.nome + "<small>" + (p.id === per && MC.dia == null && MC.periodo == null ? "agora" : "") + "</small></h3>" +
+          p.nichos.slice(0, 4).map(function (x) {
+            var c = comContato(x.nicho);
+            return '<button type="button" class="mc-linha" data-nicho="' + esc(x.nicho) + '" data-tem="' + c + '"><b>' + esc(cap(x.nicho)) + '</b><span class="pct num">' + Math.round(x.taxa * 100) + '%</span><span class="trilho"><i style="width:' + Math.round(x.taxa / topo * 100) + '%"></i></span><small>' + esc(horaLocal(V, x.rotulo)) + " · " + (c ? c + " lead" + (c > 1 ? "s" : "") + " com contato" : '<span class="novo">ainda não buscado aqui</span>') + "</small></button>";
+          }).join("") + "</div>";
+      }).join("") + "</div></div>";
+
+    // calendário
+    var semana = V.semanaNichos(nichos.slice(0, 40), dados);
+    var tudo = []; semana.forEach(function (d) { d.periodos.forEach(function (x) { tudo.push(Object.assign({ dow: d.dow }, x)); }); });
+    var maxS = Math.max.apply(null, tudo.map(function (x) { return x.taxa; }).concat([0.01]));
+    var ord = tudo.slice().sort(function (a, b) { return b.taxa - a.taxa; });
+    var mS = ord[0], fds = ord.filter(function (x) { return x.dow === 0 || x.dow === 6; })[0];
+    var hSem = '<div class="card"><div class="card-h"><div><h2>Calendário da semana</h2><p>O nicho que mais responde em cada dia e período' + (MC.nichos.length ? ", entre os escolhidos" : "") + ". Clique para escolher o momento.</p></div></div>" +
+      '<div class="mc-semana"><span></span>' + V.PERIODOS.map(function (p) { return '<span class="cab">' + p.icone + " " + p.nome + "</span>"; }).join("") +
+      semana.map(function (d) {
+        return '<span class="dia' + (d.dow === agora.dow ? " hoje" : "") + '">' + d.dia + "</span>" + d.periodos.map(function (x) {
+          return '<button type="button" class="n' + Math.min(4, Math.floor(x.taxa / maxS * 4.99)) + (d.dow === dow && x.periodo === per ? " sel" : "") + '" data-sd="' + d.dow + '" data-sp="' + x.periodo + '" title="' + esc(x.nicho) + ": " + Math.round(x.taxa * 100) + "% (" + esc(x.rotulo) + ')"><b class="num">' + Math.round(x.taxa * 100) + "%</b><span>" + esc(cap(x.nicho)) + "</span></button>";
+        }).join("");
+      }).join("") + "</div>" +
+      (mS ? '<p class="mc-resumo">Melhor momento da semana: <b>' + V.DIAS_CURTO[mS.dow] + " de " + nomePer(mS.periodo) + "</b>, " + esc(mS.nicho) + " (" + Math.round(mS.taxa * 100) + "%, " + esc(horaLocal(V, mS.rotulo)) + ")." +
+        (fds ? "<br>No fim de semana: <b>" + V.DIAS_CURTO[fds.dow] + " de " + nomePer(fds.periodo) + "</b>, " + esc(fds.nicho) + " (" + Math.round(fds.taxa * 100) + "%)." : "") + "</p>" : "") + "</div>";
+
+    // melhores leads
+    var ctx = V.contextoComparacao(S.leads), taxas = V.taxasReais(S.leads), inter = V.intervalos(S.leads);
+    var chave = MC.nichos.length ? new Set(MC.nichos.map(V.semAcento)) : null;
+    var top = V.melhoresLeads(leads, { dow: dow, periodo: per, nichos: chave, filtro: fA, intervalos: inter },
+      function (l) { return V.analisar(l, ctx); }, function (l, a) { return V.chanceFechamento(l, a, taxas); }, dados).slice(0, 12);
+    MC.top = top; MC.V = V;
+    var semC = naArea.filter(function (l) { return !V.temContato(l) && aberto(l); }).length;
+    var hLeads = '<div class="card" id="mc-leads"><div class="card-h"><div><h2>Melhores leads · ' + V.DIAS_CURTO[dow].toLowerCase() + ", " + nomePer(per) + "</h2><p>Só quem tem alguma forma de contato. A porcentagem junta a chance do lead com o horário do nicho dele." + (semC ? " " + semC + " sem contato ficaram de fora." : "") + "</p></div></div>" +
+      (top.length ? '<div class="mc-leads">' + top.map(function (t, i) {
+        var l = t.l, g = V.GRUPOS[t.a.grupo] || {}, pr = t.prox;
+        return '<div class="mc-lead" data-i="' + i + '"><div class="mc-l-txt"><b>' + esc(l.nome) + '</b><small>' + esc(l.categoria || l.nicho || "") + (l.bairro ? " · " + esc(l.bairro) : l.cidade ? " · " + esc(l.cidade) : "") + (g.nome ? " · " + esc(g.nome) : "") + "</small>" +
+          '<span class="mc-acao">' + esc((pr && pr.texto) || "Abordar") + " · melhor " + esc(horaLocal(V, t.melhor)) + " · via " + NOME_CANAL[t.canal] + "</span></div>" +
+          '<div class="mc-pct num">' + t.pct + "%<small>" + (t.contatado ? "chance de fechar" : "potencial") + "</small></div>" +
+          '<div class="mc-bts"><button type="button" class="btn sm ' + CLASSE_CANAL[t.canal] + '" data-mc="enviar">' + (pr && pr.acao === "responder" ? "Responder" : NOME_CANAL[t.canal]) + '</button><button type="button" class="btn sm ghost" data-mc="ficha">Ficha</button></div></div>';
+      }).join("") + "</div>" : '<p class="mc-vazio">Nenhum lead com contato para esse filtro' + (MC.area ? " nesta área" : "") + ". Veja ao lado os nichos para buscar.</p>") + "</div>";
+
+    // nichos para explorar
+    var tiposCom = naArea.filter(function (l) { return V.temContato(l); }).map(function (l) { return V.rotinaDe(l.nicho || "").tipo; });
+    var vistos = {}, ideias = V.catalogoNichos([]).map(function (n) { return Object.assign({ nicho: n }, V.notaNichoPeriodo(n, perObj, dados, dow)); })
+      .filter(function (x) { return tiposCom.indexOf(V.rotinaDe(x.nicho).tipo) < 0; }).sort(function (a, b) { return b.taxa - a.taxa; })
+      .filter(function (x) { var t = V.rotinaDe(x.nicho).tipo; if (vistos[t]) return false; vistos[t] = 1; return true; }).slice(0, 6);
+    var hExp = '<div class="card"><div class="card-h"><div><h2>Nichos para buscar' + (MC.area ? " nesta área" : MC.mercado === "BR" ? "" : " neste país") + "</h2><p>Setores que costumam responder bem " + V.DIAS_CURTO[dow].toLowerCase() + " de " + nomePer(per) + " e que você ainda não tem" + (MC.area ? " por aqui" : "") + "</p></div></div>" +
+      (ideias.length ? ideias.map(function (x) { var r = V.rotinaDe(x.nicho);
+        return '<div class="mc-ideia"><div><b>' + esc(cap(x.nicho)) + '</b> <span class="num">' + Math.round(x.taxa * 100) + "%</span><small>" + esc(r.tipo) + ": " + esc(r.nota) + " · melhor " + esc(horaLocal(V, x.rotulo)) + '</small></div><button type="button" class="btn sm pri" data-buscar="' + esc(x.nicho) + '">Buscar</button></div>'; }).join("")
+        : '<p class="mc-vazio">Você já tem leads de todos os setores com bom horário agora.</p>') + "</div>";
+
+    box.innerHTML = '<div class="mc">' + hFiltros + '<div class="mc-col">' + hPer + hSem + '</div><div class="mc-col">' + hLeads + hExp + "</div></div>";
+    ligar($(".mc", box), V); // eventos presos ao painel, não ao #conteudo (que as outras telas reaproveitam)
+  }
+
+  function buscarNaProspeccao(nicho) {
+    var q = "buscar=" + encodeURIComponent(nicho) + (MC.mercado !== "BR" ? "&pais=" + MC.mercado : "") + (MC.area ? "&area=" + encodeURIComponent(MC.area) : "") + (MC.raio ? "&raio=" + MC.raio : "");
+    window.open(PROSPECCAO_URL + "/?" + q, "_blank", "noopener");
+    toast("Abrindo a Prospecção com a busca de “" + nicho + "” pronta.");
+  }
+
+  function ligar(box, V) {
+    box.onclick = async function (e) {
+      var t = e.target, m = t.closest("#mc-mercado [data-m]");
+      if (m) { if (m.dataset.m === "BR") MC.mercado = "BR"; else { await carregarMundo(); if (MC.mercado === "BR") MC.mercado = "PT"; } MC.area = ""; MC.raio = 0; render(); return; }
+      var d = t.closest("#mc-dia [data-d]"); if (d) { MC.dia = d.dataset.d === "" ? null : +d.dataset.d; render(); return; }
+      var p = t.closest("#mc-periodo [data-p]"); if (p) { MC.periodo = p.dataset.p || null; render(); return; }
+      if (t.closest("#mc-ver-todos")) { MC.verTodos = !MC.verTodos; render(); return; }
+      if (t.closest("#mc-limpar")) { e.preventDefault(); MC.nichos = []; render(); return; }
+      var n = t.closest("#mc-nichos [data-n]");
+      if (n) { var k = V.semAcento(n.dataset.n), i = MC.nichos.findIndex(function (x) { return V.semAcento(x) === k; }); if (i >= 0) MC.nichos.splice(i, 1); else MC.nichos.push(n.dataset.n); render(); return; }
+      var c = t.closest("[data-sd]"); if (c) { MC.dia = +c.dataset.sd; MC.periodo = c.dataset.sp; render(); var lc = $("#mc-leads"); if (lc) lc.scrollIntoView({ behavior: "smooth", block: "start" }); return; }
+      var ln = t.closest(".mc-linha");
+      if (ln) { if (+ln.dataset.tem) { MC.nichos = [ln.dataset.nicho]; render(); var lc2 = $("#mc-leads"); if (lc2) lc2.scrollIntoView({ behavior: "smooth", block: "start" }); } else buscarNaProspeccao(ln.dataset.nicho); return; }
+      var b = t.closest("[data-buscar]"); if (b) { buscarNaProspeccao(b.dataset.buscar); return; }
+      var ac = t.closest("[data-mc]");
+      if (ac) {
+        var it = MC.top[+ac.closest(".mc-lead").dataset.i]; if (!it) return;
+        var l = it.l;
+        if (ac.dataset.mc === "ficha") { abrirLead(l.id); return; }
+        if (it.prox && it.prox.acao === "responder") { S.resp = { texto: "", alvo: "lead:" + l.id, resultado: null }; ir("responder"); return; }
+        var etapa = (it.prox && it.prox.etapa) || (l.status === "novo" ? "abordagem" : "retomar");
+        var txt = V.montarMensagem(l, etapa, it.a, S.perfil || {});
+        abrirCanal(V, l, it.canal, txt);
+        await registrarDisparo("lead", l, null, it.canal, txt);
+        toast("Mensagem registrada no lead."); render();
+      }
+    };
+    box.onchange = function (e) {
+      if (e.target.id === "mc-pais") { MC.mercado = e.target.value; MC.area = ""; MC.raio = 0; render(); }
+      if (e.target.id === "mc-area") { MC.area = e.target.value; if (!MC.area) MC.raio = 0; render(); }
+      if (e.target.id === "mc-raio") { MC.raio = +e.target.value; render(); }
+    };
+    box.oninput = function (e) { if (e.target.id === "mc-raio") { var v = $("#mc-raio-v"); if (v) v.textContent = +e.target.value ? e.target.value + " km" : "só a área"; } };
+  }
+
+  return vMelhores;
+})();
 })();

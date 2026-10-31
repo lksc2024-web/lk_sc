@@ -1,7 +1,7 @@
 // Service worker: deixa a Central instalável e abre mesmo com sinal fraco.
 // Rede primeiro (pega atualizações); cache só como reserva. /api e /r nunca são guardados.
-const CACHE = "central-v8";
-const BASICO = ["/", "/app.js", "/cena3d.js", "/regiao.js", "/styles.css", "/manifest.webmanifest", "/icone-192.png"];
+const CACHE = "central-v9";
+const BASICO = ["/", "/app.js", "/cena3d.js", "/regiao.js", "/nucleo.js", "/styles.css", "/manifest.webmanifest", "/icone-192.png"];
 self.addEventListener("install", (e) => { e.waitUntil(caches.open(CACHE).then((c) => c.addAll(BASICO)).then(() => self.skipWaiting())); });
 self.addEventListener("activate", (e) => {
   e.waitUntil(caches.keys().then((ks) => Promise.all(ks.filter((k) => k !== CACHE).map((k) => caches.delete(k)))).then(() => self.clients.claim()));
