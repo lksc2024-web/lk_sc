@@ -1,6 +1,6 @@
 // Regiao — áreas de busca (cidade, zona, região do estado, raio, estado, Brasil), índice de destaque
 // dos negócios, horário de funcionamento e o painel de mapa com ranking. Usado pela Prospecção e pela
-// Central (o mesmo arquivo nos dois apps). Mapa: Leaflet + mapa base CARTO/OpenStreetMap, sem chave.
+// Central (o mesmo arquivo nos dois apps). Mapa: Leaflet + mapa base do OpenStreetMap, sem chave.
 (function () {
   "use strict";
 
@@ -160,9 +160,10 @@
     return promessaLeaflet;
   }
   function camadaBase(L) {
-    return L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", {
-      maxZoom: 19, subdomains: "abcd",
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+    // Mapa base do OpenStreetMap: gratuito e sem chave (o CARTO passou a exigir chave).
+    return L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 19,
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
     });
   }
   // Limites da área calculados à mão (o círculo do Leaflet só sabe os limites depois que o mapa tem posição).
