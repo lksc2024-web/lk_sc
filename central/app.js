@@ -712,7 +712,9 @@ var CAL = null;
 function carregarCalendario() {
   if (CAL) return CAL;
   CAL = fetch(PROSPECCAO_URL + "/calendario.js").then(function (r) { if (!r.ok) throw new Error(r.status); return r.text(); })
-    .then(function (txt) { new Function(txt)(); return window.Calendario.carregar(PROSPECCAO_URL + "/feriados.json"); })
+    .then(function (txt) { new Function(txt)(); return fetch(PROSPECCAO_URL + "/estrategias.js"); })
+    .then(function (r) { return r.ok ? r.text() : ""; })
+    .then(function (txt) { if (txt) new Function(txt)(); return window.Calendario.carregar(PROSPECCAO_URL + "/feriados.json"); })
     .then(function () { return window.Calendario; })
     .catch(function () { CAL = null; return null; });
   return CAL;
@@ -1575,7 +1577,7 @@ sb.auth.getSession().then(function (r) { if (!r.data.session) mostrarLogin(); })
 // Qual nicho abordar de manhã, à tarde e à noite em cada dia, no Brasil ou fora, e quais leads
 // (só os que têm alguma forma de contato) valem mais agora. Regras em vendas.js da Prospecção.
 var vMelhores = (function () {
-  var MC = { data: null, periodo: null, nichos: [], area: "", raio: 0, mercado: "BR", verTodos: false, mundo: null, mundoP: null, timer: null };
+  var MC = { estNicho: null, data: null, periodo: null, nichos: [], area: "", raio: 0, mercado: "BR", verTodos: false, mundo: null, mundoP: null, timer: null };
   var NOME_CANAL = { whatsapp: "WhatsApp", instagram: "Instagram", email: "E-mail", telefone: "Ligar", facebook: "Facebook" };
   var CLASSE_CANAL = { whatsapp: "wa", instagram: "ig", email: "pri", telefone: "", facebook: "pri" };
   var ORDEM = ["América do Sul", "América do Norte", "América Central e Caribe", "Europa", "África", "Ásia", "Oceania"];
@@ -1714,6 +1716,7 @@ var vMelhores = (function () {
     // melhor nicho por período
     var hDatas = blocoDatas(V, K, ctx, dataSel, hoje, naArea, LOC);
     var ranking = V.rankingPeriodos(nichos, ctx, dados);
+    var hEst = window.Estrategias ? blocoEstrategia(V, K, window.Estrategias, ranking, per, dados, dataSel, LOC, ctx, rotDia) : "";
     var topo = Math.max.apply(null, ranking.map(function (p) { return p.nichos[0] ? p.nichos[0].taxa : 0; }).concat([0.01]));
     var nomeDia = (MC.data == null ? "hoje (" + rotDia(dataSel).toLowerCase() + ")" : rotDia(dataSel).toLowerCase()) + (ctx.feriado ? " · feriado" : ctx.vespera ? " · véspera de feriado" : ctx.ponte ? " · ponte" : "");
     var hPer = '<div class="card"><div class="card-h"><div><h2>Melhor nicho por período · ' + nomeDia + "</h2><p>Chance de resposta pela rotina de cada setor" + (Object.keys(dados).length ? " e pelos seus envios" : "") + ", em " + esc(rotuloArea()) + "</p></div></div>" +
@@ -1779,7 +1782,7 @@ var vMelhores = (function () {
         return '<div class="mc-ideia"><div><b>' + esc(cap(x.nicho)) + '</b> <span class="num">' + Math.round(x.taxa * 100) + "%</span><small>" + (x.x ? x.x.ev.icone + " " + esc(x.x.ev.nome) + " " + emDias(x.x.d) + " · oferecer " + esc(x.x.ev.oferta) : esc(r.tipo) + ": " + esc(r.nota)) + " · melhor " + esc(horaLocal(V, x.rotulo)) + '</small></div><button type="button" class="btn sm pri" data-buscar="' + esc(x.nicho) + '">Buscar</button></div>'; }).join("")
         : '<p class="mc-vazio">Você já tem leads de todos os setores com bom horário agora.</p>') + "</div>";
 
-    box.innerHTML = '<div class="mc">' + hFiltros + hDatas + '<div class="mc-col">' + hPer + hSem + '</div><div class="mc-col">' + hLeads + hExp + "</div></div>";
+    box.innerHTML = '<div class="mc">' + hFiltros + hDatas + hEst + '<div class="mc-col">' + hPer + hSem + '</div><div class="mc-col">' + hLeads + hExp + "</div></div>";
     ligar($(".mc", box), V); // eventos presos ao painel, não ao #conteudo (que as outras telas reaproveitam)
   }
 
@@ -1808,6 +1811,50 @@ var vMelhores = (function () {
       }).join("") + "</div></div></div></div>";
   }
 
+  // Estratégia por nicho: a dor do dono, o que oferecer, o tom, a sequência de mensagens por dia e as objeções.
+  function blocoEstrategia(V, K, E, ranking, per, dados, dataSel, LOC, ctx, rotDia) {
+    var daVez = ranking.find(function (p) { return p.id === per; }) || ranking[0];
+    var opcoes = []; MC.nichos.concat(daVez.nichos.map(function (n) { return n.nicho; })).forEach(function (n) { if (opcoes.indexOf(n) < 0) opcoes.push(n); });
+    opcoes = opcoes.slice(0, 10);
+    if (!MC.estNicho || !opcoes.some(function (n) { return V.semAcento(n) === V.semAcento(MC.estNicho); })) MC.estNicho = opcoes[0];
+    var nicho = MC.estNicho, est = E.doNicho(nicho), k = V.semAcento(nicho);
+    var reais = S.leads.filter(function (l) { return V.semAcento(l.nicho || "") === k && V.temContato(l) && aberto(l); });
+    var cmp = V.contextoComparacao(S.leads);
+    var l = reais.length ? reais.map(function (x) { return { l: x, a: V.analisar(x, cmp) }; }).sort(function (a, b) { return b.a.potencial - a.a.potencial; })[0].l
+      : { id: "exemplo-" + k, nome: "[nome da empresa]", nicho: nicho, categoria: cap(nicho), cidade: LOC.cidade || (MC.mercado === "BR" ? "Rio de Janeiro" : ""), uf: LOC.uf, site: "", nota: 0, avaliacoes: 0, status: "novo",
+          dados: MC.mercado !== "BR" ? { geo: { pais: MC.mercado, tz: fuso() } } : {} };
+    var real = String(l.id).indexOf("exemplo") !== 0, a = V.analisar(l, cmp), inter = V.intervalos(S.leads);
+    var seq = E.sequencia(nicho, dataSel, LOC, dados, inter), semana = E.diasDaSemana(nicho, dataSel, LOC, dados);
+    var topo = Math.max.apply(null, semana.map(function (d) { return d.taxa; }).concat([0.01]));
+    var melhor = semana.slice().sort(function (x, y) { return y.taxa - x.taxa; })[0];
+    var preco = V.precoDe(est.servico, S.perfil || {}), op = ctx.oportunidade(nicho, est.tipo);
+    var dif = MC.mercado === "BR" ? 0 : V.difFuso(fuso());
+    var nomeEtapa = { abordagem: "Primeiro contato", follow1: "Lembrete", follow2: "Prévia (valor)", encerramento: "Encerramento" };
+    MC.estMsgs = seq.map(function (x) {
+      var h = parseInt(x.faixa, 10) || 9, quando = new Date(Date.parse(x.data + "T12:00:00-03:00") + (h - dif - 12) * 3600000);
+      return Object.assign({ txt: V.montarMensagem(l, x.etapa, a, S.perfil || {}, null, { quando: quando }) }, x);
+    });
+    MC.estObj = est.objecoes;
+    return '<div class="card mc-est"><div class="card-h"><div><h2>Estratégia por nicho</h2><p>A abordagem parte da dor do dono, e as mensagens já saem com o dia, o horário e a data comercial certos.</p></div></div>' +
+      '<div class="chips" id="mc-est-nichos">' + opcoes.map(function (n) { return '<button type="button" class="chip" data-est="' + esc(n) + '" aria-pressed="' + (V.semAcento(n) === k) + '">' + esc(cap(n)) + "</button>"; }).join("") + "</div>" +
+      '<div class="mc-est-grade"><div><h3 class="mc-est-h">' + esc(cap(nicho)) + " <small>" + esc(est.tipo) + "</small></h3><dl class=\"mc-est-dl\">" +
+      "<div><dt>A dor do dono</dt><dd>" + esc(est.dor) + "</dd></div>" +
+      "<div><dt>O que oferecer</dt><dd>" + esc(est.oferta) + " <small>(" + esc(V.faixaPreco(preco)) + ", " + esc(preco.prazo) + ")</small></dd></div>" +
+      "<div><dt>Com quem você fala</dt><dd>" + esc(est.dono) + "</dd></div>" +
+      "<div><dt>Tom</dt><dd>" + esc(est.tom) + "</dd></div>" +
+      "<div><dt>Evite</dt><dd>" + est.evitar.map(esc).join(" · ") + "</dd></div>" +
+      (op.ev ? "<div><dt>Ângulo da data</dt><dd>" + op.ev.icone + " " + esc(op.ev.nome) + " " + emDias(op.dias) + ": ofereça também " + esc(op.ev.oferta) + ". Abordar até " + K.curta(K.somar(op.ev.inicio, -op.ev.ate)) + ".</dd></div>" : "") + "</dl>" +
+      '<span class="mc-rot" style="margin-top:14px">Melhor dia nesta semana</span><div class="mc-est-sem">' + semana.map(function (d) {
+        return '<span class="' + (d === melhor ? "top" : "") + (d.ctx.feriado ? " fer" : "") + '" title="' + esc(K.resumoDia(d.ctx).titulo) + '"><b>' + rotDia(d.data) + '</b><i style="height:' + Math.round(d.taxa / topo * 100) + '%"></i><small>' + Math.round(d.taxa * 100) + "%<br>" + esc(d.faixa) + "</small></span>"; }).join("") + "</div>" +
+      '<span class="mc-rot" style="margin-top:14px">Se ele disser…</span>' + est.objecoes.map(function (o, i) { return '<details class="mc-est-obj"><summary>“' + esc(o.o) + '”</summary><p>' + esc(o.r) + '</p><button type="button" class="btn sm ghost" data-copiar-obj="' + i + '">' + ICON.copia + "Copiar resposta</button></details>"; }).join("") +
+      '</div><div><span class="mc-rot">Sequência por dia ' + (real ? "<small>com " + esc(l.nome) + "</small>" : "<small>exemplo (o nome entra quando for um lead)</small>") + '</span><ol class="mc-est-seq">' +
+      MC.estMsgs.map(function (m, i) {
+        return '<li><div class="mc-est-cab"><b>' + (i + 1) + ". " + nomeEtapa[m.etapa] + "</b><span>" + rotDia(m.data) + " · " + esc(horaLocal(V, m.faixa)) + " · " + Math.round(m.taxa * 100) + "%</span></div>" +
+          "<details" + (i === 0 ? " open" : "") + "><summary>Ver mensagem</summary><p class=\"mc-est-msg\">" + esc(m.txt).replace(/\n/g, "<br>") + '</p><button type="button" class="btn sm ghost" data-copiar-msg="' + i + '">' + ICON.copia + "Copiar</button>" +
+          (real && m.etapa === "abordagem" ? ' <button type="button" class="btn sm" data-abrir-lead="' + l.id + '">Abrir o lead</button>' : "") + "</details></li>";
+      }).join("") + "</ol><p class=\"mc-vazio\" style=\"font-size:12px;margin-top:8px\">Os lembretes saem " + inter.follow1 + ", " + inter.follow2 + " e " + inter.encerramento + " dias depois do anterior, no melhor dia e horário do nicho, pulando feriado.</p></div></div></div>";
+  }
+
   function buscarNaProspeccao(nicho) {
     var q = "buscar=" + encodeURIComponent(nicho) + (MC.mercado !== "BR" ? "&pais=" + MC.mercado : "") + (MC.area ? "&area=" + encodeURIComponent(MC.area) : "") + (MC.raio ? "&raio=" + MC.raio : "");
     window.open(PROSPECCAO_URL + "/?" + q, "_blank", "noopener");
@@ -1820,6 +1867,10 @@ var vMelhores = (function () {
       if (m) { if (m.dataset.m === "BR") MC.mercado = "BR"; else { await carregarMundo(); if (MC.mercado === "BR") MC.mercado = "PT"; } MC.area = ""; MC.raio = 0; render(); return; }
       var d = t.closest("#mc-dia [data-d]"); if (d) { MC.data = d.dataset.d || null; render(); return; }
       var sm = t.closest("[data-semana]"); if (sm) { MC.data = sm.dataset.semana === K.hojeEm(fuso()) ? null : sm.dataset.semana; MC.periodo = null; render(); return; }
+      var es = t.closest("[data-est]"); if (es) { MC.estNicho = es.dataset.est; render(); return; }
+      var cm = t.closest("[data-copiar-msg]"); if (cm) { var mm = MC.estMsgs && MC.estMsgs[+cm.dataset.copiarMsg]; if (mm) copiar(mm.txt); return; }
+      var co = t.closest("[data-copiar-obj]"); if (co) { var oo = MC.estObj && MC.estObj[+co.dataset.copiarObj]; if (oo) copiar(oo.r); return; }
+      var al = t.closest("[data-abrir-lead]"); if (al) { abrirLead(al.dataset.abrirLead); return; }
       var vn = t.closest("[data-ver-nicho]"); if (vn) { MC.nichos = [vn.dataset.verNicho]; render(); var lc0 = $("#mc-leads"); if (lc0) lc0.scrollIntoView({ behavior: "smooth", block: "start" }); return; }
       var p = t.closest("#mc-periodo [data-p]"); if (p) { MC.periodo = p.dataset.p || null; render(); return; }
       if (t.closest("#mc-ver-todos")) { MC.verTodos = !MC.verTodos; render(); return; }
