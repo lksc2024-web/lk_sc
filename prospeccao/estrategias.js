@@ -21,11 +21,6 @@
         { o: "Não temos verba agora", r: "Entendo. Dá para começar só com a página e o botão de agendar, que é o que mais tira trabalho da recepção, e o resto vem depois." },
       ],
       msgs: {
-        abordagem: [
-          "{oi} {apresento} sites e sistemas para {categorias} {em_cidade}.\n\nSei que em clínica a recepção passa boa parte do dia no telefone e no WhatsApp só para marcar e remarcar horário. {obs}\n\n{gancho_data}Tenho uma ideia de agendamento online para a {nome}: o paciente marca sozinho e recebe lembrete antes da consulta. Posso te mostrar como ficaria?{fecho_dia}",
-          "{oi} {apresento} sites para {categorias} {em_cidade}. Encontrei a {nome} pesquisando por aqui. {obs}\n\nUma coisa que costuma pesar em clínica é paciente que esquece e falta. Montei agendas online com lembrete automático no WhatsApp que ajudam bastante nisso.\n\n{gancho_data}Quer que eu te mande um exemplo de como ficaria para vocês?{fecho_dia}",
-        ],
-        follow1: ["{oi} Passando de novo por aqui sobre o agendamento online da {nome}. Se não for com você que eu falo sobre isso, me diz com quem e eu procuro a pessoa certa."],
         follow2: ["{oi} Fiz um rascunho rápido de como ficaria o agendamento da {nome}: o paciente escolhe o horário, recebe o lembrete no WhatsApp e vocês veem tudo numa agenda só. Te mando a imagem?"],
         encerramento: ["Vou parar de insistir para não atrapalhar a rotina de vocês. Se um dia quiserem tirar a marcação de horário do telefone, me chama aqui. Boa semana!"],
       },
@@ -43,11 +38,6 @@
         { o: "Está caro", r: "Faz a conta comigo: se o agendamento evitar duas faltas por semana, ele se paga rápido. E dá para começar pelo básico." },
       ],
       msgs: {
-        abordagem: [
-          "{oi} {apresento} sites para {categorias} {em_cidade}.\n\nImagino que boa parte do seu dia vai em responder \"tem horário?\" no direct, né? {obs}\n\n{gancho_data}Tenho uma ideia de página para a {nome} com os serviços e o agendamento direto, a cliente marca sozinha a qualquer hora. Posso te mandar como ficaria?{fecho_dia}",
-          "{oi} Vi a {nome} pesquisando {categoria} {em_cidade}. {obs}\n\n{apresento} páginas de agendamento para salões: a cliente escolhe o serviço e o horário e já chega confirmada no seu WhatsApp, com lembrete para não esquecer.\n\n{gancho_data}Quer ver um exemplo?{fecho_dia}",
-        ],
-        follow1: ["{oi} Sei que a rotina aí é corrida, então serei rápido: posso te mandar o exemplo da página de agendamento? Leva um minuto para ver."],
         follow2: ["{oi} Montei uma prévia de como ficaria a página da {nome}, com os serviços, os preços e o botão de agendar. Te mando a imagem?"],
         encerramento: ["Não vou mais te ocupar com isso. Se um dia quiser parar de responder \"tem horário?\" o dia todo, é só me chamar. Sucesso aí!"],
       },
@@ -65,11 +55,6 @@
         { o: "Não tenho tempo para cuidar de site", r: "Você não precisa mexer em nada. Mudou preço ou prato, me manda uma foto que eu atualizo." },
       ],
       msgs: {
-        abordagem: [
-          "{oi} {apresento} sites para {categorias} {em_cidade}.\n\nUma conta que sempre pesa em restaurante é a comissão dos aplicativos em cima de cliente que já conhece a casa. {obs}\n\n{gancho_data}Tenho uma ideia de cardápio online para a {nome}, com pedido direto no WhatsApp de vocês, sem comissão. Posso te mandar como ficaria?{fecho_dia}",
-          "{oi} Vi a {nome} pesquisando {categoria} {em_cidade}. {obs}\n\n{apresento} cardápios online com pedido e reserva direto no WhatsApp, para o cliente que já gosta da casa pedir sem passar pelo aplicativo.\n\n{gancho_data}Quer ver um exemplo?{fecho_dia}",
-        ],
-        follow1: ["{oi} Mandando de novo fora do horário de movimento: posso te mostrar o exemplo do cardápio com pedido direto? Se for melhor falar com outra pessoa daí, me avisa."],
         follow2: ["{oi} Montei uma prévia do cardápio online da {nome}, com os pratos, o botão de pedir no WhatsApp e o de reservar mesa. Te mando a imagem?"],
         encerramento: ["Vou deixar vocês em paz. Se um dia quiserem tirar uma parte dos pedidos da comissão do aplicativo, me chama aqui. Bom movimento aí!"],
       },
@@ -87,11 +72,6 @@
         { o: "Agora não", r: "Tranquilo. Só fica a dica: o catálogo pronto antes das datas grandes, como Páscoa e Natal, é quando ele mais rende." },
       ],
       msgs: {
-        abordagem: [
-          "{oi} {apresento} sites para {categorias} {em_cidade}.\n\nImagino que encomenda de bolo e salgado chegue aí de todo jeito, por telefone, WhatsApp e no balcão. {obs}\n\n{gancho_data}Pensei num catálogo simples para a {nome}, com fotos, preços e o pedido indo direto para o seu WhatsApp. Posso te mandar um exemplo?{fecho_dia}",
-          "{oi} Encontrei a {nome} pesquisando {categoria} {em_cidade}. {obs}\n\n{apresento} catálogos de encomenda para padarias e confeitarias: o cliente escolhe em casa e o pedido chega organizado no WhatsApp.\n\n{gancho_data}Quer ver como ficaria?{fecho_dia}",
-        ],
-        follow1: ["{oi} Passando de novo sobre o catálogo de encomendas da {nome}. Posso te mandar o exemplo? É rapidinho de ver."],
         follow2: ["{oi} Montei uma prévia do catálogo da {nome}, com as encomendas mais pedidas e o botão do WhatsApp. Te mando a imagem?"],
         encerramento: ["Vou parar por aqui para não incomodar. Se quiserem um catálogo de encomendas antes de alguma data grande, me chama. Boas vendas!"],
       },
@@ -109,11 +89,6 @@
         { o: "Está caro", r: "Se a página trouxer duas matrículas por mês, ela se paga em pouco tempo. Posso te mostrar a conta." },
       ],
       msgs: {
-        abordagem: [
-          "{oi} {apresento} sites para {categorias} {em_cidade}.\n\nSei que em academia o desafio não é só atrair, é fazer a aula experimental virar matrícula. {obs}\n\n{gancho_data}Tenho uma ideia de página para a {nome} em que a pessoa agenda a experimental na hora e já recebe o lembrete. Posso te mostrar?{fecho_dia}",
-          "{oi} Vi a {nome} pesquisando {categoria} {em_cidade}. {obs}\n\n{apresento} páginas de aula experimental para academias e estúdios: o interessado escolhe o horário, chega confirmado e vocês acompanham quem ainda não fechou.\n\n{gancho_data}Quer ver um exemplo?{fecho_dia}",
-        ],
-        follow1: ["{oi} Passando de novo sobre a página de aula experimental da {nome}. Te mando o exemplo? Se for com outra pessoa daí, me diz com quem."],
         follow2: ["{oi} Fiz uma prévia de como ficaria a página da {nome}, com os planos, as modalidades e o botão de agendar a experimental. Te mando?"],
         encerramento: ["Vou parar por aqui para não atrapalhar. Se quiserem uma página para transformar experimental em matrícula, me chama. Bons treinos aí!"],
       },
@@ -131,11 +106,6 @@
         { o: "Agora não dá", r: "Tranquilo. Se quiser, te mando só o exemplo para guardar e ver quando der." },
       ],
       msgs: {
-        abordagem: [
-          "{oi} {apresento} sites para {categorias} {em_cidade}.\n\nUma coisa que vejo muito em pet shop é o cliente que gosta do banho e tosa mas esquece de voltar no tempo certo. {obs}\n\n{gancho_data}Pensei num agendamento para a {nome} que avisa o tutor quando está na hora do próximo banho. Posso te mandar como ficaria?{fecho_dia}",
-          "{oi} Encontrei a {nome} pesquisando {categoria} {em_cidade}. {obs}\n\n{apresento} páginas de agendamento de banho e tosa: o tutor marca sozinho, recebe o lembrete e volta no tempo certo.\n\n{gancho_data}Quer ver um exemplo?{fecho_dia}",
-        ],
-        follow1: ["{oi} Passando de novo sobre o agendamento de banho e tosa da {nome}. Posso te mandar o exemplo? É rápido de ver."],
         follow2: ["{oi} Montei uma prévia da página da {nome}, com os serviços, os horários e o lembrete de retorno. Te mando a imagem?"],
         encerramento: ["Vou parar de insistir. Se um dia quiserem que os clientes voltem no tempo certo sem vocês precisarem lembrar um por um, me chama. Abraço!"],
       },
@@ -153,11 +123,6 @@
         { o: "Está caro", r: "Uma venda ou locação fechada pelo site já paga o projeto. Posso te mostrar a conta com o seu ticket." },
       ],
       msgs: {
-        abordagem: [
-          "{oi} {apresento} sites para {categorias} {em_cidade}.\n\nVejo muito corretor bom dependendo só de portal pago e recebendo contato frio. {obs}\n\n{gancho_data}Tenho uma ideia de site para a {nome}, com os imóveis filtrados por bairro e preço e o contato indo direto para o seu WhatsApp. Posso te mostrar?{fecho_dia}",
-          "{oi} Encontrei a {nome} pesquisando {categoria} {em_cidade}. {obs}\n\n{apresento} sites de imóveis para corretores e imobiliárias, para quem chega pelo Instagram e pelo Google achar o imóvel certo e já chamar vocês.\n\n{gancho_data}Quer ver um exemplo?{fecho_dia}",
-        ],
-        follow1: ["{oi} Passando de novo sobre o site de imóveis da {nome}. Posso te mandar o exemplo? Se for com outra pessoa, me diz com quem falo."],
         follow2: ["{oi} Fiz uma prévia de como ficaria o site da {nome}, com a busca por bairro e faixa de preço e o botão de agendar visita. Te mando?"],
         encerramento: ["Vou parar por aqui. Se quiser um site próprio para não depender só dos portais, me chama. Boas vendas!"],
       },
@@ -175,11 +140,6 @@
         { o: "Agora é alta temporada", r: "Entendo. Dá para deixar combinado para a baixa, que é quando a página própria mais ajuda." },
       ],
       msgs: {
-        abordagem: [
-          "{oi} {apresento} sites para {categorias} {em_cidade}.\n\nUma coisa que pesa em pousada é a comissão das plataformas até em hóspede que já conhece a casa. {obs}\n\n{gancho_data}Tenho uma ideia de página de reservas para a {nome}, com fotos, datas e a reserva direto no seu WhatsApp. Posso te mostrar?{fecho_dia}",
-          "{oi} Encontrei a {nome} pesquisando {categoria} {em_cidade}. {obs}\n\n{apresento} páginas de reserva direta para pousadas e hotéis, para quem volta ou chega por indicação reservar sem passar pela plataforma.\n\n{gancho_data}Quer ver um exemplo?{fecho_dia}",
-        ],
-        follow1: ["{oi} Passando de novo sobre a página de reservas da {nome}. Te mando o exemplo?"],
         follow2: ["{oi} Montei uma prévia da página da {nome}, com as acomodações, as fotos e o botão de reservar pelo WhatsApp. Te mando a imagem?"],
         encerramento: ["Vou parar por aqui para não incomodar. Se quiserem reserva direta sem comissão, me chama. Boa temporada!"],
       },
@@ -197,11 +157,6 @@
         { o: "Não posso fazer publicidade", r: "Por isso o site é informativo: quem você é, áreas de atuação e como falar com você, sem promessa." },
       ],
       msgs: {
-        abordagem: [
-          "{oi} {apresento} sites para {categorias} {em_cidade}.\n\nMesmo quem trabalha muito por indicação acaba sendo pesquisado no Google antes do primeiro contato. {obs}\n\n{gancho_data}Tenho uma ideia de site sóbrio para a {nome}, com as áreas de atuação e um formulário que já chega com o tipo de caso. Posso te mostrar?{fecho_dia}",
-          "{oi} Encontrei a {nome} pesquisando {categoria} {em_cidade}. {obs}\n\n{apresento} sites para escritórios: informativos, dentro das regras da profissão, e com os contatos chegando já organizados.\n\n{gancho_data}Quer ver um exemplo?{fecho_dia}",
-        ],
-        follow1: ["{oi} Passando de novo sobre o site da {nome}. Posso te mandar o exemplo? Se for melhor falar com outra pessoa do escritório, me avisa."],
         follow2: ["{oi} Fiz um rascunho de como ficaria o site da {nome}, com as áreas de atuação e o formulário de contato. Te mando?"],
         encerramento: ["Vou parar por aqui. Se em algum momento quiser um site que passe a confiança do seu trabalho, me chama. Boa semana!"],
       },
@@ -219,11 +174,6 @@
         { o: "Está caro", r: "Um serviço a mais por mês já paga. E dá para começar só com a página e o botão de agendar." },
       ],
       msgs: {
-        abordagem: [
-          "{oi} {apresento} sites para {categorias} {em_cidade}.\n\nSei que oficina vive de confiança, e cliente novo chega desconfiado de orçamento. {obs}\n\n{gancho_data}Pensei numa página para a {nome} com os serviços, fotos do trabalho de vocês e o orçamento pelo WhatsApp. Posso te mandar como ficaria?{fecho_dia}",
-          "{oi} Encontrei a {nome} pesquisando {categoria} {em_cidade}. {obs}\n\n{apresento} páginas para oficinas: o cliente vê os serviços, as fotos e já marca a revisão pelo WhatsApp.\n\n{gancho_data}Quer ver um exemplo?{fecho_dia}",
-        ],
-        follow1: ["{oi} Passando rapidinho de novo sobre a página da {nome}. Te mando o exemplo?"],
         follow2: ["{oi} Montei uma prévia da página da {nome}, com os serviços e o botão de agendar revisão. Te mando a imagem?"],
         encerramento: ["Vou parar por aqui. Se quiser uma página para o cliente chegar confiando no serviço de vocês, me chama. Abraço!"],
       },
@@ -241,11 +191,6 @@
         { o: "Está caro", r: "Um orçamento fechado a mais já paga. Dá para começar simples." },
       ],
       msgs: {
-        abordagem: [
-          "{oi} {apresento} sites para {categorias} {em_cidade}.\n\nImagino que você passe o dia na obra e perca orçamento por não conseguir responder na hora. {obs}\n\n{gancho_data}Pensei numa página para a {nome} com fotos dos seus trabalhos e um pedido de orçamento que já chega completo no WhatsApp. Posso te mandar como ficaria?{fecho_dia}",
-          "{oi} Encontrei a {nome} pesquisando {categoria} {em_cidade}. {obs}\n\n{apresento} páginas para quem trabalha em campo: o cliente vê os trabalhos e manda o pedido de orçamento com tudo que você precisa saber.\n\n{gancho_data}Quer ver um exemplo?{fecho_dia}",
-        ],
-        follow1: ["{oi} Mandando de novo fora do horário de obra: posso te mostrar o exemplo da página de orçamento?"],
         follow2: ["{oi} Montei uma prévia da página da {nome}, com a galeria de trabalhos e o pedido de orçamento. Te mando a imagem?"],
         encerramento: ["Vou parar por aqui para não atrapalhar. Se quiser parar de perder orçamento por não conseguir responder, me chama. Bom trabalho!"],
       },
@@ -263,11 +208,6 @@
         { o: "Está caro", r: "Algumas vendas a mais já pagam. Posso te mostrar a conta com o seu ticket médio." },
       ],
       msgs: {
-        abordagem: [
-          "{oi} {apresento} sites para {categorias} {em_cidade}.\n\nSabe aquele cliente que pergunta o preço no direct e some? {obs}\n\n{gancho_data}Pensei num catálogo para a {nome} com fotos, preços e o pedido indo direto para o WhatsApp, para vender também para quem não passa na porta. Posso te mandar como ficaria?{fecho_dia}",
-          "{oi} Encontrei a {nome} pesquisando {categoria} {em_cidade}. {obs}\n\n{apresento} catálogos online para lojas: o cliente escolhe, vê o preço e já manda o pedido no WhatsApp.\n\n{gancho_data}Quer ver um exemplo?{fecho_dia}",
-        ],
-        follow1: ["{oi} Passando de novo sobre o catálogo da {nome}. Te mando o exemplo? É rápido de ver."],
         follow2: ["{oi} Montei uma prévia do catálogo da {nome}, com os produtos em destaque e o botão de pedir no WhatsApp. Te mando a imagem?"],
         encerramento: ["Vou parar por aqui. Se quiserem vender também para quem não passa na porta, me chama. Boas vendas!"],
       },
@@ -285,11 +225,6 @@
         { o: "Agora não", r: "Entendo. O melhor momento é antes do período de matrículas; se quiser, deixo o exemplo com você." },
       ],
       msgs: {
-        abordagem: [
-          "{oi} {apresento} sites para {categorias} {em_cidade}.\n\nOs pais costumam pesquisar escola à noite, quando a secretaria já fechou. {obs}\n\n{gancho_data}Tenho uma ideia de página para a {nome} em que a família agenda a visita e faz a pré-matrícula a qualquer hora. Posso te mostrar?{fecho_dia}",
-          "{oi} Encontrei a {nome} pesquisando {categoria} {em_cidade}. {obs}\n\n{apresento} páginas de matrícula para escolas e cursos: a família conhece a proposta, agenda a visita e vocês recebem tudo organizado.\n\n{gancho_data}Quer ver um exemplo?{fecho_dia}",
-        ],
-        follow1: ["{oi} Passando de novo sobre a página de matrícula da {nome}. Posso te mandar o exemplo? Se for com outra pessoa da escola, me diz com quem falo."],
         follow2: ["{oi} Fiz uma prévia de como ficaria a página da {nome}, com a proposta pedagógica e o agendamento de visita. Te mando?"],
         encerramento: ["Vou parar por aqui. Se quiserem facilitar a visita e a matrícula para as famílias, me chama. Bom trabalho aí!"],
       },
@@ -307,11 +242,6 @@
         { o: "Está caro", r: "Um evento fechado a mais já paga. Posso te mostrar a conta." },
       ],
       msgs: {
-        abordagem: [
-          "{oi} {apresento} sites para {categorias} {em_cidade}.\n\nImagino quanto tempo vai em responder pedido de orçamento que chega sem data nem número de convidados. {obs}\n\n{gancho_data}Pensei numa página para a {nome} com o portfólio e um pedido de orçamento que já chega completo. Posso te mandar como ficaria?{fecho_dia}",
-          "{oi} Encontrei a {nome} pesquisando {categoria} {em_cidade}. {obs}\n\n{apresento} páginas para buffets e profissionais de eventos: o cliente vê o portfólio e pede o orçamento com data e convidados.\n\n{gancho_data}Quer ver um exemplo?{fecho_dia}",
-        ],
-        follow1: ["{oi} Passando de novo, já no começo da semana, sobre a página da {nome}. Te mando o exemplo?"],
         follow2: ["{oi} Montei uma prévia da página da {nome}, com as fotos dos eventos e o formulário de orçamento. Te mando a imagem?"],
         encerramento: ["Vou parar por aqui. Se quiser receber pedidos de orçamento completos, me chama. Bons eventos!"],
       },
@@ -329,20 +259,58 @@
         { o: "Agora não", r: "Tranquilo. Deixo o exemplo com você para ver quando der." },
       ],
       msgs: {
-        abordagem: [
-          "{oi} {apresento} sites e sistemas para empresas {em_cidade}.\n\nEncontrei a {nome} no Google. {obs}\n\n{gancho_data}Tenho uma ideia simples para quem pesquisa vocês encontrar tudo e chamar direto no WhatsApp. Posso te mostrar?{fecho_dia}",
-        ],
-        follow1: ["{oi} Passando de novo sobre a ideia para a {nome}. Te mando o exemplo?"],
         follow2: ["{oi} Fiz uma prévia rápida de como ficaria a página da {nome}. Te mando a imagem?"],
         encerramento: ["Vou parar por aqui para não incomodar. Se precisarem, é só me chamar. Abraço!"],
       },
     },
   };
 
+
+  // Conversa em partes: o primeiro contato é curto (quem sou, por que estou escrevendo, um convite) e
+  // a ideia do nicho só aparece quando o lead responde. Assim a mensagem não parece disparo nem golpe.
+  const CONVERSA = {
+    "Saúde": { sobre: "para a agenda de vocês", pergunta: "hoje vocês marcam mais por telefone ou pelo WhatsApp?",
+      ideia: "Em clínica, a recepção passa boa parte do dia marcando e remarcando horário. A ideia é um agendamento online em que o paciente marca sozinho e recebe lembrete no WhatsApp antes da consulta." },
+    "Beleza": { sobre: "para a agenda do salão", pergunta: "hoje a maioria das clientes chega pelo Instagram ou por indicação?",
+      ideia: "Sei que muito do dia vai em responder \"tem horário?\" no direct. A ideia é uma página com os serviços e o agendamento direto, a cliente marca sozinha a qualquer hora." },
+    "Restaurantes e bares": { sobre: "para os pedidos de vocês", pergunta: "hoje os pedidos chegam mais pelo aplicativo, pelo Instagram ou pelo WhatsApp?",
+      ideia: "A ideia é um cardápio online com pedido direto no WhatsApp de vocês, para o cliente que já conhece a casa pedir sem a comissão do aplicativo." },
+    "Padarias e cafés": { sobre: "para as encomendas", pergunta: "hoje as encomendas chegam mais por telefone ou pelo WhatsApp?",
+      ideia: "A ideia é uma página mostrando o que dá para encomendar, bolos, salgados e cestas, com o pedido chegando completo no WhatsApp." },
+    "Academias e estúdios": { sobre: "para as aulas experimentais", pergunta: "hoje a aula experimental é marcada pelo direct ou pelo WhatsApp?",
+      ideia: "A ideia é uma página de aula experimental: a pessoa escolhe o horário e já chega agendada no WhatsApp de vocês." },
+    "Pet": { sobre: "para o banho e tosa", pergunta: "hoje vocês marcam banho e tosa mais pelo WhatsApp ou por telefone?",
+      ideia: "A ideia é o banho e tosa com agendamento online e um lembrete automático para o cliente voltar no tempo certo." },
+    "Imobiliário": { sobre: "para os contatos dos imóveis", pergunta: "hoje a maioria dos contatos vem do portal ou do Instagram?",
+      ideia: "A ideia é um site com os imóveis organizados e o contato caindo direto no WhatsApp, sem depender só do portal pago." },
+    "Turismo e hospedagem": { sobre: "para as reservas", pergunta: "hoje a maior parte das reservas vem da plataforma ou direto com vocês?",
+      ideia: "A ideia é um site com reserva direta, para o hóspede que já encontrou vocês não precisar passar pela plataforma e pela comissão." },
+    "Escritórios": { sobre: "para o site de vocês", pergunta: "hoje os clientes chegam mais por indicação ou pelo Google?",
+      ideia: "A ideia é um site sóbrio, com as áreas de atuação e um formulário que já chega com o tipo de caso." },
+    "Automotivo": { sobre: "para os orçamentos", pergunta: "hoje o pessoal pede orçamento mais por telefone ou pelo WhatsApp?",
+      ideia: "A ideia é uma página com os serviços, fotos da oficina e um pedido de orçamento que já chega com o carro e o problema." },
+    "Obras e serviços": { sobre: "para os orçamentos", pergunta: "hoje os pedidos chegam mais por indicação ou pela internet?",
+      ideia: "A ideia é uma página com os seus trabalhos e um pedido de orçamento que chega completo, com o tipo de serviço e as fotos." },
+    "Lojas": { sobre: "para as vendas", pergunta: "hoje vocês vendem mais na loja ou pelo Instagram?",
+      ideia: "A ideia é um catálogo com preço e pedido direto no WhatsApp, para vender também para quem não passa na porta." },
+    "Educação": { sobre: "para as matrículas", pergunta: "hoje as matrículas começam mais por visita ou pelo WhatsApp?",
+      ideia: "A ideia é uma página para os pais agendarem visita e fazerem a pré-matrícula a qualquer hora." },
+    "Eventos": { sobre: "para os orçamentos", pergunta: "hoje os pedidos de orçamento chegam mais pelo Instagram ou pelo WhatsApp?",
+      ideia: "A ideia é uma página com o portfólio e um pedido de orçamento que já chega com a data e o número de convidados." },
+    "Outros": { sobre: "sobre isso", pergunta: "hoje os clientes chegam mais pelo Google, pelo Instagram ou por indicação?",
+      ideia: "A ideia é uma página simples para quem pesquisa vocês encontrar tudo e chamar direto no WhatsApp." },
+  };
+  // 1ª mensagem: apresentação, motivo do contato e um convite. Nada de preço, link ou proposta.
+  const ABERTURA = "{oi} {apresento} sites para {categorias} {em_cidade}.\n\nEstava pesquisando {categorias} por aqui e vi vocês. {obs_curta}Posso te mandar uma ideia rápida {sobre_convite}?{fecho_dia}";
+  // Lembrete 1: o lead ainda não respondeu, então não cita nada que ele não leu.
+  const LEMBRETE = "{oi} Passando de novo por aqui: posso te mandar aquela ideia que comentei? Se for melhor falar com outra pessoa daí, me avisa.{fecho_dia}";
+  // Quando o lead abre a conversa: a ideia do nicho e uma pergunta sobre o negócio dele.
+  const IDEIA = "Boa! {ideia}\n\n{gancho_data}Antes de te mostrar como ficaria para a {nome}, me conta: {pergunta}{exemplos}";
+
   // Respostas do meio da conversa: as mesmas para todos, com a dor do setor entrando no texto.
   const RESPOSTAS = {
-    atencao: "Claro. Funciona assim: eu olho como a {nome} aparece hoje no Google e no celular e te mando um diagnóstico curto, de graça, focado em {dor_curta}. " +
-      "Se fizer sentido, te passo uma proposta fechada, com o que entra, prazo ({prazo}) e valor, sem surpresa.{portfolio_frase2}{exemplos}\n\nPosso fazer o diagnóstico?",
+    atencao: "Claro! Eu olho como a {nome} aparece hoje no Google e no celular e te mando um diagnóstico curto, de graça, focado em {dor_curta}. " +
+      "Se fizer sentido, te passo uma proposta fechada, com prazo ({prazo}) e valor.{portfolio_frase2}{exemplos}\n\nPosso fazer?",
     desejo: "Combinado, vou montar a prévia da {nome}. Só me conta duas coisas para eu acertar: hoje os clientes chegam mais pelo Instagram, pelo Google ou por indicação? E prefere ver numa ligação rápida ou por aqui mesmo?{exemplos}",
     rejeicao: "Tranquilo, obrigado por responder. Só por curiosidade: já tem alguém cuidando disso ou não é prioridade agora? Se mudar, é só me chamar.",
     aprovacao: "Fechado então. Vou te mandar a proposta com o que entra, o prazo ({prazo}) e o valor. Qual e-mail eu uso e em nome de quem faço?",
@@ -404,19 +372,26 @@
     const est = doNicho(l.nicho || l.categoria);
     const { hora, ctx } = diaDoLead(l, quando);
     const nicho = l.nicho || l.categoria || "";
-    const g = ["abordagem", "follow2"].includes(etapa) ? ganchoData(ctx, nicho, est.tipo) : { txt: "" };
+    const g = ["desejo", "follow2"].includes(etapa) ? ganchoData(ctx, nicho, est.tipo) : { txt: "" };
     const nome = perfil.nome;
     const extra = {
       oi: saudacao(hora.h),
-      apresento: nome ? `Meu nome é ${nome} e faço` : "Eu faço",
+      apresento: nome ? `Meu nome é ${nome} e faço` : perfil.marca ? `Aqui é da ${perfil.marca}, faço` : "Eu faço",
       obs: ["crm", "app"].includes(vars.op_id) ? `Vi que a ${vars.nome} já tem uma presença forte no Google, com ${vars.avaliacoes} avaliações.`
         : vars.problema ? `Uma coisa que reparei: ${vars.problema}.` : "",
       gancho_data: g.txt, fecho_dia: ["abordagem", "follow1", "follow2"].includes(etapa) ? fechoDia(ctx, hora) : "",
       dor_curta: est.dor_curta,
+      obs_curta: ["crm", "app"].includes(vars.op_id) ? `Vi que vocês já têm uma presença forte por lá, com ${vars.avaliacoes} avaliações. `
+        : vars.problema ? `${vars.problema.charAt(0).toUpperCase()}${vars.problema.slice(1)}. ` : "",
+      ...(CONVERSA[est.tipo] || CONVERSA.Outros),
     };
+    extra.sobre_convite = extra.obs_curta ? "sobre isso" : extra.sobre;
     const todas = { ...vars, ...extra };
     let modelo = null;
-    if (est.msgs[etapa]) { const lista = est.msgs[etapa]; modelo = lista[hash(`${l.id || l.nome}|${etapa}`) % lista.length]; }
+    if (etapa === "abordagem") modelo = ABERTURA;
+    else if (etapa === "desejo") modelo = IDEIA;
+    else if (etapa === "follow1") modelo = LEMBRETE;
+    else if (est.msgs[etapa]) { const lista = est.msgs[etapa]; modelo = lista[hash(`${l.id || l.nome}|${etapa}`) % lista.length]; }
     else if (RESPOSTAS[etapa]) modelo = RESPOSTAS[etapa];
     if (!modelo) return null;
     let t = limpar(preencher(modelo, todas));
@@ -459,5 +434,5 @@
     });
   }
 
-  window.Estrategias = { SETORES, RESPOSTAS, doNicho, setorDe, texto, sequencia, diasDaSemana, localDoLead };
+  window.Estrategias = { SETORES, RESPOSTAS, CONVERSA, ABERTURA, IDEIA, LEMBRETE, doNicho, setorDe, texto, sequencia, diasDaSemana, localDoLead };
 })();

@@ -315,9 +315,7 @@ function retorno(l, a, perfil = {}, ticket = null, clientes = 2) {
 // ── Mensagens do ciclo (modulares: cada {bloco} vem do diagnóstico do lead) ────────
 const PROFISSAO_PADRAO = "desenvolvedor e trabalho com presença digital para empresas: sites, aplicativos, sistemas e soluções com inteligência artificial";
 const ROTEIRO_PADRAO = {
-  abordagem: "Olá, tudo bem? {apresentacao}\n\n{elogio} Dei uma olhada na presença digital de vocês: {problema}. " +
-    "{impacto}.\n\nEu desenvolvo {solucao} para {categorias}{portfolio_frase}\n\n" +
-    "Posso te mandar um diagnóstico gratuito da {nome}, sem compromisso? Se não fizer sentido agora, é só me avisar que não volto a mandar mensagem.",
+  abordagem: "Olá, tudo bem? {apresentacao}\n\nEncontrei a {nome} no Google e reparei uma coisa sobre {curto}. Posso te mandar uma ideia rápida?",
   follow1: "Oi! {de_novo}Passando só para saber se você viu minha mensagem sobre {curto}. O diagnóstico é gratuito e leva 2 minutos para ler. Quer que eu te mande?",
   follow2: "Olá! Uma última ideia para a {nome}: {beneficio}. Se quiser, preparo uma prévia de como ficaria, sem custo nenhum. Posso?",
   encerramento: "Vou parar por aqui para não incomodar. Se em algum momento quiserem melhorar {curto}, é só me chamar. Sucesso para a {nome}!",
