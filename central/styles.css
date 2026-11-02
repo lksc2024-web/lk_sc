@@ -440,7 +440,7 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 .mc-linha small{grid-column:1/-1;color:var(--muted);font-size:12px}
 .mc-linha .novo{color:var(--warn);font-weight:600}
 .mc-linha:hover b{color:var(--accent)}
-.mc-semana{display:grid;grid-template-columns:38px repeat(3,minmax(0,1fr));gap:4px;font-size:12px}
+.mc-semana{display:grid;grid-template-columns:48px repeat(3,minmax(0,1fr));gap:4px;font-size:12px}
 .mc-semana .cab{color:var(--muted);text-align:center;font-weight:600}
 .mc-semana .dia{color:var(--muted);align-self:center;font-weight:600}
 .mc-semana .dia.hoje{color:var(--accent)}
@@ -470,7 +470,36 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 .mc-vazio{color:var(--muted);margin:0}
 @media (min-width:1100px){
   .mc{grid-template-columns:minmax(0,1.15fr) minmax(0,1fr)}
-  .mc-filtros{grid-column:1/-1}
+  .mc-filtros,.mc-datas{grid-column:1/-1}
+  .mc-datas-grade{grid-template-columns:minmax(0,1fr) minmax(0,1.2fr)}
+  .mc-plano{grid-template-columns:repeat(2,minmax(0,1fr))}
   .mc-pers{grid-template-columns:repeat(3,minmax(0,1fr))}
 }
 .mc-grade .seg{justify-self:start}
+
+/* calendário de datas */
+.mc-chipdata{display:inline-flex;align-items:center;gap:4px}
+.mc-chipdata input{border:0;background:transparent;color:inherit;font:inherit;padding:0}
+.mc-tagdata{color:var(--warn);font-weight:600;white-space:nowrap}
+.mc-aviso{padding:10px 12px;border-radius:10px;background:var(--accent-soft);font-size:13px;line-height:1.5;margin-bottom:14px}
+.mc-aviso.feriado{background:color-mix(in srgb,var(--bad) 16%,transparent)}
+.mc-aviso.util,.mc-aviso.fds{background:var(--panel-2)}
+.mc-aviso.vespera,.mc-aviso.ponte,.mc-aviso.facultativo{background:color-mix(in srgb,var(--warn) 16%,transparent)}
+.mc-datas-grade{display:grid;gap:16px}
+.mc-op{border-top:1px solid var(--line);padding:10px 0}
+.mc-op:first-of-type{border-top:0;padding-top:4px}
+.mc-op-cab{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.mc-op-cab span{color:var(--muted);font-size:12px;white-space:nowrap}
+.mc-op small{display:block;color:var(--muted);font-size:12px;margin:2px 0 8px}
+.chip.tem{border-color:var(--accent);color:var(--accent)}
+.mc-plano{display:grid;gap:6px;margin-top:6px}
+.mc-sem{text-align:left;border:1px solid var(--line);background:var(--panel-2);border-radius:10px;padding:9px 11px;display:grid;gap:3px;color:var(--ink);cursor:pointer;font:inherit;font-size:12.5px}
+.mc-sem.sel{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset}
+.mc-sem-datas{color:var(--warn);font-size:12px}
+.mc-sem-foco{color:var(--muted);line-height:1.6}
+.mc-sem-foco i{font-style:normal;font-weight:600;font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;padding:1px 6px;border-radius:6px;margin-right:2px}
+.mc-sem-foco .et-a{background:var(--accent-soft);color:var(--accent)}
+.mc-sem-foco .et-b{background:var(--line);color:var(--ink)}
+.mc-sem-foco .et-c{background:color-mix(in srgb,var(--bad) 16%,transparent);color:var(--bad)}
+.mc-semana .dia small{display:block;font-weight:500;font-size:10px}
+.mc-semana .dia.fer{color:var(--bad)}
