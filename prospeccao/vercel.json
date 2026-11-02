@@ -31,6 +31,24 @@
           "value": "https://central-lk.vercel.app"
         }
       ]
+    },
+    {
+      "source": "/calendario.js",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "https://central-lk.vercel.app"
+        }
+      ]
+    },
+    {
+      "source": "/feriados.json",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "https://central-lk.vercel.app"
+        }
+      ]
     }
   ]
 }

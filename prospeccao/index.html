@@ -326,7 +326,7 @@ nav.abas button { position: relative; }
 .mel-linha .trilho i { display: block; height: 100%; background: var(--pri); border-radius: 3px; }
 .mel-linha small { grid-column: 1 / -1; color: var(--sub); font-size: 12px; }
 .mel-linha .novo-nicho { color: var(--amarelo); font-weight: 600; }
-.semana { display: grid; grid-template-columns: 40px repeat(3, minmax(0, 1fr)); gap: 4px; font-size: 12px; }
+.semana { display: grid; grid-template-columns: 50px repeat(3, minmax(0, 1fr)); gap: 4px; font-size: 12px; }
 .semana .cab { color: var(--sub); text-align: center; font-weight: 600; padding-bottom: 2px; }
 .semana .dia { color: var(--sub); align-self: center; font-weight: 600; }
 .semana .dia.hoje { color: var(--pri); }
@@ -362,7 +362,38 @@ nav.abas button { position: relative; }
 .r-tipo.auto { background: color-mix(in srgb, var(--amarelo) 18%, transparent); }
 .r-tipo.ruim { background: color-mix(in srgb, var(--perigo) 15%, transparent); }
 
+/* Calendário de datas */
+.dia-aviso { padding: 10px 12px; border-radius: 10px; background: var(--pri-suave); font-size: 14px; margin: 0 0 6px; }
+.dia-aviso.feriado { background: color-mix(in srgb, var(--perigo) 16%, transparent); }
+.dia-aviso.vespera, .dia-aviso.ponte, .dia-aviso.facultativo { background: color-mix(in srgb, var(--amarelo) 16%, transparent); }
+.tag-data { color: var(--amarelo); font-weight: 600; white-space: nowrap; }
+.chip-data { display: inline-flex; align-items: center; gap: 4px; }
+.chip-data input { border: 0; background: transparent; color: inherit; font: inherit; padding: 0; width: auto; min-height: 0; color-scheme: inherit; }
+.datas-grade { display: grid; gap: 16px; }
+.datas-grade .sub { font-size: 14px; margin: 0 0 6px; color: var(--sub); }
+.data-op { border-top: 1px solid var(--linha); padding: 10px 0; }
+.data-op:first-of-type { border-top: 0; padding-top: 2px; }
+.data-op-cab { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+.data-op-cab span { color: var(--sub); font-size: 12px; white-space: nowrap; }
+.data-op small { display: block; color: var(--sub); margin: 2px 0 8px; font-size: 12px; }
+.chip.tem { border-color: var(--pri); }
+.plano { display: grid; gap: 6px; }
+.plano-sem { text-align: left; border: 1px solid var(--linha); background: var(--bg); border-radius: 10px; padding: 8px 10px; display: grid; gap: 3px; color: var(--txt); cursor: pointer; font: inherit; font-size: 13px; }
+.plano-sem.sel { border-color: var(--pri); box-shadow: 0 0 0 1px var(--pri) inset; }
+.plano-rot { font-weight: 700; }
+.plano-datas { color: var(--amarelo); font-size: 12px; }
+.plano-foco { font-size: 12.5px; color: var(--sub); line-height: 1.55; }
+.plano-foco i { font-style: normal; font-weight: 700; font-size: 10.5px; text-transform: uppercase; letter-spacing: .03em; padding: 1px 6px; border-radius: 6px; margin-right: 2px; }
+.plano-foco .et-a { background: var(--pri-suave); color: var(--pri); }
+.plano-foco .et-b { background: var(--card); color: var(--txt); }
+.plano-foco .et-c { background: color-mix(in srgb, var(--perigo) 16%, transparent); color: var(--perigo); }
+.semana .dia small { display: block; font-weight: 500; font-size: 10px; }
+.semana .dia.fer { color: var(--perigo); }
+
 @media (min-width: 900px) {
+  #tela-melhores > #mel-datas-card { grid-column: 1 / -1; }
+  .datas-grade { grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); }
+  .plano { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   #tela-melhores:not([hidden]) { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 0 18px; align-items: start; }
   #tela-melhores > .mel-filtros { grid-column: 1 / -1; }
   .mel-periodos { grid-template-columns: repeat(3, minmax(0, 1fr)); }
@@ -517,6 +548,7 @@ nav.abas button { position: relative; }
 
   <section id="tela-melhores" hidden>
     <div class="cartao mel-filtros" id="mel-filtros"></div>
+    <div class="cartao" id="mel-datas-card"><div id="mel-datas"></div></div>
     <div class="cartao" id="mel-periodos-card"><div id="mel-periodos"></div></div>
     <div class="cartao" id="mel-semana-card"><div id="mel-semana"></div></div>
     <div class="cartao" id="mel-leads-card"><div id="mel-leads"></div></div>
@@ -766,6 +798,7 @@ nav.abas button { position: relative; }
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="/vendas.js"></script>
+<script src="/calendario.js"></script>
 <script src="/regiao.js"></script>
 <script src="/nucleo.js"></script>
 <script src="/app.js"></script>

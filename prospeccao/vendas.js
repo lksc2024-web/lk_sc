@@ -536,6 +536,8 @@ const ROTINA_NICHO = [
     bons: [[9, 11], [14, 17]], evitar: [[17, 19]], dias: [1, 2, 3, 4, 5], nota: "horário comercial calmo", exemplos: ["pet shop", "clínica veterinária", "banho e tosa"] },
   { tipo: "Imobiliário", re: /imobili|corretor|im[oó]ve|incorpora|loteament/i,
     bons: [[9, 12], [14, 16]], evitar: [[17, 20]], dias: [1, 2, 3, 4], nota: "manhã; fim de tarde é de visitas", exemplos: ["imobiliária", "corretor de imóveis"] },
+  { tipo: "Turismo e hospedagem", re: /pousada|hotel|hostel|turism|passeio|ag[eê]ncia de viage|temporada|camping|chal[eé]/i,
+    bons: [[9, 11], [14, 17]], evitar: [[17, 20]], dias: [1, 2, 3, 4], nota: "começo da semana; fim de semana e feriado são de hóspede", exemplos: ["pousada", "hotel", "agência de turismo"] },
   { tipo: "Escritórios", re: /advoca|advogad|contab|contador|arquitet|engenh|consult|despachan|seguro|cart[oó]rio|ag[eê]ncia/i,
     bons: [[9, 11], [14, 17]], evitar: [[12, 14]], dias: [2, 3, 4], nota: "horário comercial, fora do almoço", exemplos: ["advogado", "contabilidade", "arquitetura"] },
   { tipo: "Automotivo", re: /oficina|mec[aâ]nic|autope|lava.?jato|lava.?r[aá]pido|funilar|auto.?escola|concession|pneu|moto|ve[ií]cul|carro/i,
@@ -558,15 +560,19 @@ const sobrepoe = (faixas, a, b) => faixas.some(([x, y]) => x < b && y > a);
 const cobre = (janelas, a, b) => janelas.reduce((s, [x, y]) => s + Math.max(0, Math.min(b, y) - Math.max(a, x)), 0) / (b - a);
 // Quanto cada setor costuma responder a quem oferece site e presença digital (referência de mercado).
 const RECEPTIVIDADE = { "Saúde": 1.05, "Beleza": 1.08, "Restaurantes e bares": 0.82, "Padarias e cafés": 0.8, "Academias e estúdios": 0.95,
-  "Pet": 1, "Imobiliário": 0.97, "Escritórios": 0.9, "Automotivo": 0.88, "Obras e serviços": 0.93, "Lojas": 0.85, "Educação": 0.9, "Eventos": 1.02, "Outros": 0.85 };
+  "Pet": 1, "Imobiliário": 0.97, "Escritórios": 0.9, "Automotivo": 0.88, "Obras e serviços": 0.93, "Lojas": 0.85, "Educação": 0.9, "Eventos": 1.02, "Turismo e hospedagem": 0.98, "Outros": 0.85 };
 // Fim de semana: quem atende no sábado está ocupado; quem trabalha em campo responde mais.
 const FIM_DE_SEMANA = { "Restaurantes e bares": 0.3, "Padarias e cafés": 0.45, "Saúde": 0.35, "Beleza": 0.25, "Academias e estúdios": 0.45,
-  "Pet": 0.5, "Imobiliário": 0.45, "Escritórios": 0.3, "Automotivo": 0.6, "Obras e serviços": 0.65, "Lojas": 0.35, "Educação": 0.3, "Eventos": 0.2, "Outros": 0.4 };
-function encaixeReferencia(rotina, f, dow = null) {
+  "Pet": 0.5, "Imobiliário": 0.45, "Escritórios": 0.3, "Automotivo": 0.6, "Obras e serviços": 0.65, "Lojas": 0.35, "Educação": 0.3, "Eventos": 0.2, "Turismo e hospedagem": 0.3, "Outros": 0.4 };
+// dow: dia da semana (0 a 6) ou o contexto de uma data do calendario.js (feriado, véspera, ponte, datas comerciais).
+const diaDe = (dow) => (dow && typeof dow === "object" ? dow.dow : dow);
+function encaixeReferencia(rotina, f, dia = null) {
+  const ctx = dia && typeof dia === "object" ? dia : null, dow = diaDe(dia);
   const [a, b] = FAIXAS[f];
   const bom = cobre(rotina.bons, a, b), ruim = cobre(rotina.evitar, a, b);
   let s = Math.max(0.2, Math.min(1, 0.55 + 0.45 * bom - 0.32 * ruim));
   if (dow != null && rotina.dias && !rotina.dias.includes(dow)) s *= dow === 0 || dow === 6 ? (FIM_DE_SEMANA[rotina.tipo] ?? 0.4) * (dow === 0 ? 0.75 : 1) : 0.8;
+  if (ctx?.fatorDia) s *= ctx.fatorDia(rotina.tipo);
   return s;
 }
 
@@ -593,15 +599,23 @@ const TAXA_REF = 0.3, PESO_REF = 5;
 function notaNichoFaixa(nicho, f, dados, dow = null) {
   const c = dados?.[nicho]?.[f];
   const rot = rotinaDe(nicho);
-  const prior = TAXA_REF * encaixeReferencia(rot, f, dow) * (RECEPTIVIDADE[rot.tipo] || 0.85);
-  if (!c?.n) return { taxa: prior, interesse: null, n: 0, fonte: "estimativa" };
-  return { taxa: (c.r + PESO_REF * prior) / (c.n + PESO_REF), interesse: c.i / c.n, n: c.n, fonte: c.n >= PESO_REF ? "seus dados" : "misto" };
+  const ctx = dow && typeof dow === "object" ? dow : null;
+  const prior = TAXA_REF * encaixeReferencia(rot, f, diaDe(dow)) * (RECEPTIVIDADE[rot.tipo] || 0.85);
+  const r = !c?.n ? { taxa: prior, interesse: null, n: 0, fonte: "estimativa" }
+    : { taxa: (c.r + PESO_REF * prior) / (c.n + PESO_REF), interesse: c.i / c.n, n: c.n, fonte: c.n >= PESO_REF ? "seus dados" : "misto" };
+  if (!ctx) return r;
+  // o dia (feriado, véspera, ponte, pico de data comercial) vale também para os seus dados, que são médias de dias comuns;
+  // data comercial chegando (Black Friday, Dia das Mães...): o dono está pensando nisso e responde mais
+  const op = ctx.oportunidade ? ctx.oportunidade(nicho, rot.tipo) : { v: 0 };
+  r.taxa = Math.min(0.95, r.taxa * (ctx.fatorDia ? ctx.fatorDia(rot.tipo) : 1) * (1 + 0.45 * op.v));
+  r.data = op.v > 0 ? op : null;
+  return r;
 }
 
 // Melhores nichos para abordar numa hora: os nichos que você já buscou (com leads novos esperando)
 // e, para ideias de busca, os tipos de negócio cuja rotina combina com o horário.
-function melhoresNichosAgora(leads, quando = new Date()) {
-  const h = quando.getHours(), dow = quando.getDay(), f = faixaDe(h);
+function melhoresNichosAgora(leads, quando = new Date(), ctx = null) {
+  const h = quando.getHours(), f = faixaDe(h), dow = ctx || quando.getDay();
   const dados = desempenhoNichos(leads);
   const nichos = {};
   for (const l of leads) {
@@ -617,7 +631,7 @@ function melhoresNichosAgora(leads, quando = new Date()) {
   const buscados = new Set(Object.keys(nichos).map((n) => rotinaDe(n).tipo));
   const ideias = f < 0 ? [] : ROTINA_NICHO.map((r) => ({ tipo: r.tipo, nota: r.nota, exemplos: r.exemplos, encaixe: encaixeReferencia(r, f, dow), buscado: buscados.has(r.tipo) }))
     .filter((r) => r.encaixe >= 0.8).sort((a, b) => b.encaixe - a.encaixe || a.buscado - b.buscado);
-  return { hora: h, dow, faixa: f, rotulo: f < 0 ? null : FAIXAS[f][2], seus, ideias };
+  return { hora: h, dow: diaDe(dow), ctx, faixa: f, rotulo: f < 0 ? null : FAIXAS[f][2], seus, ideias };
 }
 
 // ── Melhores do momento: nicho × período × dia, mercado nacional ou de fora ─────────────
@@ -667,9 +681,10 @@ function rankingPeriodos(nichos, dow, dados) {
 }
 
 // Semana inteira: para cada dia e período, o melhor nicho entre os escolhidos.
-function semanaNichos(nichos, dados) {
-  return [1, 2, 3, 4, 5, 6, 0].map((dow) => ({
-    dow, dia: DIAS_CURTO[dow],
+// dias: os 7 dias (números de 0 a 6 ou contextos de data do calendário); sem dias = semana genérica.
+function semanaNichos(nichos, dados, dias = [1, 2, 3, 4, 5, 6, 0]) {
+  return dias.map((dow) => ({
+    dow: diaDe(dow), dia: DIAS_CURTO[diaDe(dow)], ctx: typeof dow === "object" ? dow : null,
     periodos: PERIODOS.map((p) => {
       const top = nichos.map((n) => ({ nicho: n, ...notaNichoPeriodo(n, p, dados, dow) })).sort((a, b) => b.taxa - a.taxa)[0];
       return { periodo: p.id, ...top };
@@ -768,6 +783,14 @@ const NICHO_TRAD = {
   "buffet": { en: "catering", es: "catering", fr: "traiteur", it: "catering", de: "Catering" },
   "fotógrafo": { en: "photographer", es: "fotógrafo", fr: "photographe", it: "fotografo", de: "Fotograf" },
   "salão de festas": { en: "event venue", es: "salón de eventos", fr: "salle de réception", it: "sala ricevimenti", de: "Eventlocation" },
+  "pousada": { en: "guesthouse", es: "posada", fr: "maison d'hôtes", it: "pensione", de: "Pension" },
+  "hotel": { en: "hotel", es: "hotel", fr: "hôtel", it: "hotel", de: "Hotel" },
+  "agência de turismo": { en: "travel agency", es: "agencia de viajes", fr: "agence de voyages", it: "agenzia di viaggi", de: "Reisebüro" },
+  "floricultura": { en: "florist", es: "floristería", fr: "fleuriste", it: "fioraio", de: "Blumenladen" },
+  "loja de brinquedos": { en: "toy store", es: "juguetería", fr: "magasin de jouets", it: "negozio di giocattoli", de: "Spielwarengeschäft" },
+  "perfumaria": { en: "perfume shop", es: "perfumería", fr: "parfumerie", it: "profumeria", de: "Parfümerie" },
+  "joalheria": { en: "jewelry store", es: "joyería", fr: "bijouterie", it: "gioielleria", de: "Juwelier" },
+  "chocolateria": { en: "chocolate shop", es: "chocolatería", fr: "chocolaterie", it: "cioccolateria", de: "Chocolatier" },
   "lanchonete": { en: "snack bar", es: "cafetería", fr: "snack", it: "snack bar", de: "Imbiss" },
 };
 function traduzirNicho(n, idioma) {

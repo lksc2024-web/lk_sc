@@ -139,7 +139,7 @@ async function iniciar(sessao) {
     return;
   }
   irPara("buscar");
-  await Promise.all([carregarConfig(), carregarBuscas(), carregarLeads()]);
+  await Promise.all([carregarConfig(), carregarBuscas(), carregarLeads(), Calendario.carregar("/feriados.json")]);
   recalcular();
   renderBuscar();
   if (location.hash === "#mapa") irPara("mapa"); // a Central abre direto no mapa
@@ -1244,9 +1244,16 @@ function renderContatos() {
 // Cache curto: a análise de nichos × horário é usada no painel, no "Fazer hoje" e na busca.
 // Zerado em recalcular(), quando os leads ou os envios mudam.
 function horaNichos() {
-  const k = `${new Date().getHours()}-${estado.leads.length}`;
-  if (estado.cacheHora?.k !== k) estado.cacheHora = { k, v: Vendas.melhoresNichosAgora(estado.leads) };
+  const ctx = Calendario.pronto() ? Calendario.contextoDia(Calendario.hojeEm(), localPadrao()) : null;
+  const k = `${new Date().getHours()}-${estado.leads.length}-${ctx ? ctx.data : ""}`;
+  if (estado.cacheHora?.k !== k) estado.cacheHora = { k, v: Vendas.melhoresNichosAgora(estado.leads, new Date(), ctx) };
   return estado.cacheHora.v;
+}
+// Lugar padrão para os feriados: Brasil e o estado onde está a maior parte dos seus leads.
+function localPadrao() {
+  const c = {}; estado.leads.forEach((l) => { if (l.uf && (l.dados?.geo?.pais || "BR") === "BR") c[l.uf] = (c[l.uf] || 0) + 1; });
+  const uf = Object.keys(c).sort((a, b) => c[b] - c[a])[0];
+  return { pais: "BR", uf };
 }
 
 function fazerHoje() {
@@ -1403,7 +1410,9 @@ function linhaAgora(a) {
   if (a.faixa < 0) return `<p class="dica" style="margin:0">Agora (${a.hora}h) está fora do horário comercial. Programe as abordagens para amanhã, a partir das 7h.</p>`;
   const top = a.seus.filter((n) => n.novos).slice(0, 3);
   const ideias = a.ideias.filter((r) => !r.buscado);
+  const dia = a.ctx ? Calendario.resumoDia(a.ctx) : null;
   return `<p class="agora"><b>Agora · ${DIAS[a.dow]} ${a.rotulo}</b></p>` +
+    (dia && !["util", "fds"].includes(dia.tipo) ? `<p class="dia-aviso ${dia.tipo}"><b>${esc(dia.titulo)}.</b> ${esc(dia.texto)}</p>` : "") +
     (top.length ? `<div class="agora-lista">${top.map((n) => `
       <button class="linha-hoje" data-nicho="${esc(n.nicho)}">
         <span class="tag-hoje ${n.agoraBom ? "t2" : n.taxa < 0.1 ? "t0" : "t1"}">${n.agoraBom ? "Bom agora" : n.taxa < 0.1 ? "Evite agora" : "Ok"}</span>

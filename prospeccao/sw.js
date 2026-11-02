@@ -1,7 +1,7 @@
 // Service worker: deixa o app instalável e abre mesmo com sinal fraco.
 // Rede primeiro (para pegar atualizações); cache só como reserva. /api nunca é guardado.
-const CACHE = "prospeccao-v10";
-const BASICO = ["/", "/app.js", "/vendas.js", "/regiao.js", "/nucleo.js", "/melhores.js", "/responder.js", "/manifest.webmanifest", "/icone-192.png"];
+const CACHE = "prospeccao-v11";
+const BASICO = ["/", "/app.js", "/vendas.js", "/calendario.js", "/feriados.json", "/regiao.js", "/nucleo.js", "/melhores.js", "/responder.js", "/manifest.webmanifest", "/icone-192.png"];
 
 self.addEventListener("install", (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(BASICO)).then(() => self.skipWaiting()));
