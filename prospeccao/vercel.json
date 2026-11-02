@@ -49,6 +49,15 @@
           "value": "https://central-lk.vercel.app"
         }
       ]
+    },
+    {
+      "source": "/estrategias.js",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "https://central-lk.vercel.app"
+        }
+      ]
     }
   ]
 }

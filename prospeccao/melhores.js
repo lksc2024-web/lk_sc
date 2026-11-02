@@ -13,6 +13,7 @@ const mel = {
   raio: 0,          // km em volta da área (0 = só a área)
   mercado: "BR",    // "BR" ou o código do país
   verTodos: false,
+  estNicho: null,   // nicho aberto na estratégia
 };
 
 function melFuso() {
@@ -177,6 +178,8 @@ function renderMelhores() {
             <small>${esc(horaLocalRotulo(n.rotulo))} · ${c ? `${c} lead${c > 1 ? "s" : ""} com contato` : `<span class="novo-nicho">ainda não buscado aqui</span>`}${n.data ? " · " + tagData(n.data) : ""}</small>
           </button>`; }).join("")}
       </div>`).join("")}</div>`;
+
+  renderEstrategia(ranking, per, dados, dataSel);
 
   // ── Calendário da semana ──
   let seg = dataSel; while (Calendario.dowDe(seg) !== 1) seg = Calendario.somar(seg, -1);
@@ -357,3 +360,88 @@ $("#tela-melhores").addEventListener("click", (e) => {
   const v = e.target.closest("[data-ver-nicho]");
   if (v) { mel.nichos = [v.dataset.verNicho]; renderMelhores(); $("#mel-leads-card").scrollIntoView({ behavior: "smooth", block: "start" }); }
 });
+
+// ── Estratégia por nicho: a dor, o que oferecer, o tom, a sequência de mensagens por dia e as objeções ──
+function exemploLead(nicho) {
+  // um lead de verdade do nicho (o melhor com contato) ou um exemplo com o nome em branco
+  const k = Vendas.semAcento(nicho);
+  const reais = estado.leads.filter((l) => Vendas.semAcento(l.nicho || "") === k && Vendas.temContato(l) && !["fechado", "descartado"].includes(l.status));
+  if (reais.length) return reais.sort((a, b) => analise(b).potencial - analise(a).potencial)[0];
+  const loc = melLocal();
+  return { id: "exemplo-" + k, nome: "[nome da empresa]", nicho, categoria: capN(nicho), cidade: loc.cidade || (mel.mercado === "BR" ? "Rio de Janeiro" : ""), uf: loc.uf,
+    site: "", nota: 0, avaliacoes: 0, status: "novo", dados: mel.mercado !== "BR" ? { geo: { pais: mel.mercado, tz: melFuso() } } : {} };
+}
+function quandoDe(data, faixa) {
+  const h = parseInt(faixa, 10) || 9, dif = mel.mercado === "BR" ? 0 : Vendas.difFuso(melFuso());
+  return new Date(Date.parse(`${data}T12:00:00-03:00`) + (h - dif - 12) * 3600000);
+}
+function renderEstrategia(ranking, per, dados, dataSel) {
+  const el = $("#mel-estrategia"); if (!el) return;
+  const daVez = ranking.find((p) => p.id === per) || ranking[0];
+  const opcoes = [...new Set([...mel.nichos, ...daVez.nichos.map((n) => n.nicho)])].slice(0, 10);
+  if (!mel.estNicho || !opcoes.some((n) => Vendas.semAcento(n) === Vendas.semAcento(mel.estNicho))) mel.estNicho = opcoes[0];
+  const nicho = mel.estNicho, est = Estrategias.doNicho(nicho), loc = melLocal();
+  const l = exemploLead(nicho), real = !String(l.id).startsWith("exemplo");
+  const a = Vendas.analisar(l, Vendas.contextoComparacao(estado.leads));
+  const inter = estado.intervalos || { follow1: 3, follow2: 7, encerramento: 7 };
+  const seq = Estrategias.sequencia(nicho, dataSel, loc, dados, inter);
+  const semana = Estrategias.diasDaSemana(nicho, dataSel, loc, dados);
+  const topoSem = Math.max(...semana.map((d) => d.taxa), 0.01);
+  const melhorDia = [...semana].sort((x, y) => y.taxa - x.taxa)[0];
+  const preco = Vendas.precoDe(est.servico, perfil());
+  const ctxHoje = melCtx(dataSel), op = ctxHoje.oportunidade(nicho, est.tipo);
+  const nomeEtapa = { abordagem: "Primeiro contato", follow1: "Lembrete", follow2: "Prévia (valor)", encerramento: "Encerramento" };
+  const msgs = seq.map((x) => ({ ...x, txt: Vendas.montarMensagem(l, x.etapa, a, perfil(), null, { quando: quandoDe(x.data, x.faixa) }) }));
+  el.innerHTML = `<h2>Estratégia por nicho</h2>
+    <p class="dica" style="margin:-6px 0 10px">Escolha o nicho. A abordagem parte da dor do dono, e as mensagens já saem com o dia, o horário e a data comercial certos.</p>
+    <div class="chips quebra" id="est-nichos">${opcoes.map((n) => `<button class="chip" data-est="${esc(n)}" aria-pressed="${Vendas.semAcento(n) === Vendas.semAcento(nicho)}">${esc(capN(n))}</button>`).join("")}</div>
+    <div class="est-grade">
+      <div class="est-perfil">
+        <h3>${esc(capN(nicho))} <small>${esc(est.tipo)}</small></h3>
+        <dl>
+          <div><dt>A dor do dono</dt><dd>${esc(est.dor)}</dd></div>
+          <div><dt>O que oferecer</dt><dd>${esc(est.oferta)} <small>(${esc(Vendas.faixaPreco(preco))}, ${esc(preco.prazo)})</small></dd></div>
+          <div><dt>Com quem você fala</dt><dd>${esc(est.dono)}</dd></div>
+          <div><dt>Tom</dt><dd>${esc(est.tom)}</dd></div>
+          <div><dt>Evite</dt><dd>${est.evitar.map(esc).join(" · ")}</dd></div>
+          ${op.ev ? `<div><dt>Ângulo da data</dt><dd>${op.ev.icone} ${esc(op.ev.nome)} ${emDias(op.dias)}: ofereça também ${esc(op.ev.oferta)}. Abordar até ${Calendario.curta(Calendario.somar(op.ev.inicio, -op.ev.ate))}.</dd></div>` : ""}
+        </dl>
+        <h4>Melhor dia nesta semana</h4>
+        <div class="est-semana">${semana.map((d) => `<span class="${d === melhorDia ? "top" : ""}${d.ctx.feriado ? " fer" : ""}" title="${esc(Calendario.resumoDia(d.ctx).titulo)}">
+          <b>${rotDia(d.data)}</b><i style="height:${Math.round(d.taxa / topoSem * 100)}%"></i><small>${Math.round(d.taxa * 100)}%<br>${esc(d.faixa)}</small></span>`).join("")}</div>
+        <p class="dica">Melhor: <b>${rotDia(melhorDia.data).toLowerCase()}, ${esc(horaLocalRotulo(melhorDia.faixa))}</b>.${semana.some((d) => d.ctx.feriado) ? " Feriado marcado em vermelho." : ""}</p>
+        <h4>Se ele disser…</h4>
+        <div class="est-obj">${est.objecoes.map((o) => `<details><summary>“${esc(o.o)}”</summary><p>${esc(o.r)}</p><button class="btn peq" data-copiar-obj="${esc(o.r)}">Copiar resposta</button></details>`).join("")}</div>
+      </div>
+      <div>
+        <h4 style="margin-top:0">Sequência por dia ${real ? `<small>com ${esc(l.nome)}</small>` : `<small>exemplo (o nome entra quando for um lead)</small>`}</h4>
+        <ol class="est-seq">${msgs.map((m, i) => `<li>
+          <div class="est-seq-cab"><b>${i + 1}. ${nomeEtapa[m.etapa]}</b><span>${rotDia(m.data)} · ${esc(horaLocalRotulo(m.faixa))} · ${Math.round(m.taxa * 100)}%</span></div>
+          ${m.ctx.feriado ? `<small class="novo-nicho">Cai em feriado: quem trabalha em campo responde, os outros nem tanto.</small>` : ""}
+          <details${i === 0 ? " open" : ""}><summary>Ver mensagem</summary><p class="est-msg">${esc(m.txt).replace(/\n/g, "<br>")}</p>
+            <div class="linha-flex" style="gap:8px; justify-content:flex-start"><button class="btn peq" data-copiar-msg="${i}">Copiar</button>${real && m.etapa === "abordagem" ? `<button class="btn peq pri" data-abrir-lead="${l.id}">Abrir o lead</button>` : ""}</div>
+          </details></li>`).join("")}</ol>
+        <p class="dica">Os lembretes saem ${inter.follow1}, ${inter.follow2} e ${inter.encerramento} dias depois do anterior${inter.fonte === "seus dados" ? " (pelo seu tempo de resposta)" : ""}, sempre no melhor dia e horário do nicho, pulando feriado.</p>
+      </div>
+    </div>`;
+  el._msgs = msgs;
+}
+$("#tela-melhores").addEventListener("click", async (e) => {
+  const n = e.target.closest("[data-est]");
+  if (n) { mel.estNicho = n.dataset.est; renderMelhores(); return; }
+  const c = e.target.closest("[data-copiar-msg]");
+  if (c) { const m = $("#mel-estrategia")._msgs?.[+c.dataset.copiarMsg]; if (m && await copiarTexto(m.txt)) toast("Mensagem copiada."); return; }
+  const o = e.target.closest("[data-copiar-obj]");
+  if (o) { if (await copiarTexto(o.dataset.copiarObj)) toast("Resposta copiada."); return; }
+  const ab = e.target.closest("[data-abrir-lead]");
+  if (ab) abrirLead(ab.dataset.abrirLead);
+});
+
+// Resumo da estratégia dentro da ficha do lead.
+function htmlEstrategiaLead(l) {
+  if (!window.Estrategias) return "";
+  const est = Estrategias.doNicho(l.nicho || l.categoria);
+  return `<details class="est-mini"><summary>Como abordar ${esc((l.nicho || l.categoria || "este nicho").toLowerCase())}: <b>${esc(est.dor_curta)}</b></summary>
+    <p><b>Dor do dono:</b> ${esc(est.dor)}</p><p><b>Tom:</b> ${esc(est.tom)}</p><p><b>Evite:</b> ${est.evitar.map(esc).join(" · ")}</p>
+    ${est.objecoes.map((o) => `<p><b>Se disser “${esc(o.o)}”:</b> ${esc(o.r)}</p>`).join("")}</details>`;
+}

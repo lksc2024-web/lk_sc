@@ -389,6 +389,13 @@ function montarMensagem(l, etapa, analise, perfil = {}, oportunidade = null, con
   const plano = planoMensal(l, { principal: op }, perfil);
   vars.manutencao_frase = plano?.recomendado && servico.manutencao
     ? `\n\nE vocês não precisam se preocupar com a parte técnica: eu cuido de tudo todo mês (${servico.manutencao}).` : "";
+  // Estratégia do nicho (estrategias.js): dor do setor, tom natural e o dia do lead. O roteiro que você
+  // escreveu em Ajustes continua valendo por cima dela; etapas internas ("_...") usam só os blocos.
+  const E = typeof window !== "undefined" ? window.Estrategias : null;
+  if (E && !String(etapa).startsWith("_") && !(perfil.roteiro && perfil.roteiro[etapa])) {
+    const t = E.texto(l, etapa, { ...vars, op_id: op.id }, perfil, conta.quando || null);
+    if (t) return t;
+  }
   const roteiro = { ...ROTEIRO_PADRAO, ...(perfil.roteiro || {}) };
   return preencherBlocos(roteiro[etapa] || roteiro.abordagem, vars).replace(/\.\./g, ".").replace(/[ \t]+\n/g, "\n").trim();
 }

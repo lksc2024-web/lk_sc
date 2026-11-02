@@ -982,6 +982,7 @@ function abrirLead(id, opcoes = {}) {
 
       <div class="cartao">
         <h2>Mensagem</h2>
+        ${typeof htmlEstrategiaLead === "function" ? htmlEstrategiaLead(l) : ""}
         ${Vendas.temContato(l) ? `
           <label class="campo" for="l-etapa" style="margin-top:0">Etapa do ciclo</label>
           <select id="l-etapa">
