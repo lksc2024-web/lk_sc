@@ -1279,7 +1279,7 @@ function mostrarSugestao() {
   }
   sel.onchange = aplicar; $("#rs-ag-q", box).onchange = aplicar; aplicar();
   if (lei && (lei.plano.encerrar || ["ok_seco", "nao_responsavel", "outro"].indexOf(g.id) >= 0)) $("#rs-ag-on", box).checked = false;
-  if (al) { var stSel = $("#rs-st", box); var sug = lei && lei.plano.encerrar ? "descartado" : NEGATIVOS_RESGATE.indexOf(g.id) >= 0 && lei ? "respondeu" : g.st; if (al.tipo === "cliente") sug = { descartado: "encerrado", fechado: "ativo", reuniao: al.obj.status, respondeu: al.obj.status }[g.st] || al.obj.status; stSel.value = sug; if (al.obj && al.obj.status === sug) $("#rs-st-on", box).checked = false; }
+  if (al) { var stSel = $("#rs-st", box); var sug = lei && lei.plano.futuro ? "respondeu" : lei && lei.plano.encerrar ? "descartado" : NEGATIVOS_RESGATE.indexOf(g.id) >= 0 && lei ? "respondeu" : g.st; if (al.tipo === "cliente") sug = { descartado: "encerrado", fechado: "ativo", reuniao: al.obj.status, respondeu: al.obj.status }[g.st] || al.obj.status; stSel.value = sug; if (al.obj && al.obj.status === sug) $("#rs-st-on", box).checked = false; }
   $("#rs-copiar", box).onclick = function () { copiar(tx.value); };
   $("#rs-salvar", box).onclick = function () { concluirResposta(box, false); };
   $("#rs-wa", box).onclick = function () { concluirResposta(box, true); };
@@ -1305,6 +1305,7 @@ async function concluirResposta(box, enviar) {
         var plano = res.leitura && res.leitura.plano;
         dados.ciclo = { envios: envios, respostas: respostas, encerrado: !!c.encerrado || g.id === "remover" || !!(plano && plano.encerrar) };
         if (g.id === "remover" || (plano && plano.nao_contatar)) dados.nao_contatar = true;
+        if (plano && plano.futuro) dados.relacionamento_futuro = true;
         var hist = (l.historico || []).concat([{ t: agora.toISOString(), tipo: robo ? "nota" : "resposta", txt: robo ? "Caiu na mensagem automática: " + S.resp.texto.slice(0, 200) : "Cliente respondeu (" + g.nome.toLowerCase() + "): " + S.resp.texto.slice(0, 300) }]);
         if (enviar) hist.push({ t: agora.toISOString(), tipo: "whatsapp", txt: "Resposta enviada pela Central: " + (m ? m.nome : res.leitura ? "pela leitura da resposta" : "") });
         var mud = { dados: dados, historico: hist, ultimo_contato: agora.toISOString() };
