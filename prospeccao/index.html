@@ -35,6 +35,15 @@
 html, body { margin: 0; background: var(--bg); color: var(--txt);
   font: 16px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
 body { padding-bottom: calc(76px + env(safe-area-inset-bottom)); }
+/* Nada pode passar da largura da tela: senão o celular "abre" a página para o lado e a barra de baixo estica junto. */
+html { overflow-x: hidden; }
+body { overflow-x: clip; max-width: 100%; overflow-wrap: break-word; }
+main, section, .cartao, .folha, .lead, .mel-lead, .canal-linha, .aviso { max-width: 100%; min-width: 0; }
+.segmento > *, .grade2 > *, .resumo > *, .kpis > *, .linha-flex > *, .mel-periodos > *, .est-grade > * { min-width: 0; }
+.segmento button { overflow-wrap: anywhere; }
+.cab > div, .mel-lead > div, .lead h3, .mel-lead h3, .meta { min-width: 0; overflow-wrap: anywhere; }
+img, video, canvas, svg, table, pre { max-width: 100%; }
+input, select, textarea { max-width: 100%; }
 button, input, select, textarea { font: inherit; color: inherit; }
 a { color: var(--pri); }
 [hidden] { display: none !important; }
@@ -117,11 +126,12 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--pri); outli
 
 .vazio { text-align: center; color: var(--sub); padding: 36px 12px; }
 
-nav.abas { position: fixed; left: 0; right: 0; bottom: 0; z-index: 6; display: flex; background: var(--card);
+nav.abas { position: fixed; left: 0; right: 0; bottom: 0; width: 100%; max-width: 100vw; box-sizing: border-box; z-index: 6; display: flex; background: var(--card);
   border-top: 1px solid var(--linha); padding-bottom: env(safe-area-inset-bottom); }
-nav.abas button { flex: 1; border: 0; background: none; padding: 10px 0 12px; font-size: 12px; color: var(--sub);
+nav.abas button { flex: 1 1 0; min-width: 0; border: 0; background: none; padding: 10px 0 12px; font-size: 12px; color: var(--sub); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   display: flex; flex-direction: column; align-items: center; gap: 3px; cursor: pointer; min-height: 60px; }
-nav.abas button svg { width: 24px; height: 24px; }
+nav.abas button svg { width: 24px; height: 24px; flex: none; }
+@media (max-width: 380px) { nav.abas button { font-size: 10.5px; } nav.abas button svg { width: 22px; height: 22px; } }
 nav.abas button[aria-current="page"] { color: var(--pri); font-weight: 700; }
 
 dialog.folha { border: 0; padding: 0; margin: auto 0 0; width: 100%; max-width: 100%; max-height: 92vh;
