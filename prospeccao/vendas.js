@@ -651,6 +651,7 @@ function periodoDe(h) { const f = faixaDe(h); return f < 0 ? null : PERIODOS.fin
 
 // Hora e dia da semana num fuso (ex.: "Europe/Lisbon"). Sem fuso = horário de Brasília.
 function horaEm(tz, quando = new Date()) {
+  if (!quando) quando = new Date(); // null virava 1970 (21h em Brasília) e toda saudação saía "Boa noite"
   try {
     const p = new Intl.DateTimeFormat("en-US", { timeZone: tz || "America/Sao_Paulo", hour: "numeric", hour12: false, weekday: "short" }).formatToParts(quando);
     const h = +p.find((x) => x.type === "hour").value % 24;

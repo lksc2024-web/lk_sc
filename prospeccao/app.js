@@ -654,6 +654,7 @@ function chanceDe(l, a = analise(l)) {
   return Vendas.chanceFechamento(l, a, estado.taxas || {});
 }
 
+const canalLead = (l) => (window.Estrategias?.canalDoLead ? Estrategias.canalDoLead(l, estado.leads) : { msg: 0, lig: 0 });
 function filtrados(ignorarGrupo = false) {
   const f = estado.filtro, termo = norm(f.texto);
   let lista = estado.leads.filter((l) =>
@@ -669,7 +670,9 @@ function filtrados(ignorarGrupo = false) {
     avaliacoes: (a, b) => b.avaliacoes - a.avaliacoes,
     nota: (a, b) => b.nota - a.nota || b.avaliacoes - a.avaliacoes,
     nome: (a, b) => a.nome.localeCompare(b.nome),
-  }[f.ordem];
+    canal_msg: (a, b) => canalLead(b).msg - canalLead(a).msg,
+    canal_lig: (a, b) => canalLead(b).lig - canalLead(a).lig,
+  }[f.ordem] || ((a, b) => b.criado_em.localeCompare(a.criado_em));
   // quem tem alguma forma de contato vem antes: lead sem contato não dá para prospectar
   return lista.sort((a, b) => (Vendas.temContato(b) - Vendas.temContato(a)) || ord(a, b));
 }
@@ -705,6 +708,7 @@ function cartaoLead(l) {
     </div>
     <div class="selos">${seloGrupo(a.grupo)}${selos.map((s) => `<span class="selo">${s}</span>`).join("")}${canal ? "" : `<span class="sem-contato">Sem forma de contato</span>`}</div>
     ${a.principal ? `<p class="oport">💡 ${esc(cap(blocoCurto(l, a)))}</p>` : ""}
+    ${(() => { const cn = window.Estrategias?.canalDoLead ? Estrategias.canalDoLead(l, estado.leads) : null; return cn && cn.melhor ? `<p class="canal-lead">${{ msg: "💬", lig: "📞", combo: "🔁" }[cn.melhor]} Melhor: <b>${esc(cn.melhorNome)}</b> · mensagem ${Math.round(cn.msg * 100)}% · ligação ${Math.round(cn.lig * 100)}%${cn.porque ? `<small>${esc(cap(cn.porque))}</small>` : ""}</p>` : ""; })()}
     ${(() => { const pl = Vendas.planoMensal(l, a, perfil()); return pl?.recomendado ? `<p class="mensal">🔁 Vale plano mensal (${pl.nivel}): ${Vendas.fmtReais(pl.valor[0])} a ${Vendas.fmtReais(pl.valor[1])}/mês</p>` : ""; })()}
     <div class="medidor">${medidor}${prox?.urgente ? ` · <span class="urgente">${esc(prox.texto)} hoje</span>` : ""}</div>
     <div class="acoes">
@@ -721,6 +725,31 @@ function blocoCurto(l, a) {
   const p = Vendas.precoDe(a.principal.servico, perfil());
   return `${Vendas.montarMensagem(l, "_curto", a, { roteiro: { _curto: "{curto}" } })} → ${p.nome}`;
 }
+
+// Quando a lista é de um nicho (uma busca, um termo ou só leads de um setor): o melhor canal para ele
+// e quantas empresas da lista respondem mais por mensagem, por ligação ou pelas duas.
+function renderCanalNicho(lista, busca, f) {
+  const el = $("#f-canal-nicho"); if (!el) return;
+  const E = window.Estrategias;
+  if (!E?.canalDoLead || !lista.length) { el.hidden = true; return; }
+  let nicho = busca?.nichos?.[0] || "";
+  if (!nicho && f.texto) { const t = norm(f.texto); nicho = Vendas.catalogoNichos(estado.leads).find((n) => norm(n).includes(t) || t.includes(norm(n))) || ""; }
+  if (!nicho) { const tipos = new Set(lista.map((l) => E.setorDe(l.nicho || l.categoria))); if (tipos.size === 1) nicho = lista[0].nicho || lista[0].categoria || ""; }
+  if (!nicho) { el.hidden = true; return; }
+  const cn = E.canalDoNicho(nicho, estado.leads), doNicho = lista.filter((l) => E.setorDe(l.nicho || l.categoria) === cn.tipo);
+  const cont = { msg: 0, lig: 0, combo: 0 };
+  doNicho.forEach((l) => { const c = E.canalDoLead(l, estado.leads); if (c.melhor) cont[c.melhor]++; });
+  const pc = (v) => Math.round(v * 100) + "%";
+  el.hidden = false;
+  el.innerHTML = `<b>${esc(cap(nicho))}</b>: melhor por <b>${esc(cn.melhorNome.toLowerCase())}</b> (mensagem ${pc(cn.taxa.msg)}, ligação ${pc(cn.taxa.lig)}, as duas ${pc(cn.taxa.combo)}). ${esc(cn.quem)}
+    <br>Hora de ligar: ${esc(cn.ligar)}. ${esc(cn.combo)}
+    ${doNicho.length ? `<br>Nesta lista: <b>${cont.msg}</b> mais prováveis por mensagem, <b>${cont.lig}</b> por ligação e <b>${cont.combo}</b> pelas duas.
+    <span class="linha-flex" style="gap:8px; justify-content:flex-start; margin-top:8px"><button class="btn peq" data-ordem-canal="canal_msg">Ver primeiro os de mensagem</button><button class="btn peq" data-ordem-canal="canal_lig">Ver primeiro os de ligação</button></span>` : ""}`;
+}
+document.addEventListener("click", (e) => {
+  const b = e.target.closest("[data-ordem-canal]"); if (!b) return;
+  estado.filtro.ordem = b.dataset.ordemCanal; $("#f-ordem").value = b.dataset.ordemCanal; renderLeads();
+});
 
 function renderLeads() {
   const f = estado.filtro, todos = estado.leads;
@@ -750,6 +779,7 @@ function renderLeads() {
   }
 
   const lista = filtrados();
+  renderCanalNicho(lista, busca, f);
   $("#lista-leads").innerHTML = lista.length ? lista.slice(0, estado.mostrar).map(cartaoLead).join("")
     : `<div class="vazio">${todos.length ? "Nenhum lead com esses filtros." : "Seus leads aparecem aqui depois da primeira busca."}</div>`;
   $("#btn-mais").hidden = lista.length <= estado.mostrar;

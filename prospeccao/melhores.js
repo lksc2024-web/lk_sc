@@ -471,10 +471,13 @@ $("#tela-melhores").addEventListener("click", async (e) => {
 });
 
 // Resumo da estratégia dentro da ficha do lead.
+const ICONE_CANAL_ABRE = { msg: "💬", lig: "📞", combo: "🔁" };
 function htmlEstrategiaLead(l) {
   if (!window.Estrategias) return "";
   const est = Estrategias.doNicho(l.nicho || l.categoria);
-  return `<details class="est-mini"><summary>Como abordar ${esc((l.nicho || l.categoria || "este nicho").toLowerCase())}: <b>${esc(est.dor_curta)}</b></summary>
+  const cn = Estrategias.canalDoLead ? Estrategias.canalDoLead(l, estado.leads) : null;
+  const canalHtml = cn && cn.melhor ? `<p class="canal-lead">${ICONE_CANAL_ABRE[cn.melhor]} Melhor com esta empresa: <b>${esc(cn.melhorNome)}</b> · mensagem ${Math.round(cn.msg * 100)}% · ligação ${Math.round(cn.lig * 100)}%${cn.porque ? `<small>${esc(cap(cn.porque))}.${cn.melhor !== "msg" ? ` Hora de ligar: ${esc(cn.ligar)}.` : ""}${cn.melhor === "combo" ? ` ${esc(cn.comoCombinar)}` : ""}</small>` : ""}</p>` : "";
+  return canalHtml + `<details class="est-mini"><summary>Como abordar ${esc((l.nicho || l.categoria || "este nicho").toLowerCase())}: <b>${esc(est.dor_curta)}</b></summary>
     <p><b>Dor do dono:</b> ${esc(est.dor)}</p><p><b>Tom:</b> ${esc(est.tom)}</p><p><b>Evite:</b> ${est.evitar.map(esc).join(" · ")}</p>
     ${est.objecoes.map((o) => `<p><b>Se disser “${esc(o.o)}”:</b> ${esc(o.r)}</p>`).join("")}</details>`;
 }

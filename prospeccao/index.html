@@ -349,6 +349,9 @@ nav.abas button { position: relative; }
 .canal-linha .trilho i { display: block; height: 100%; background: var(--pri); border-radius: 3px; }
 .canal-linha summary small { grid-column: 1 / -1; color: var(--sub); font-size: 12px; }
 .canal-linha p { margin: 8px 0 0; font-size: 13px; }
+.canal-lead { margin: 6px 0 0; font-size: 13px; }
+.canal-lead small { display: block; color: var(--sub); font-size: 12px; }
+.canal-nicho { font-size: 13px; line-height: 1.5; }
 .mel-resumo { margin: 12px 0 0; font-size: 14px; }
 .mel-lead { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 12px; padding: 12px 0; border-top: 1px solid var(--linha); }
 .mel-lead:first-child { border-top: 0; }
@@ -620,12 +623,15 @@ nav.abas button { position: relative; }
         <option value="avaliacoes">Mais avaliações</option>
         <option value="nota">Maior nota</option>
         <option value="nome">Nome (A–Z)</option>
+        <option value="canal_msg">Mais provável por mensagem</option>
+        <option value="canal_lig">Mais provável por ligação</option>
       </select>
       <button class="btn" id="btn-exportar" style="flex:none">Planilha</button>
     </div>
     <button class="btn cheio" id="btn-limpar-filtros" style="margin-bottom:12px" hidden>✕ Limpar filtros</button>
     <button class="btn cheio" id="btn-analisar" style="margin-bottom:12px" hidden></button>
     <div class="aviso" id="f-busca-aviso" hidden></div>
+    <div class="aviso canal-nicho" id="f-canal-nicho" hidden></div>
     <div id="lista-leads"></div>
     <button class="btn cheio" id="btn-mais" hidden>Mostrar mais</button>
   </section>

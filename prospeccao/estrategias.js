@@ -383,6 +383,48 @@
     // Na combinação, vem primeiro quem mais ganha ao somar a ligação (não só quem tem a maior taxa).
     return { msg: por("msg"), lig: por("lig"), combo: [...lista].sort((a, b) => b.ganho - a.ganho), lista };
   }
+  // Para cada empresa: qual canal tem mais chance com ela. Parte do setor e ajusta pelo que a empresa tem:
+  // sem WhatsApp não tem mensagem; celular costuma ser atendido pelo dono, fixo pela recepção (ou ninguém);
+  // empresa pequena (poucas avaliações) o dono atende; grande tem recepção e gerente no meio.
+  let _cacheR = null, _chaveR = "";
+  function rankingCacheado(leads) {
+    const chave = leads.length + ":" + leads.reduce((n, l) => n + (((l.dados || {}).ciclo || {}).envios || []).length, 0);
+    if (chave !== _chaveR) { _cacheR = rankingCanais(leads); _chaveR = chave; }
+    return _cacheR;
+  }
+  const soDig = (t) => String(t || "").replace(/\D/g, "");
+  function ehCelular(l) {
+    const d = soDig(l.tel_digitos || l.telefone).replace(/^55/, "");
+    return d.length === 11 && d[2] === "9";
+  }
+  function canalDoLead(l, leads = []) {
+    const tipo = setorDe(l.nicho || l.categoria);
+    const base = rankingCacheado(leads).lista.find((x) => x.tipo === tipo) || { taxa: { msg: CANAIS.Outros.msg, lig: CANAIS.Outros.lig }, ...CANAIS.Outros };
+    let msg = base.taxa.msg, lig = base.taxa.lig;
+    const mM = [], mL = [];
+    const temTel = !!(l.tel_digitos || l.telefone), cel = temTel && ehCelular(l);
+    if (l.whatsapp) mM.push("tem WhatsApp");
+    else if (l.instagram) { msg *= 0.85; mM.push("sem WhatsApp, só o direct"); }
+    else if (l.email) { msg *= 0.45; mM.push("só e-mail para mensagem"); }
+    else { msg = 0; mM.push("sem WhatsApp nem Instagram"); }
+    if (!temTel) { lig = 0; mL.push("sem telefone"); }
+    else if (cel) { lig *= 1.2; mL.push("o telefone é celular, costuma ser o dono"); }
+    else { lig *= 0.8; mL.push("telefone fixo, quem atende é a recepção"); }
+    const av = +l.avaliacoes || 0;
+    if (av && av < 40) { lig *= 1.1; mL.push("empresa pequena, o dono atende"); }
+    else if (av >= 300) { lig *= 0.85; msg *= 0.95; mL.push("empresa grande, tem gente no meio"); }
+    // se ele já respondeu depois de um envio, o canal desse envio é o que funciona com ele
+    const c = (l.dados || {}).ciclo || {}, env = c.envios || [], resp = c.respostas || [];
+    if (resp.length && env.length) {
+      const ult = env[env.length - 1];
+      if (ult.canal === "telefone") { lig = Math.max(lig, 0.5); mL.unshift("já respondeu por ligação"); } else { msg = Math.max(msg, 0.5); mM.unshift("já respondeu por mensagem"); }
+    }
+    msg = Math.min(0.6, msg); lig = Math.min(0.6, lig);
+    const combo = msg && lig ? comboDe(msg, lig) : Math.max(msg, lig);
+    const melhor = !msg && !lig ? null : lig > msg * 1.05 ? "lig" : msg > lig * 1.6 || !lig ? "msg" : "combo";
+    const porque = melhor === "lig" ? mL[0] : melhor === "msg" ? (l.whatsapp && !mM[0].startsWith("já") ? base.quem : mM[0]) : [mM[0], mL[0]].filter(Boolean).join("; ");
+    return { tipo, msg, lig, combo, melhor, melhorNome: melhor ? NOME_CANAL_ABRE[melhor] : "Sem contato", porque, motivos: [...mM, ...mL], ligar: base.ligar, comoCombinar: base.combo, celular: cel };
+  }
   function canalDoNicho(nicho, leads = []) {
     const t = setorDe(nicho);
     return rankingCanais(leads).lista.find((x) => x.tipo === t) || { tipo: t, ...CANAIS.Outros, taxa: { msg: CANAIS.Outros.msg, lig: CANAIS.Outros.lig, combo: comboDe(CANAIS.Outros.msg, CANAIS.Outros.lig) }, melhor: "msg", melhorNome: "Mensagem", fonte: {} };
@@ -522,5 +564,5 @@
     });
   }
 
-  window.Estrategias = { SETORES, RESPOSTAS, CANAIS, rankingCanais, canalDoNicho, LIGACAO, CONVERSA, ABERTURA, IDEIA, LEMBRETE, doNicho, setorDe, texto, sequencia, diasDaSemana, localDoLead };
+  window.Estrategias = { SETORES, RESPOSTAS, CANAIS, rankingCanais, canalDoNicho, canalDoLead, LIGACAO, CONVERSA, ABERTURA, IDEIA, LEMBRETE, doNicho, setorDe, texto, sequencia, diasDaSemana, localDoLead };
 })();
