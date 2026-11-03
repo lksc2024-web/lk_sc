@@ -181,6 +181,7 @@ function renderMelhores() {
       </div>`).join("")}</div>`;
 
   renderCanais();
+  renderTesteAbertura();
   renderEstrategia(ranking, per, dados, dataSel);
 
   // ── Calendário da semana ──
@@ -378,6 +379,19 @@ function quandoDe(data, faixa) {
   return new Date(Date.parse(`${data}T12:00:00-03:00`) + (h - dif - 12) * 3600000);
 }
 // Melhor canal por nicho: mensagem, ligação ou as duas. Estimativa por setor até ter 10 envios seus por canal.
+function renderTesteAbertura() {
+  const el = $("#mel-teste"); if (!el || !Estrategias.testeAbertura) return;
+  const r = Estrategias.testeAbertura(estado.leads), pct = (x) => (x.env ? Math.round((x.resp / x.env) * 100) : 0);
+  const linha = (k, nome, ex) => `<div class="teste-linha"><b>${nome}</b><span>${r[k].env} enviadas · ${r[k].resp} ${r[k].resp === 1 ? "respondeu" : "responderam"}${r[k].env ? ` (${pct(r[k])}%)` : ""} · ${r[k].pos} com interesse ou dúvida</span><small>${ex}</small></div>`;
+  const total = r.A.env + r.B.env, falta = Math.max(0, 30 - Math.min(r.A.env, r.B.env));
+  const veredito = falta ? `Faltam ${falta} envios na versão com menos mensagens para dar para confiar no resultado.`
+    : pct(r.A) === pct(r.B) ? "Empate até agora." : `A versão ${pct(r.B) > pct(r.A) ? "B" : "A"} está respondendo mais.`;
+  el.innerHTML = `<h2>Teste da primeira mensagem</h2>
+    <p class="dica" style="margin:-6px 0 10px">Metade das empresas recebe cada versão. Conta só a primeira mensagem enviada daqui em diante.</p>
+    ${linha("A", "A · atual", "“Tenho uma ideia para… e queria te mostrar. Pode ser?”")}
+    ${linha("B", "B · nova", "Diz a ideia concreta e oferece uma prévia sem compromisso.")}
+    <p class="dica" style="margin:10px 0 0">${total ? veredito : "Ainda sem envios no teste."}</p>`;
+}
 function renderCanais() {
   const el = $("#mel-canais"); if (!el || !Estrategias.rankingCanais) return;
   const R = Estrategias.rankingCanais(estado.leads), k = mel.canal, lista = R[k];

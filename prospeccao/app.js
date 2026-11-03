@@ -861,6 +861,7 @@ async function enviarEtapa(l, etapa, texto, nome, canal) {
   const agora = new Date();
   const c = Vendas.ciclo(l);
   const envio = { t: agora.toISOString(), etapa, dow: agora.getDay(), h: agora.getHours(), txt: texto.slice(0, 1000) };
+  if (etapa === "abordagem" && window.Estrategias?.varianteAbertura) envio.v = Estrategias.varianteAbertura(l); // teste A/B da primeira mensagem
   const dados = { ...(l.dados || {}), ciclo: { ...c, envios: [...c.envios, envio], encerrado: c.encerrado || etapa === "encerramento" } };
   const extra = { dados, ultimo_contato: envio.t };
   if (l.status === "novo" && estado.config.auto_contatado !== false) extra.status = "contatado";

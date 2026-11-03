@@ -269,38 +269,42 @@
   // Conversa em partes: o primeiro contato é curto (quem sou, por que estou escrevendo, um convite) e
   // a ideia do nicho só aparece quando o lead responde. Assim a mensagem não parece disparo nem golpe.
   const CONVERSA = {
-    "Saúde": { sobre: "para a agenda de vocês", pergunta: "hoje vocês marcam mais por telefone ou pelo WhatsApp?",
+    "Saúde": { proposta: "Pensei num agendamento online para a {nome}: o paciente marca sozinho, até à noite, e recebe lembrete no WhatsApp antes da consulta.", sobre: "para a agenda de vocês", pergunta: "hoje vocês marcam mais por telefone ou pelo WhatsApp?",
       ideia: "Em clínica, a recepção passa boa parte do dia marcando e remarcando horário. A ideia é um agendamento online em que o paciente marca sozinho e recebe lembrete no WhatsApp antes da consulta." },
-    "Beleza": { sobre: "para a agenda de vocês", pergunta: "hoje a maioria das clientes chega pelo Instagram ou por indicação?",
+    "Beleza": { proposta: "Pensei numa página para a {nome} com os serviços e o agendamento direto: a cliente marca sozinha, sem esperar resposta no direct.", sobre: "para a agenda de vocês", pergunta: "hoje a maioria das clientes chega pelo Instagram ou por indicação?",
       ideia: "Sei que muito do dia vai em responder \"tem horário?\" no direct. A ideia é uma página com os serviços e o agendamento direto, a cliente marca sozinha a qualquer hora." },
-    "Restaurantes e bares": { sobre: "para os pedidos de vocês", pergunta: "hoje os pedidos chegam mais pelo aplicativo, pelo Instagram ou pelo WhatsApp?",
+    "Restaurantes e bares": { proposta: "Pensei num cardápio online da {nome} com pedido direto no WhatsApp, para quem já conhece a casa pedir sem a comissão do aplicativo.", sobre: "para os pedidos de vocês", pergunta: "hoje os pedidos chegam mais pelo aplicativo, pelo Instagram ou pelo WhatsApp?",
       ideia: "A ideia é um cardápio online com pedido direto no WhatsApp de vocês, para o cliente que já conhece a casa pedir sem a comissão do aplicativo." },
-    "Padarias e cafés": { sobre: "para as encomendas", pergunta: "hoje as encomendas chegam mais por telefone ou pelo WhatsApp?",
+    "Padarias e cafés": { proposta: "Pensei numa página da {nome} mostrando o que dá para encomendar, com o pedido chegando completo no WhatsApp.", sobre: "para as encomendas", pergunta: "hoje as encomendas chegam mais por telefone ou pelo WhatsApp?",
       ideia: "A ideia é uma página mostrando o que dá para encomendar, bolos, salgados e cestas, com o pedido chegando completo no WhatsApp." },
-    "Academias e estúdios": { sobre: "para as aulas experimentais", pergunta: "hoje a aula experimental é marcada pelo direct ou pelo WhatsApp?",
+    "Academias e estúdios": { proposta: "Pensei numa página de aula experimental para a {nome}: a pessoa escolhe o horário e já chega agendada no WhatsApp.", sobre: "para as aulas experimentais", pergunta: "hoje a aula experimental é marcada pelo direct ou pelo WhatsApp?",
       ideia: "A ideia é uma página de aula experimental: a pessoa escolhe o horário e já chega agendada no WhatsApp de vocês." },
-    "Pet": { sobre: "para o banho e tosa", pergunta: "hoje vocês marcam banho e tosa mais pelo WhatsApp ou por telefone?",
+    "Pet": { proposta: "Pensei num agendamento online de banho e tosa para a {nome}, com lembrete para o cliente voltar no tempo certo.", sobre: "para o banho e tosa", pergunta: "hoje vocês marcam banho e tosa mais pelo WhatsApp ou por telefone?",
       ideia: "A ideia é o banho e tosa com agendamento online e um lembrete automático para o cliente voltar no tempo certo." },
-    "Imobiliário": { sobre: "para os contatos dos imóveis", pergunta: "hoje a maioria dos contatos vem do portal ou do Instagram?",
+    "Imobiliário": { proposta: "Pensei num site da {nome} com os imóveis organizados e o contato caindo direto no WhatsApp, sem depender só do portal.", sobre: "para os contatos dos imóveis", pergunta: "hoje a maioria dos contatos vem do portal ou do Instagram?",
       ideia: "A ideia é um site com os imóveis organizados e o contato caindo direto no WhatsApp, sem depender só do portal pago." },
-    "Turismo e hospedagem": { sobre: "para as reservas", pergunta: "hoje a maior parte das reservas vem da plataforma ou direto com vocês?",
+    "Turismo e hospedagem": { proposta: "Pensei num site da {nome} com reserva direta, para o hóspede que já conhece vocês não pagar a comissão da plataforma.", sobre: "para as reservas", pergunta: "hoje a maior parte das reservas vem da plataforma ou direto com vocês?",
       ideia: "A ideia é um site com reserva direta, para o hóspede que já encontrou vocês não precisar passar pela plataforma e pela comissão." },
-    "Escritórios": { sobre: "para o site de vocês", pergunta: "hoje os clientes chegam mais por indicação ou pelo Google?",
+    "Escritórios": { proposta: "Pensei num site sóbrio para a {nome}, com as áreas de atuação e um contato que já chega com o tipo de caso.", sobre: "para o site de vocês", pergunta: "hoje os clientes chegam mais por indicação ou pelo Google?",
       ideia: "A ideia é um site sóbrio, com as áreas de atuação e um formulário que já chega com o tipo de caso." },
-    "Automotivo": { sobre: "para os orçamentos", pergunta: "hoje o pessoal pede orçamento mais por telefone ou pelo WhatsApp?",
+    "Automotivo": { proposta: "Pensei numa página da {nome} com os serviços, fotos da oficina e um pedido de orçamento que já chega com o carro e o problema.", sobre: "para os orçamentos", pergunta: "hoje o pessoal pede orçamento mais por telefone ou pelo WhatsApp?",
       ideia: "A ideia é uma página com os serviços, fotos da oficina e um pedido de orçamento que já chega com o carro e o problema." },
-    "Obras e serviços": { sobre: "para os orçamentos", pergunta: "hoje os pedidos chegam mais por indicação ou pela internet?",
+    "Obras e serviços": { proposta: "Pensei numa página com fotos dos seus trabalhos, onde o cliente já manda o pedido de orçamento com medidas e fotos pelo WhatsApp.", sobre: "para os orçamentos", pergunta: "hoje os pedidos chegam mais por indicação ou pela internet?",
       ideia: "A ideia é uma página com os seus trabalhos e um pedido de orçamento que chega completo, com o tipo de serviço e as fotos." },
-    "Lojas": { sobre: "para as vendas", pergunta: "hoje vocês vendem mais na loja ou pelo Instagram?",
+    "Lojas": { proposta: "Pensei num catálogo da {nome} com preço e pedido direto no WhatsApp, para vender também para quem não passa na porta.", sobre: "para as vendas", pergunta: "hoje vocês vendem mais na loja ou pelo Instagram?",
       ideia: "A ideia é um catálogo com preço e pedido direto no WhatsApp, para vender também para quem não passa na porta." },
-    "Educação": { sobre: "para as matrículas", pergunta: "hoje as matrículas começam mais por visita ou pelo WhatsApp?",
+    "Educação": { proposta: "Pensei numa página da {nome} para os pais agendarem visita e fazerem a pré-matrícula a qualquer hora.", sobre: "para as matrículas", pergunta: "hoje as matrículas começam mais por visita ou pelo WhatsApp?",
       ideia: "A ideia é uma página para os pais agendarem visita e fazerem a pré-matrícula a qualquer hora." },
-    "Eventos": { sobre: "para os orçamentos", pergunta: "hoje os pedidos de orçamento chegam mais pelo Instagram ou pelo WhatsApp?",
+    "Eventos": { proposta: "Pensei numa página com o portfólio da {nome} e um pedido de orçamento que já chega com a data e o número de convidados.", sobre: "para os orçamentos", pergunta: "hoje os pedidos de orçamento chegam mais pelo Instagram ou pelo WhatsApp?",
       ideia: "A ideia é uma página com o portfólio e um pedido de orçamento que já chega com a data e o número de convidados." },
-    "Outros": { sobre: "sobre isso", pergunta: "hoje os clientes chegam mais pelo Google, pelo Instagram ou por indicação?",
+    "Outros": { proposta: "Pensei numa página simples da {nome}, com o que vocês fazem e um botão que leva direto para o WhatsApp.", sobre: "sobre isso", pergunta: "hoje os clientes chegam mais pelo Google, pelo Instagram ou por indicação?",
       ideia: "A ideia é uma página simples para quem pesquisa vocês encontrar tudo e chamar direto no WhatsApp." },
   };
   // 1ª mensagem: apresentação, motivo do contato e um convite. Nada de preço, link ou proposta.
+  // Versão B (em teste contra a A): diz a ideia concreta e oferece uma prévia, em vez de "tenho uma ideia".
+  const ABERTURA_B = "{oi} {apresento_b} sites para {categorias} {em_cidade}.\n\n{elogio_curto}{obs_curta}\n\n{proposta} Posso te mandar uma prévia de como ficaria? É sem compromisso.{fecho_dia}";
+  // Metade dos leads recebe cada versão (sempre a mesma para o mesmo lead). O app mede qual tem mais resposta.
+  function varianteAbertura(l) { return hash(String(l.id || l.nome)) % 2 ? "B" : "A"; }
   const ABERTURA = "{oi} {apresento} sites para {categorias} {em_cidade}.\n\n{elogio_curto}{obs_curta}Tenho uma ideia {sobre} e queria te mostrar. Pode ser?{fecho_dia}";
   // O que foi visto, dito como observação de quem olhou (e não como acusação). "Pode ser só comigo" quando não dá para ter certeza.
   const OBS_LEVE = {
@@ -528,13 +532,15 @@
       ...(CONVERSA[est.tipo] || CONVERSA.Outros),
     };
     extra.sobre_convite = extra.obs_curta ? "sobre isso" : extra.sobre;
+    extra.apresento_b = nome ? `Meu nome é ${nome}, faço` : extra.apresento;
+    extra.proposta = preencher(extra.proposta || CONVERSA.Outros.proposta, vars);
     extra.dica_gratis = preencher(DICA_GRATIS[vars.op_id] || DICA_PADRAO, vars);
     extra.oi_fala = saudacao(hora.h).replace(", tudo bem?", "!");
     extra.motivo_fala = vars.problema ? `${vars.problema}. Tenho uma ideia ${extra.sobre} e queria te contar em 1 minuto.`
       : `tenho uma ideia ${extra.sobre} da ${vars.nome} e queria te contar em 1 minuto.`;
     const todas = { ...vars, ...extra };
     let modelo = null;
-    if (etapa === "abordagem") modelo = ABERTURA;
+    if (etapa === "abordagem") modelo = varianteAbertura(l) === "B" ? ABERTURA_B : ABERTURA;
     else if (etapa === "desejo") {
       const ult = ((l.dados && l.dados.ciclo && l.dados.ciclo.envios) || []).slice(-1)[0];
       const t = semAcento(ult && ult.txt);
@@ -731,5 +737,19 @@
     return null;
   }
 
-  window.Estrategias = { OBS_LEVE, SETORES, RESPOSTAS, CANAIS, rankingCanais, canalDoNicho, canalDoLead, LIGACAO, CONVERSA, ABERTURA, IDEIA, LEMBRETE, doNicho, setorDe, texto, sequencia, diasDaSemana, localDoLead, respostaAoCliente, DICA_GRATIS };
+  // Teste A/B da primeira mensagem: quantas empresas receberam cada versão e quantas responderam (sem contar robô).
+  function testeAbertura(leads) {
+    const r = { A: { env: 0, resp: 0, pos: 0 }, B: { env: 0, resp: 0, pos: 0 } };
+    for (const l of leads || []) {
+      const c = (l.dados && l.dados.ciclo) || {}, ab = (c.envios || []).find((e) => e.etapa === "abordagem" && e.v);
+      if (!ab) continue;
+      const x = r[ab.v]; if (!x) continue;
+      x.env++;
+      const resp = (c.respostas || []).filter((q) => q.t > ab.t && q.tipo);
+      if (resp.length) x.resp++;
+      if (resp.some((q) => ["desejo", "aprovacao", "atencao"].includes(q.tipo))) x.pos++;
+    }
+    return r;
+  }
+  window.Estrategias = { OBS_LEVE, SETORES, RESPOSTAS, CANAIS, rankingCanais, canalDoNicho, canalDoLead, LIGACAO, CONVERSA, ABERTURA, IDEIA, LEMBRETE, doNicho, setorDe, texto, sequencia, diasDaSemana, localDoLead, respostaAoCliente, DICA_GRATIS, varianteAbertura, testeAbertura };
 })();

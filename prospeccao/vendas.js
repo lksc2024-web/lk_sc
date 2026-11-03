@@ -141,7 +141,7 @@ const PLATAFORMAS = [
 function plataformaDe(site) { const s = String(site || ""); const p = PLATAFORMAS.find(([re]) => re.test(s)); return p ? p[1] : ""; }
 function soLink(site) { return soRede(site) || !!plataformaDe(site); }
 function pluralPalavra(p) {
-  return /s$/.test(p) ? p : p.replace(/ão$/, "ões").replace(/el$/, "éis").replace(/ol$/, "óis").replace(/([aeiouáéíóú])$/, "$1s").replace(/([rz])$/, "$1es").replace(/l$/, "is");
+  return /s$/.test(p) ? p : /[tkp]$/.test(p) ? p + "s" : p.replace(/ão$/, "ões").replace(/el$/, "éis").replace(/ol$/, "óis").replace(/([aeiouáéíóú])$/, "$1s").replace(/([rz])$/, "$1es").replace(/l$/, "is");
 }
 // "Clínica de estética" -> "clínicas de estética"; "Imobiliária" -> "imobiliárias"; casos difíceis -> genérico
 function plural(cat) {

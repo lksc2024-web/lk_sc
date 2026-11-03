@@ -385,6 +385,8 @@ nav.abas button { position: relative; }
 .r-tipo { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px; background: var(--pri-suave); margin: 12px 0 0; font-size: 14px; }
 .r-tipo b { font-size: 15px; }
 .r-tipo.auto { background: color-mix(in srgb, var(--amarelo) 18%, transparent); }
+.teste-linha { display: grid; gap: 2px; padding: 8px 0; border-top: 1px solid var(--linha, rgba(127,127,127,.2)); font-size: 14px; }
+.teste-linha small { color: var(--sub); }
 .r-leitura { margin: 8px 0 0; padding: 9px 12px; border-left: 3px solid var(--pri); background: var(--cartao, transparent); font-size: 13.5px; line-height: 1.45; border-radius: 0 8px 8px 0; }
 .r-leitura.conferir { border-left-color: var(--amarelo); }
 .r-tipo.ruim { background: color-mix(in srgb, var(--perigo) 15%, transparent); }
@@ -609,6 +611,7 @@ nav.abas button { position: relative; }
     <div class="cartao mel-filtros" id="mel-filtros"></div>
     <div class="cartao" id="mel-datas-card"><div id="mel-datas"></div></div>
     <div class="cartao" id="mel-periodos-card"><div id="mel-periodos"></div></div>
+    <div class="cartao"><div id="mel-teste"></div></div>
     <div class="cartao" id="mel-canais-card"><div id="mel-canais"></div></div>
     <div class="cartao" id="mel-estrategia-card"><div id="mel-estrategia"></div></div>
     <div class="cartao" id="mel-semana-card"><div id="mel-semana"></div></div>
