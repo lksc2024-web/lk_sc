@@ -389,7 +389,7 @@ function renderTesteAbertura() {
   el.innerHTML = `<h2>Teste da primeira mensagem</h2>
     <p class="dica" style="margin:-6px 0 10px">Metade das empresas recebe cada versão. Conta só a primeira mensagem enviada daqui em diante.</p>
     ${linha("A", "A · atual", "“Tenho uma ideia para… e queria te mostrar. Pode ser?”")}
-    ${linha("B", "B · nova", "Diz a ideia concreta e oferece uma prévia sem compromisso.")}
+    ${linha("B", "B · nova", "Diz a ideia concreta e pergunta como eles fazem hoje.")}
     <p class="dica" style="margin:10px 0 0">${total ? veredito : "Ainda sem envios no teste."}</p>`;
 }
 function renderCanais() {

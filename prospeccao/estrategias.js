@@ -269,40 +269,40 @@
   // Conversa em partes: o primeiro contato é curto (quem sou, por que estou escrevendo, um convite) e
   // a ideia do nicho só aparece quando o lead responde. Assim a mensagem não parece disparo nem golpe.
   const CONVERSA = {
-    "Saúde": { proposta: "Pensei num agendamento online para a {nome}: o paciente marca sozinho, até à noite, e recebe lembrete no WhatsApp antes da consulta.", sobre: "para a agenda de vocês", pergunta: "hoje vocês marcam mais por telefone ou pelo WhatsApp?",
+    "Saúde": { forma: "o paciente marcar a consulta sozinho, até à noite, com lembrete no WhatsApp antes do horário", processo: "Hoje a marcação é toda feita pela recepção?", proposta: "Pensei num agendamento online para a {nome}: o paciente marca sozinho, até à noite, e recebe lembrete no WhatsApp antes da consulta.", sobre: "para a agenda de vocês", pergunta: "hoje vocês marcam mais por telefone ou pelo WhatsApp?",
       ideia: "Em clínica, a recepção passa boa parte do dia marcando e remarcando horário. A ideia é um agendamento online em que o paciente marca sozinho e recebe lembrete no WhatsApp antes da consulta." },
-    "Beleza": { proposta: "Pensei numa página para a {nome} com os serviços e o agendamento direto: a cliente marca sozinha, sem esperar resposta no direct.", sobre: "para a agenda de vocês", pergunta: "hoje a maioria das clientes chega pelo Instagram ou por indicação?",
+    "Beleza": { forma: "a cliente ver os serviços e marcar o horário sozinha, sem esperar resposta no direct", processo: "Hoje vocês marcam tudo pelo WhatsApp e pelo direct?", proposta: "Pensei numa página para a {nome} com os serviços e o agendamento direto: a cliente marca sozinha, sem esperar resposta no direct.", sobre: "para a agenda de vocês", pergunta: "hoje a maioria das clientes chega pelo Instagram ou por indicação?",
       ideia: "Sei que muito do dia vai em responder \"tem horário?\" no direct. A ideia é uma página com os serviços e o agendamento direto, a cliente marca sozinha a qualquer hora." },
-    "Restaurantes e bares": { proposta: "Pensei num cardápio online da {nome} com pedido direto no WhatsApp, para quem já conhece a casa pedir sem a comissão do aplicativo.", sobre: "para os pedidos de vocês", pergunta: "hoje os pedidos chegam mais pelo aplicativo, pelo Instagram ou pelo WhatsApp?",
+    "Restaurantes e bares": { forma: "o cliente que já conhece a casa pedir direto no WhatsApp, sem a comissão do aplicativo", processo: "Hoje a maior parte dos pedidos vem pelo aplicativo?", proposta: "Pensei num cardápio online da {nome} com pedido direto no WhatsApp, para quem já conhece a casa pedir sem a comissão do aplicativo.", sobre: "para os pedidos de vocês", pergunta: "hoje os pedidos chegam mais pelo aplicativo, pelo Instagram ou pelo WhatsApp?",
       ideia: "A ideia é um cardápio online com pedido direto no WhatsApp de vocês, para o cliente que já conhece a casa pedir sem a comissão do aplicativo." },
-    "Padarias e cafés": { proposta: "Pensei numa página da {nome} mostrando o que dá para encomendar, com o pedido chegando completo no WhatsApp.", sobre: "para as encomendas", pergunta: "hoje as encomendas chegam mais por telefone ou pelo WhatsApp?",
+    "Padarias e cafés": { forma: "o cliente ver o que dá para encomendar e mandar o pedido completo pelo WhatsApp", processo: "Hoje as encomendas chegam mais por telefone ou por mensagem?", proposta: "Pensei numa página da {nome} mostrando o que dá para encomendar, com o pedido chegando completo no WhatsApp.", sobre: "para as encomendas", pergunta: "hoje as encomendas chegam mais por telefone ou pelo WhatsApp?",
       ideia: "A ideia é uma página mostrando o que dá para encomendar, bolos, salgados e cestas, com o pedido chegando completo no WhatsApp." },
-    "Academias e estúdios": { proposta: "Pensei numa página de aula experimental para a {nome}: a pessoa escolhe o horário e já chega agendada no WhatsApp.", sobre: "para as aulas experimentais", pergunta: "hoje a aula experimental é marcada pelo direct ou pelo WhatsApp?",
+    "Academias e estúdios": { forma: "facilitar a aula experimental: a pessoa escolhe o horário e já chega agendada no WhatsApp", processo: "Hoje vocês já têm uma página para a aula experimental?", proposta: "Pensei numa página de aula experimental para a {nome}: a pessoa escolhe o horário e já chega agendada no WhatsApp.", sobre: "para as aulas experimentais", pergunta: "hoje a aula experimental é marcada pelo direct ou pelo WhatsApp?",
       ideia: "A ideia é uma página de aula experimental: a pessoa escolhe o horário e já chega agendada no WhatsApp de vocês." },
-    "Pet": { proposta: "Pensei num agendamento online de banho e tosa para a {nome}, com lembrete para o cliente voltar no tempo certo.", sobre: "para o banho e tosa", pergunta: "hoje vocês marcam banho e tosa mais pelo WhatsApp ou por telefone?",
+    "Pet": { forma: "o tutor pedir o banho e tosa já informando o serviço, os dados do pet e o horário desejado", processo: "Como vocês organizam esses agendamentos hoje?", proposta: "Pensei num agendamento online de banho e tosa para a {nome}, com lembrete para o cliente voltar no tempo certo.", sobre: "para o banho e tosa", pergunta: "hoje vocês marcam banho e tosa mais pelo WhatsApp ou por telefone?",
       ideia: "A ideia é o banho e tosa com agendamento online e um lembrete automático para o cliente voltar no tempo certo." },
-    "Imobiliário": { proposta: "Pensei num site da {nome} com os imóveis organizados e o contato caindo direto no WhatsApp, sem depender só do portal.", sobre: "para os contatos dos imóveis", pergunta: "hoje a maioria dos contatos vem do portal ou do Instagram?",
+    "Imobiliário": { forma: "o interessado ver os imóveis organizados e chamar direto no WhatsApp, sem depender só do portal", processo: "Hoje a maioria dos contatos vem do portal?", proposta: "Pensei num site da {nome} com os imóveis organizados e o contato caindo direto no WhatsApp, sem depender só do portal.", sobre: "para os contatos dos imóveis", pergunta: "hoje a maioria dos contatos vem do portal ou do Instagram?",
       ideia: "A ideia é um site com os imóveis organizados e o contato caindo direto no WhatsApp, sem depender só do portal pago." },
-    "Turismo e hospedagem": { proposta: "Pensei num site da {nome} com reserva direta, para o hóspede que já conhece vocês não pagar a comissão da plataforma.", sobre: "para as reservas", pergunta: "hoje a maior parte das reservas vem da plataforma ou direto com vocês?",
+    "Turismo e hospedagem": { forma: "o hóspede que já conhece vocês reservar direto, sem a comissão da plataforma", processo: "Hoje a maior parte das reservas vem da plataforma?", proposta: "Pensei num site da {nome} com reserva direta, para o hóspede que já conhece vocês não pagar a comissão da plataforma.", sobre: "para as reservas", pergunta: "hoje a maior parte das reservas vem da plataforma ou direto com vocês?",
       ideia: "A ideia é um site com reserva direta, para o hóspede que já encontrou vocês não precisar passar pela plataforma e pela comissão." },
-    "Escritórios": { proposta: "Pensei num site sóbrio para a {nome}, com as áreas de atuação e um contato que já chega com o tipo de caso.", sobre: "para o site de vocês", pergunta: "hoje os clientes chegam mais por indicação ou pelo Google?",
+    "Escritórios": { forma: "o cliente chegar já explicando o tipo de caso antes do primeiro contato", processo: "Hoje os clientes chegam mais por indicação?", proposta: "Pensei num site sóbrio para a {nome}, com as áreas de atuação e um contato que já chega com o tipo de caso.", sobre: "para o site de vocês", pergunta: "hoje os clientes chegam mais por indicação ou pelo Google?",
       ideia: "A ideia é um site sóbrio, com as áreas de atuação e um formulário que já chega com o tipo de caso." },
-    "Automotivo": { proposta: "Pensei numa página da {nome} com os serviços, fotos da oficina e um pedido de orçamento que já chega com o carro e o problema.", sobre: "para os orçamentos", pergunta: "hoje o pessoal pede orçamento mais por telefone ou pelo WhatsApp?",
+    "Automotivo": { forma: "o cliente pedir orçamento já informando o carro e o problema, antes de ligar", processo: "Hoje esses pedidos chegam mais por telefone ou pelo WhatsApp?", proposta: "Pensei numa página da {nome} com os serviços, fotos da oficina e um pedido de orçamento que já chega com o carro e o problema.", sobre: "para os orçamentos", pergunta: "hoje o pessoal pede orçamento mais por telefone ou pelo WhatsApp?",
       ideia: "A ideia é uma página com os serviços, fotos da oficina e um pedido de orçamento que já chega com o carro e o problema." },
-    "Obras e serviços": { proposta: "Pensei numa página com fotos dos seus trabalhos, onde o cliente já manda o pedido de orçamento com medidas e fotos pelo WhatsApp.", sobre: "para os orçamentos", pergunta: "hoje os pedidos chegam mais por indicação ou pela internet?",
+    "Obras e serviços": { forma: "organizar os pedidos de orçamento, com o cliente mandando ambiente, medidas e referências antes de chamar no WhatsApp", processo: "Hoje vocês já usam algum processo assim?", proposta: "Pensei numa página com fotos dos seus trabalhos, onde o cliente já manda o pedido de orçamento com medidas e fotos pelo WhatsApp.", sobre: "para os orçamentos", pergunta: "hoje os pedidos chegam mais por indicação ou pela internet?",
       ideia: "A ideia é uma página com os seus trabalhos e um pedido de orçamento que chega completo, com o tipo de serviço e as fotos." },
-    "Lojas": { proposta: "Pensei num catálogo da {nome} com preço e pedido direto no WhatsApp, para vender também para quem não passa na porta.", sobre: "para as vendas", pergunta: "hoje vocês vendem mais na loja ou pelo Instagram?",
+    "Lojas": { forma: "o cliente ver os produtos com preço e pedir pelo WhatsApp, mesmo sem passar na loja", processo: "Hoje vocês já usam algum catálogo assim?", proposta: "Pensei num catálogo da {nome} com preço e pedido direto no WhatsApp, para vender também para quem não passa na porta.", sobre: "para as vendas", pergunta: "hoje vocês vendem mais na loja ou pelo Instagram?",
       ideia: "A ideia é um catálogo com preço e pedido direto no WhatsApp, para vender também para quem não passa na porta." },
-    "Educação": { proposta: "Pensei numa página da {nome} para os pais agendarem visita e fazerem a pré-matrícula a qualquer hora.", sobre: "para as matrículas", pergunta: "hoje as matrículas começam mais por visita ou pelo WhatsApp?",
+    "Educação": { forma: "os pais agendarem a visita e começarem a pré-matrícula a qualquer hora", processo: "Hoje a visita é marcada só por telefone?", proposta: "Pensei numa página da {nome} para os pais agendarem visita e fazerem a pré-matrícula a qualquer hora.", sobre: "para as matrículas", pergunta: "hoje as matrículas começam mais por visita ou pelo WhatsApp?",
       ideia: "A ideia é uma página para os pais agendarem visita e fazerem a pré-matrícula a qualquer hora." },
-    "Eventos": { proposta: "Pensei numa página com o portfólio da {nome} e um pedido de orçamento que já chega com a data e o número de convidados.", sobre: "para os orçamentos", pergunta: "hoje os pedidos de orçamento chegam mais pelo Instagram ou pelo WhatsApp?",
+    "Eventos": { forma: "o cliente pedir orçamento já informando a data, o bairro e o número de convidados", processo: "Hoje vocês já usam algum formulário assim?", proposta: "Pensei numa página com o portfólio da {nome} e um pedido de orçamento que já chega com a data e o número de convidados.", sobre: "para os orçamentos", pergunta: "hoje os pedidos de orçamento chegam mais pelo Instagram ou pelo WhatsApp?",
       ideia: "A ideia é uma página com o portfólio e um pedido de orçamento que já chega com a data e o número de convidados." },
-    "Outros": { proposta: "Pensei numa página simples da {nome}, com o que vocês fazem e um botão que leva direto para o WhatsApp.", sobre: "sobre isso", pergunta: "hoje os clientes chegam mais pelo Google, pelo Instagram ou por indicação?",
+    "Outros": { forma: "o cliente encontrar vocês no Google e chamar direto no WhatsApp, já sabendo o que vocês fazem", processo: "Hoje a maioria dos clientes chega por indicação?", proposta: "Pensei numa página simples da {nome}, com o que vocês fazem e um botão que leva direto para o WhatsApp.", sobre: "sobre isso", pergunta: "hoje os clientes chegam mais pelo Google, pelo Instagram ou por indicação?",
       ideia: "A ideia é uma página simples para quem pesquisa vocês encontrar tudo e chamar direto no WhatsApp." },
   };
   // 1ª mensagem: apresentação, motivo do contato e um convite. Nada de preço, link ou proposta.
-  // Versão B (em teste contra a A): diz a ideia concreta e oferece uma prévia, em vez de "tenho uma ideia".
-  const ABERTURA_B = "{oi} {apresento_b} sites para {categorias} {em_cidade}.\n\n{elogio_curto}{obs_curta}\n\n{proposta} Posso te mandar uma prévia de como ficaria? É sem compromisso.{fecho_dia}";
+  // Versão B (em teste contra a A): conversa consultiva, diz a ideia concreta e pergunta como eles fazem hoje.
+  const ABERTURA_B = "{oi} {apresento_b} sites aqui {em_cidade}.\n\nVi o perfil de vocês no Google. {obs_curta}\n\nPensei numa forma de {forma}. {processo}{fecho_dia}";
   // Metade dos leads recebe cada versão (sempre a mesma para o mesmo lead). O app mede qual tem mais resposta.
   function varianteAbertura(l) { return hash(String(l.id || l.nome)) % 2 ? "B" : "A"; }
   const ABERTURA = "{oi} {apresento} sites para {categorias} {em_cidade}.\n\n{elogio_curto}{obs_curta}Tenho uma ideia {sobre} e queria te mostrar. Pode ser?{fecho_dia}";
@@ -466,24 +466,24 @@
   const K = () => (window.Calendario && window.Calendario.pronto() ? window.Calendario : null);
   // Ajustes por nicho dentro do setor: nome no plural, setor certo e a ideia concreta da primeira mensagem.
   const POR_NICHO = [
-    [/(aluguel|locacao|loca) .*(festa|evento)|(festa|evento).*(aluguel|locacao)|pegue e monte|pague e leve/, { setor: "Eventos", proposta: "Pensei num catálogo da {nome} com os itens para locação, em que o cliente escolhe o que precisa e o pedido de orçamento já chega com a data e as quantidades." }],
-    [/salao de festa|casa de festa|espaco de evento|espaco para evento/, { setor: "Eventos", categorias: "salões de festas", proposta: "Pensei numa página do espaço da {nome} com fotos, capacidade e um pedido de orçamento que já chega com a data e o número de convidados." }],
-    [/veterin/, { setor: "Pet", categorias: "clínicas veterinárias", proposta: "Pensei num agendamento online para a {nome}: o tutor marca a consulta sozinho e recebe lembrete de vacina e retorno no WhatsApp." }],
+    [/(aluguel|locacao|loca) .*(festa|evento)|(festa|evento).*(aluguel|locacao)|pegue e monte|pague e leve/, { forma: "o cliente escolher os itens para o evento, informar a data e mandar o pedido de orçamento organizado pelo WhatsApp", processo: "Hoje vocês já usam algum catálogo com esse fluxo?", setor: "Eventos", proposta: "Pensei num catálogo da {nome} com os itens para locação, em que o cliente escolhe o que precisa e o pedido de orçamento já chega com a data e as quantidades." }],
+    [/salao de festa|casa de festa|espaco de evento|espaco para evento/, { setor: "Eventos", forma: "o cliente ver o espaço e a capacidade e pedir orçamento já com a data e o número de convidados", processo: "Hoje esses pedidos chegam mais pelo Instagram ou pelo WhatsApp?", categorias: "salões de festas", proposta: "Pensei numa página do espaço da {nome} com fotos, capacidade e um pedido de orçamento que já chega com a data e o número de convidados." }],
+    [/veterin/, { setor: "Pet", forma: "o tutor marcar a consulta sozinho e receber lembrete de vacina e retorno no WhatsApp", processo: "Hoje a marcação é toda feita por telefone?", categorias: "clínicas veterinárias", proposta: "Pensei num agendamento online para a {nome}: o tutor marca a consulta sozinho e recebe lembrete de vacina e retorno no WhatsApp." }],
     [/banho e tosa/, { setor: "Pet", categorias: "pet shops e banho e tosa" }],
     [/oficina|mecanic|funilaria/, { setor: "Automotivo", categorias: "oficinas mecânicas" }],
-    [/lava.?jato|lava rapido|estetica automotiva/, { setor: "Automotivo", proposta: "Pensei numa página da {nome} com os serviços e preços, onde o cliente já marca o horário da lavagem pelo WhatsApp." }],
-    [/autopeca|auto peca/, { setor: "Automotivo", categorias: "lojas de autopeças", proposta: "Pensei num catálogo da {nome} em que o cliente manda o modelo do carro e a peça que procura, e o pedido já chega completo no WhatsApp." }],
-    [/material de construcao|materiais de construcao|home center/, { setor: "Lojas", categorias: "lojas de material de construção", proposta: "Pensei num catálogo da {nome} em que o cliente monta a lista de materiais e o orçamento já chega pronto no WhatsApp." }],
-    [/arquitet|interiores/, { setor: "Escritórios", categorias: "escritórios de arquitetura", proposta: "Pensei num site com o portfólio da {nome}, onde o cliente vê os projetos e já manda o briefing com o tipo de obra e o tamanho do espaço." }],
-    [/contab/, { setor: "Escritórios", categorias: "escritórios de contabilidade", proposta: "Pensei num site sóbrio para a {nome}, com os serviços e um contato que já chega com o tipo e o porte da empresa." }],
+    [/lava.?jato|lava rapido|estetica automotiva/, { setor: "Automotivo", forma: "o cliente ver os serviços e preços e já marcar o horário da lavagem pelo WhatsApp", processo: "Hoje vocês trabalham mais com horário marcado ou por ordem de chegada?", proposta: "Pensei numa página da {nome} com os serviços e preços, onde o cliente já marca o horário da lavagem pelo WhatsApp." }],
+    [/autopeca|auto peca/, { setor: "Automotivo", forma: "o cliente mandar o modelo do carro e a peça que procura, e o pedido já chegar completo no WhatsApp", processo: "Hoje esses pedidos chegam mais por telefone?", categorias: "lojas de autopeças", proposta: "Pensei num catálogo da {nome} em que o cliente manda o modelo do carro e a peça que procura, e o pedido já chega completo no WhatsApp." }],
+    [/material de construcao|materiais de construcao|home center/, { setor: "Lojas", forma: "o cliente montar a lista de materiais e o orçamento já chegar pronto no WhatsApp", processo: "Hoje vocês recebem muita lista por foto ou por áudio?", categorias: "lojas de material de construção", proposta: "Pensei num catálogo da {nome} em que o cliente monta a lista de materiais e o orçamento já chega pronto no WhatsApp." }],
+    [/arquitet|interiores/, { setor: "Escritórios", forma: "o cliente ver os projetos e já mandar o briefing com o tipo de obra e o tamanho do espaço", processo: "Hoje esse briefing é feito só na primeira reunião?", categorias: "escritórios de arquitetura", proposta: "Pensei num site com o portfólio da {nome}, onde o cliente vê os projetos e já manda o briefing com o tipo de obra e o tamanho do espaço." }],
+    [/contab/, { setor: "Escritórios", forma: "o cliente chegar já informando o tipo e o porte da empresa", processo: "Hoje os clientes novos chegam mais por indicação?", categorias: "escritórios de contabilidade", proposta: "Pensei num site sóbrio para a {nome}, com os serviços e um contato que já chega com o tipo e o porte da empresa." }],
     [/fisioterap/, { setor: "Saúde", categorias: "clínicas de fisioterapia" }],
-    [/estetica/, { setor: "Beleza", categorias: "clínicas de estética", proposta: "Pensei numa página da {nome} com os procedimentos e o agendamento direto: a cliente marca a avaliação sozinha, sem esperar resposta no direct." }],
-    [/fotograf/, { setor: "Eventos", categorias: "fotógrafos", proposta: "Pensei num site com o portfólio da {nome} e um pedido de orçamento que já chega com o tipo de ensaio ou evento e a data." }],
-    [/agencia de (turismo|viage)|turismo/, { setor: "Turismo e hospedagem", categorias: "agências de turismo", proposta: "Pensei num site da {nome} com os pacotes organizados e um pedido de orçamento que já chega com o destino, as datas e o número de pessoas." }],
-    [/idioma|curso|ingles|espanhol/, { setor: "Educação", proposta: "Pensei numa página da {nome} para o aluno marcar a aula experimental ou o teste de nível sozinho, a qualquer hora." }],
+    [/estetica/, { setor: "Beleza", forma: "a cliente ver os procedimentos e marcar a avaliação sozinha, sem esperar resposta no direct", processo: "Hoje vocês marcam tudo pelo WhatsApp e pelo direct?", categorias: "clínicas de estética", proposta: "Pensei numa página da {nome} com os procedimentos e o agendamento direto: a cliente marca a avaliação sozinha, sem esperar resposta no direct." }],
+    [/fotograf/, { setor: "Eventos", forma: "o cliente ver o portfólio e pedir orçamento já com o tipo de ensaio ou evento e a data", processo: "Hoje esses pedidos chegam mais pelo direct?", categorias: "fotógrafos", proposta: "Pensei num site com o portfólio da {nome} e um pedido de orçamento que já chega com o tipo de ensaio ou evento e a data." }],
+    [/agencia de (turismo|viage)|turismo/, { setor: "Turismo e hospedagem", forma: "o cliente pedir orçamento já com o destino, as datas e o número de pessoas", processo: "Hoje esses pedidos chegam mais pelo WhatsApp ou pelo Instagram?", categorias: "agências de turismo", proposta: "Pensei num site da {nome} com os pacotes organizados e um pedido de orçamento que já chega com o destino, as datas e o número de pessoas." }],
+    [/idioma|curso|ingles|espanhol/, { forma: "o aluno marcar a aula experimental ou o teste de nível sozinho, a qualquer hora", processo: "Hoje esse agendamento é feito pelo WhatsApp?", setor: "Educação", proposta: "Pensei numa página da {nome} para o aluno marcar a aula experimental ou o teste de nível sozinho, a qualquer hora." }],
     [/escola infantil|creche|bercario|educacao infantil/, { setor: "Educação", categorias: "escolas infantis" }],
     [/chocolat|doceria|bombon/, { setor: "Padarias e cafés", categorias: "chocolaterias e docerias" }],
-    [/floricultura|flores/, { setor: "Lojas", proposta: "Pensei num catálogo da {nome} com os arranjos e preços, e o pedido de entrega chegando completo no WhatsApp, com data e endereço." }],
+    [/floricultura|flores/, { forma: "o cliente escolher o arranjo e mandar o pedido de entrega já com a data e o endereço", processo: "Hoje esses pedidos chegam mais por mensagem ou por telefone?", setor: "Lojas", proposta: "Pensei num catálogo da {nome} com os arranjos e preços, e o pedido de entrega chegando completo no WhatsApp, com data e endereço." }],
   ];
   function porNicho(nicho) { const t = semAcento(nicho); const a = POR_NICHO.find(([rx]) => rx.test(t)); return a ? a[1] : {}; }
   function setorDe(nicho) { const o = porNicho(nicho); if (o.setor && SETORES[o.setor]) return o.setor; const v = V(); const t = v ? v.rotinaDe(nicho || "").tipo : "Outros"; return SETORES[t] ? t : "Outros"; }
@@ -548,16 +548,16 @@
       obs_curta: ["crm", "app"].includes(vars.op_id) ? ""
         : OBS_LEVE[vars.op_id] ? preencher(OBS_LEVE[vars.op_id], vars) + " "
         : vars.problema ? `${vars.problema.charAt(0).toUpperCase()}${vars.problema.slice(1)}. ` : "",
-      elogio_curto: parseFloat(String(vars.nota).replace(",", ".")) >= 4.5 && +vars.avaliacoes >= 20
-        ? `Vi vocês no Google, nota ${vars.nota} com ${vars.avaliacoes} avaliações. Parabéns pelo trabalho! `
-        : "Vi o perfil de vocês no Google. ",
+      elogio_curto: "Vi o perfil de vocês no Google. ",
       ...(CONVERSA[est.tipo] || CONVERSA.Outros),
     };
     extra.sobre_convite = extra.obs_curta ? "sobre isso" : extra.sobre;
-    extra.apresento_b = nome ? `Meu nome é ${nome}, faço` : extra.apresento;
+    extra.apresento_b = nome ? `Aqui é o ${nome}, faço` : perfil.marca ? `Aqui é da ${perfil.marca}, faço` : "Eu faço";
     const ajuste = porNicho(nicho);
     if (ajuste.categorias) vars = { ...vars, categorias: ajuste.categorias };
     extra.proposta = preencher(ajuste.proposta || extra.proposta || CONVERSA.Outros.proposta, vars);
+    extra.forma = ajuste.forma || extra.forma || CONVERSA.Outros.forma;
+    extra.processo = ajuste.processo || extra.processo || CONVERSA.Outros.processo;
     extra.dica_gratis = preencher(DICA_GRATIS[vars.op_id] || DICA_PADRAO, vars);
     extra.oi_fala = saudacao(hora.h).replace(", tudo bem?", "!");
     extra.motivo_fala = vars.problema ? `${vars.problema}. Tenho uma ideia ${extra.sobre} e queria te contar em 1 minuto.`
@@ -691,6 +691,9 @@
         leitura: "Segunda negativa: ele já tinha recusado antes.", estrategia: "Sair de forma leve e encerrar o ciclo. Um terceiro pedido vira insistência.",
         encerrar: true };
 
+    if (g.id === "pergunta_aberta")
+      return { modelo: "Obrigado por responder! Te procurei porque pensei numa forma de {forma}. {processo}",
+        leitura: "Uma pessoa respondeu e perguntou como pode ajudar. É abertura, ainda não é interesse.", estrategia: "Dizer em uma frase por que você chamou e fazer uma pergunta sobre como eles fazem hoje." };
     if (g.id === "concorrente")
       return { modelo: "Ah, entendi, então somos da mesma área! Obrigado pelo retorno e sucesso para a {nome}.",
         leitura: "É da mesma área (faz sites ou sistemas).", estrategia: "Agradecer e encerrar. Não há venda aqui.", encerrar: true, nao_contatar: true };
@@ -710,6 +713,9 @@
       return { modelo: "Tranquilo, obrigado por responder! Não vou insistir.\n\nSó deixo uma dica que vale para quem cuidar disso aí: {dica_gratis}\n\nSe um dia quiser ver a ideia completa para a {nome}, é só me chamar.",
         leitura: "Disse não, sem explicar o motivo.", estrategia: "Aceitar o não e deixar uma dica útil, de graça, sem pedir nada em troca. É o que mais faz o cliente lembrar de você depois." };
     }
+    if (g.id === "ja_tem" && /n[aã]o (me |nos )?interess|n[aã]o (tenho|temos) interesse|sem interesse/.test(t))
+      return { modelo: "Entendido, obrigado pelo retorno! Sucesso para a {nome}.",
+        leitura: "Já tem uma solução parecida e disse que não tem interesse.", estrategia: "Recusa clara: agradecer e encerrar, sem dica nem nova oferta.", encerrar: true };
     if (g.id === "ja_tem") {
       const as = assuntosDe(texto);
       const abre = as.includes("instagram") ? "Faz sentido, o Instagram é ótimo para atrair, e continua."
