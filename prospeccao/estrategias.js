@@ -307,6 +307,90 @@
   // Quando o lead abre a conversa: a ideia do nicho e uma pergunta sobre o negócio dele.
   const IDEIA = "Boa! {ideia}\n\n{gancho_data}Antes de te mostrar como ficaria para a {nome}, me conta: {pergunta}{exemplos}";
 
+
+  // Melhor canal por setor: chance de abrir conversa a cada 100 leads (estimativa de partida).
+  // Base: WhatsApp personalizado no B2B brasileiro responde perto de 15 a 20% (lista qualificada);
+  // ligação fria chega ao decisor em cerca de 1 a cada 4 empresas (Belkins 2026) e o sucesso médio é
+  // baixo (Cognism 2026: 2,7%); combinar canais aumenta o contato em 3 a 4 vezes. O ajuste por setor
+  // vem de quem atende: dono com a mão ocupada (oficina, obra) atende o celular e não digita; salão e
+  // clínica vivem no WhatsApp e a recepção barra ligação. Com 10 envios ou mais por canal num setor,
+  // os seus números substituem a estimativa.
+  const CANAIS = {
+    "Saúde": { msg: 0.14, lig: 0.07, quem: "A recepção lê o WhatsApp; ligando, você raramente passa da recepção.",
+      ligar: "12h às 14h, fora do horário de consultas", combo: "Mensagem primeiro; se não responder em 2 dias, ligue no almoço e peça para falar com quem cuida da agenda." },
+    "Beleza": { msg: 0.2, lig: 0.06, quem: "A dona vive no WhatsApp e no direct, mas não atende telefone com cliente na cadeira.",
+      ligar: "9h às 10h, antes da primeira cliente", combo: "Fique na mensagem e no direct. Ligue só se ela pedir." },
+    "Restaurantes e bares": { msg: 0.12, lig: 0.1, quem: "O dono lê mensagem entre o almoço e o jantar; ligando nesse intervalo, o gerente costuma atender.",
+      ligar: "15h às 17h, entre o almoço e o jantar", combo: "Mensagem de manhã; sem resposta, ligue no mesmo dia às 15h citando a mensagem." },
+    "Padarias e cafés": { msg: 0.11, lig: 0.12, quem: "O dono fica no balcão e atende o telefone da loja; mensagem demora a ser lida.",
+      ligar: "9h30 às 11h, depois do pico da manhã", combo: "Ligue primeiro e mande a mensagem logo depois, para ele ter por escrito." },
+    "Academias e estúdios": { msg: 0.16, lig: 0.09, quem: "Recepção e dono respondem bem o WhatsApp fora dos horários de treino.",
+      ligar: "10h às 12h ou 14h às 16h", combo: "Mensagem primeiro; ligação só como segundo lembrete." },
+    "Pet": { msg: 0.18, lig: 0.1, quem: "Atendem muito pelo WhatsApp, que já é onde marcam banho e tosa.",
+      ligar: "9h às 11h", combo: "Mensagem primeiro; se não responder, ligue no terceiro dia." },
+    "Imobiliário": { msg: 0.17, lig: 0.16, quem: "Corretor vive de telefone e de WhatsApp; atende os dois.",
+      ligar: "9h às 12h; fim de tarde é de visita", combo: "Mensagem e ligação no mesmo dia: mande a mensagem e ligue 1 hora depois." },
+    "Turismo e hospedagem": { msg: 0.15, lig: 0.1, quem: "Pousada responde WhatsApp o dia todo; telefone fica com quem está no balcão.",
+      ligar: "segunda a quinta, 10h às 12h", combo: "Mensagem primeiro; ligação só fora de feriado e fim de semana." },
+    "Escritórios": { msg: 0.11, lig: 0.13, quem: "Advogado e contador confiam mais em ligação ou e-mail; WhatsApp frio parece spam.",
+      ligar: "9h às 11h ou 14h às 16h", combo: "Ligue e peça o e-mail ou o WhatsApp para mandar o material. A mensagem vem depois da conversa." },
+    "Automotivo": { msg: 0.12, lig: 0.17, quem: "O dono está com a mão na graxa: atende o telefone, mas não digita.",
+      ligar: "7h30 às 9h, no almoço ou ao fechar", combo: "Ligue primeiro; mande a mensagem no fim do dia com o resumo." },
+    "Obras e serviços": { msg: 0.13, lig: 0.19, quem: "Está em campo o dia todo e atende o celular, porque cada ligação pode ser um serviço.",
+      ligar: "7h às 8h30 ou 12h às 13h30", combo: "Ligue primeiro; mensagem só para mandar exemplos depois da conversa." },
+    "Lojas": { msg: 0.15, lig: 0.08, quem: "O WhatsApp da loja é lido pelo dono ou pela vendedora; telefone fixo quase ninguém atende.",
+      ligar: "9h às 10h30, antes do movimento", combo: "Mensagem; se não responder, passe na loja ou ligue no terceiro dia." },
+    "Educação": { msg: 0.12, lig: 0.11, quem: "A secretaria atende os dois, mas quem decide é a direção: peça o melhor horário dela.",
+      ligar: "9h às 11h, fora da entrada e saída dos alunos", combo: "Ligue para a secretaria, descubra o nome de quem decide e mande a mensagem para essa pessoa." },
+    "Eventos": { msg: 0.18, lig: 0.11, quem: "Buffet e fotógrafo respondem rápido no WhatsApp; é por lá que chegam os orçamentos.",
+      ligar: "segunda a quarta, 10h às 12h", combo: "Mensagem primeiro; se não responder em 3 dias, uma ligação curta no começo da semana." },
+    "Outros": { msg: 0.13, lig: 0.1, quem: "Sem regra clara para o setor: comece pela mensagem e acompanhe os seus números.",
+      ligar: "9h às 11h ou 14h às 16h", combo: "Mensagem primeiro; se não responder em 2 dias, ligue." },
+  };
+  const NOME_CANAL_ABRE = { msg: "Mensagem", lig: "Ligação", combo: "Mensagem + ligação" };
+  // Combinação: a ligação alcança parte de quem não respondeu à mensagem.
+  const comboDe = (m, l) => Math.min(0.6, m + (1 - m) * l * 0.85);
+  const ehLigacao = (c) => c === "telefone";
+
+  // Ranking por canal. leads: todos os leads (para usar os seus números quando houver).
+  function rankingCanais(leads = []) {
+    const reais = {};
+    for (const l of leads) {
+      const c = (l.dados && l.dados.ciclo) || {}, env = c.envios || [], resp = c.respostas || [];
+      if (!env.length) continue;
+      const tipo = setorDe(l.nicho || l.categoria);
+      const r = (reais[tipo] ||= { msg: [0, 0], lig: [0, 0], combo: [0, 0] });
+      const usou = { msg: env.some((e) => e.canal && !ehLigacao(e.canal)), lig: env.some((e) => ehLigacao(e.canal)) };
+      const respondeu = resp.length > 0 || ["respondeu", "negociando", "fechado"].includes(l.status);
+      const k = usou.msg && usou.lig ? "combo" : usou.lig ? "lig" : usou.msg ? "msg" : null;
+      if (!k) continue;
+      r[k][0]++; if (respondeu) r[k][1]++;
+    }
+    const lista = Object.keys(CANAIS).filter((t) => t !== "Outros").map((tipo) => {
+      const c = CANAIS[tipo], R = reais[tipo] || { msg: [0, 0], lig: [0, 0], combo: [0, 0] };
+      const ref = { msg: c.msg, lig: c.lig, combo: comboDe(c.msg, c.lig) };
+      const taxa = {}, fonte = {};
+      for (const k of ["msg", "lig", "combo"]) {
+        const [n, ok] = R[k];
+        taxa[k] = n >= 10 ? ok / n : ref[k]; fonte[k] = n >= 10 ? `seus ${n} envios` : "estimativa";
+      }
+      const melhor = taxa.lig > taxa.msg * 1.05 ? "lig" : "msg";
+      const exemplos = (V() && (V().ROTINA_NICHO || []).find((r) => r.tipo === tipo)?.exemplos) || [];
+      return { tipo, exemplos, taxa, fonte, melhor, melhorNome: NOME_CANAL_ABRE[melhor], ...c };
+    });
+    lista.forEach((x) => { x.ganho = x.taxa.combo - Math.max(x.taxa.msg, x.taxa.lig); });
+    const por = (k) => [...lista].sort((a, b) => b.taxa[k] - a.taxa[k]);
+    // Na combinação, vem primeiro quem mais ganha ao somar a ligação (não só quem tem a maior taxa).
+    return { msg: por("msg"), lig: por("lig"), combo: [...lista].sort((a, b) => b.ganho - a.ganho), lista };
+  }
+  function canalDoNicho(nicho, leads = []) {
+    const t = setorDe(nicho);
+    return rankingCanais(leads).lista.find((x) => x.tipo === t) || { tipo: t, ...CANAIS.Outros, taxa: { msg: CANAIS.Outros.msg, lig: CANAIS.Outros.lig, combo: comboDe(CANAIS.Outros.msg, CANAIS.Outros.lig) }, melhor: "msg", melhorNome: "Mensagem", fonte: {} };
+  }
+
+  // Roteiro de ligação: curto, para falar e não para ler. Mesma lógica da mensagem: quem sou, por que liguei, um convite.
+  const LIGACAO = "{oi_fala} Falo com o responsável pela {nome}?\n\n{apresento} sites para {categorias} {em_cidade}. Liguei rapidinho porque {motivo_fala}\n\nVocê tem um minuto agora, ou prefere que eu te mande pelo WhatsApp e você vê com calma?\n\n(Se não for a pessoa certa: \"Qual o melhor horário para falar com quem cuida disso, e o nome dela?\")";
+
   // Respostas do meio da conversa: as mesmas para todos, com a dor do setor entrando no texto.
   const RESPOSTAS = {
     atencao: "Claro! Eu olho como a {nome} aparece hoje no Google e no celular e te mando um diagnóstico curto, de graça, focado em {dor_curta}. " +
@@ -386,11 +470,15 @@
       ...(CONVERSA[est.tipo] || CONVERSA.Outros),
     };
     extra.sobre_convite = extra.obs_curta ? "sobre isso" : extra.sobre;
+    extra.oi_fala = saudacao(hora.h).replace(", tudo bem?", "!");
+    extra.motivo_fala = vars.problema ? `${vars.problema}. Tenho uma ideia ${extra.sobre} e queria te contar em 1 minuto.`
+      : `tenho uma ideia ${extra.sobre} da ${vars.nome} e queria te contar em 1 minuto.`;
     const todas = { ...vars, ...extra };
     let modelo = null;
     if (etapa === "abordagem") modelo = ABERTURA;
     else if (etapa === "desejo") modelo = IDEIA;
     else if (etapa === "follow1") modelo = LEMBRETE;
+    else if (etapa === "ligacao") modelo = LIGACAO;
     else if (est.msgs[etapa]) { const lista = est.msgs[etapa]; modelo = lista[hash(`${l.id || l.nome}|${etapa}`) % lista.length]; }
     else if (RESPOSTAS[etapa]) modelo = RESPOSTAS[etapa];
     if (!modelo) return null;
@@ -434,5 +522,5 @@
     });
   }
 
-  window.Estrategias = { SETORES, RESPOSTAS, CONVERSA, ABERTURA, IDEIA, LEMBRETE, doNicho, setorDe, texto, sequencia, diasDaSemana, localDoLead };
+  window.Estrategias = { SETORES, RESPOSTAS, CANAIS, rankingCanais, canalDoNicho, LIGACAO, CONVERSA, ABERTURA, IDEIA, LEMBRETE, doNicho, setorDe, texto, sequencia, diasDaSemana, localDoLead };
 })();

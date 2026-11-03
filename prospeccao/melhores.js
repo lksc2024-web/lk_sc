@@ -14,6 +14,7 @@ const mel = {
   mercado: "BR",    // "BR" ou o código do país
   verTodos: false,
   estNicho: null,   // nicho aberto na estratégia
+  canal: "msg",     // ranking de canal: "msg", "lig" ou "combo"
 };
 
 function melFuso() {
@@ -179,6 +180,7 @@ function renderMelhores() {
           </button>`; }).join("")}
       </div>`).join("")}</div>`;
 
+  renderCanais();
   renderEstrategia(ranking, per, dados, dataSel);
 
   // ── Calendário da semana ──
@@ -375,6 +377,36 @@ function quandoDe(data, faixa) {
   const h = parseInt(faixa, 10) || 9, dif = mel.mercado === "BR" ? 0 : Vendas.difFuso(melFuso());
   return new Date(Date.parse(`${data}T12:00:00-03:00`) + (h - dif - 12) * 3600000);
 }
+// Melhor canal por nicho: mensagem, ligação ou as duas. Estimativa por setor até ter 10 envios seus por canal.
+function renderCanais() {
+  const el = $("#mel-canais"); if (!el || !Estrategias.rankingCanais) return;
+  const R = Estrategias.rankingCanais(estado.leads), k = mel.canal, lista = R[k];
+  const topo = Math.max(...lista.map((x) => x.taxa[k]), 0.01);
+  const seus = lista.some((x) => x.fonte[k] !== "estimativa");
+  const resumo = (lista2, kk) => lista2.slice(0, 3).map((x) => x.tipo.toLowerCase()).join(", ");
+  el.innerHTML = `<h2>Melhor canal por nicho</h2>
+    <p class="dica" style="margin:-6px 0 10px">Chance de abrir conversa a cada 100 empresas de cada setor. ${seus ? "Onde aparece “seus envios”, o número é o seu." : "Estimativa pela rotina de quem atende em cada setor; com 10 envios seus por canal num setor, o número passa a ser o seu."}</p>
+    <div class="segmento" style="grid-template-columns:1fr 1fr 1fr" id="mel-canal-modo">
+      <button type="button" data-canal-modo="msg" aria-pressed="${k === "msg"}"><b>💬 Mensagem</b><span>WhatsApp e direct</span></button>
+      <button type="button" data-canal-modo="lig" aria-pressed="${k === "lig"}"><b>📞 Ligação</b><span>telefone</span></button>
+      <button type="button" data-canal-modo="combo" aria-pressed="${k === "combo"}"><b>🔁 As duas</b><span>mensagem + ligação</span></button>
+    </div>
+    <div class="canais-lista">${lista.slice(0, 8).map((x, i) => `
+      <details class="canal-linha"${i === 0 ? " open" : ""}>
+        <summary><b>${esc(x.tipo)}</b><span class="pct">${Math.round(x.taxa[k] * 100)}%${k === "combo" ? `<small> +${Math.round(x.ganho * 100)} pts</small>` : ""}</span>
+          <span class="trilho"><i style="width:${Math.round(x.taxa[k] / topo * 100)}%"></i></span>
+          <small>${x.exemplos.slice(0, 3).map(esc).join(", ")}${x.fonte[k] !== "estimativa" ? ` · ${esc(x.fonte[k])}` : ""} · melhor: <b>${esc(x.melhorNome)}</b></small></summary>
+        <p>${esc(x.quem)}</p>
+        <p><b>Mensagem</b> ${Math.round(x.taxa.msg * 100)}% · <b>Ligação</b> ${Math.round(x.taxa.lig * 100)}% · <b>As duas</b> ${Math.round(x.taxa.combo * 100)}%</p>
+        <p><b>Hora de ligar:</b> ${esc(x.ligar)}.<br><b>Como combinar:</b> ${esc(x.combo)}</p>
+      </details>`).join("")}</div>
+    <p class="mel-resumo">💬 Mensagem rende mais em: <b>${resumo(R.msg)}</b>.<br>📞 Ligação rende mais em: <b>${resumo(R.lig)}</b>.<br>🔁 Somar a ligação vale mais em: <b>${resumo(R.combo)}</b>.</p>`;
+}
+$("#tela-melhores").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-canal-modo]");
+  if (b) { mel.canal = b.dataset.canalModo; renderCanais(); }
+});
+
 function renderEstrategia(ranking, per, dados, dataSel) {
   const el = $("#mel-estrategia"); if (!el) return;
   const daVez = ranking.find((p) => p.id === per) || ranking[0];
@@ -402,6 +434,7 @@ function renderEstrategia(ranking, per, dados, dataSel) {
           <div><dt>A dor do dono</dt><dd>${esc(est.dor)}</dd></div>
           <div><dt>O que oferecer</dt><dd>${esc(est.oferta)} <small>(${esc(Vendas.faixaPreco(preco))}, ${esc(preco.prazo)})</small></dd></div>
           <div><dt>Com quem você fala</dt><dd>${esc(est.dono)}</dd></div>
+          ${(() => { const cn = Estrategias.canalDoNicho ? Estrategias.canalDoNicho(nicho, estado.leads) : null; return cn ? `<div><dt>Melhor canal</dt><dd><b>${esc(cn.melhorNome)}</b> (mensagem ${Math.round(cn.taxa.msg * 100)}%, ligação ${Math.round(cn.taxa.lig * 100)}%, as duas ${Math.round(cn.taxa.combo * 100)}%). ${esc(cn.quem)} Ligar: ${esc(cn.ligar)}.</dd></div>` : ""; })()}
           <div><dt>Tom</dt><dd>${esc(est.tom)}</dd></div>
           <div><dt>Evite</dt><dd>${est.evitar.map(esc).join(" · ")}</dd></div>
           ${op.ev ? `<div><dt>Ângulo da data</dt><dd>${op.ev.icone} ${esc(op.ev.nome)} ${emDias(op.dias)}: ofereça também ${esc(op.ev.oferta)}. Abordar até ${Calendario.curta(Calendario.somar(op.ev.inicio, -op.ev.ate))}.</dd></div>` : ""}

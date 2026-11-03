@@ -337,6 +337,18 @@ nav.abas button { position: relative; }
 .semana button.n0 { background: var(--mapa-0); } .semana button.n1 { background: var(--mapa-1); }
 .semana button.n2 { background: var(--mapa-2); color: #fff; } .semana button.n3 { background: var(--mapa-3); color: #fff; } .semana button.n4 { background: var(--mapa-4); color: #fff; }
 .semana button.sel { outline: 2px solid var(--txt); outline-offset: -2px; }
+.canais-lista { margin-top: 12px; }
+.canal-linha { border-top: 1px solid var(--linha); padding: 8px 0; }
+.canal-linha:first-child { border-top: 0; }
+.canal-linha summary { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 10px; align-items: center; cursor: pointer; list-style: none; }
+.canal-linha summary::-webkit-details-marker { display: none; }
+.canal-linha summary b { font-size: 14px; }
+.canal-linha .pct { font-weight: 700; text-align: right; font-variant-numeric: tabular-nums; }
+.canal-linha .pct small { font-weight: 600; color: var(--sub); font-size: 11px; }
+.canal-linha .trilho { grid-column: 1 / -1; height: 6px; border-radius: 3px; background: var(--card); overflow: hidden; }
+.canal-linha .trilho i { display: block; height: 100%; background: var(--pri); border-radius: 3px; }
+.canal-linha summary small { grid-column: 1 / -1; color: var(--sub); font-size: 12px; }
+.canal-linha p { margin: 8px 0 0; font-size: 13px; }
 .mel-resumo { margin: 12px 0 0; font-size: 14px; }
 .mel-lead { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 12px; padding: 12px 0; border-top: 1px solid var(--linha); }
 .mel-lead:first-child { border-top: 0; }
@@ -582,6 +594,7 @@ nav.abas button { position: relative; }
     <div class="cartao mel-filtros" id="mel-filtros"></div>
     <div class="cartao" id="mel-datas-card"><div id="mel-datas"></div></div>
     <div class="cartao" id="mel-periodos-card"><div id="mel-periodos"></div></div>
+    <div class="cartao" id="mel-canais-card"><div id="mel-canais"></div></div>
     <div class="cartao" id="mel-estrategia-card"><div id="mel-estrategia"></div></div>
     <div class="cartao" id="mel-semana-card"><div id="mel-semana"></div></div>
     <div class="cartao" id="mel-leads-card"><div id="mel-leads"></div></div>

@@ -823,6 +823,10 @@ function abrirCanal(l, canal, texto) {
 
 async function enviarEtapa(l, etapa, texto, nome, canal) {
   canal ||= Vendas.canais(l)[0] || "whatsapp";
+  // Na ligação, o que se copia é o roteiro de fala (curto), não a mensagem escrita.
+  if (canal === "telefone" && ["abordagem", "follow1", "follow2"].includes(etapa) && window.Estrategias?.LIGACAO) {
+    texto = Vendas.montarMensagem(l, "ligacao", analise(l), perfil()) || texto;
+  }
   abrirCanal(l, canal, texto);
   const agora = new Date();
   const c = Vendas.ciclo(l);
