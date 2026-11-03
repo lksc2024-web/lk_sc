@@ -836,7 +836,7 @@ function abrirLead(id, contexto) {
   var l = S.leads.find(function (x) { return x.id === id; }); if (!l) return;
   var info = [["Telefone", l.telefone], ["WhatsApp", l.whatsapp ? l.whatsapp.replace(/^55/, "") : ""], ["E-mail", l.email], ["Site", l.site], ["Instagram", l.instagram], ["Endereço", [l.endereco || "", l.bairro, l.cidade].filter(Boolean).join(" · ")], ["Nota no Google", n(l.nota) ? n(l.nota).toFixed(1) + " (" + int(l.avaliacoes) + " avaliações)" : ""]].filter(function (x) { return x[1]; });
   modal(l.nome, '<div class="det"><div style="display:grid;gap:16px;align-content:start"><div class="card"><div class="card-h"><div><h2>' + esc(l.nicho || l.categoria || "Lead") + '</h2><p>Entrou ' + quando(l.criado_em) + '</p></div></div><div class="chips" id="ld-st">' + LEAD_ST.map(function (s) { return '<button class="chip" type="button" data-s="' + s[0] + '" aria-pressed="' + (l.status === s[0]) + '">' + s[1] + "</button>"; }).join("") + '</div><div class="stat-list" style="margin-top:10px">' + info.map(function (x) { var v = x[1]; var link = x[0] === "Site" ? '<a href="' + esc(/^http/.test(v) ? v : "https://" + v) + '" target="_blank" rel="noopener">' + esc(v.replace(/^https?:\/\//, "").slice(0, 40)) + "</a>" : esc(v); return "<div><span>" + x[0] + "</span><b>" + link + "</b></div>"; }).join("") + "</div>" + (l.maps ? '<a class="btn sm" style="margin-top:10px" href="' + esc(l.maps) + '" target="_blank" rel="noopener">' + ICON.ext + "Ver no Google Maps</a>" : "") + '</div>' + blocoMensagem("lead", l, l.status === "novo" ? ["prospeccao", "captacao"] : ["retomada", "continuidade"], contexto) + '</div>' +
-    '<div style="display:grid;gap:16px;align-content:start"><div class="card"><div class="card-h"><div><h2>Anotações</h2></div></div><textarea class="inp" id="ld-obs" style="min-height:90px">' + esc(l.obs || "") + '</textarea><div class="acoes"><button class="btn sm" type="button" id="ld-obs-ok">Salvar anotação</button></div></div>' +
+    '<div style="display:grid;gap:16px;align-content:start"><div id="ld-canal"></div><div class="card"><div class="card-h"><div><h2>Anotações</h2></div></div><textarea class="inp" id="ld-obs" style="min-height:90px">' + esc(l.obs || "") + '</textarea><div class="acoes"><button class="btn sm" type="button" id="ld-obs-ok">Salvar anotação</button></div></div>' +
     '<div class="card"><div class="card-h"><div><h2>Histórico</h2></div></div>' + ((l.historico || []).length ? '<ul class="hist">' + l.historico.slice().reverse().slice(0, 30).map(function (h) { return "<li>" + esc(h.txt || h.tipo) + "<small>" + (h.t ? new Date(h.t).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "") + "</small></li>"; }).join("") + "</ul>" : '<p class="hint">Sem registros ainda.</p>') + "</div>" +
     '<div class="card"><div class="card-h"><div><h2>O lead respondeu?</h2><p>Cole a resposta e receba a mensagem pronta</p></div></div><button class="btn full" type="button" id="ld-resp">' + ICON.responder + 'Colar resposta do cliente</button></div>' +
     '<div class="card"><div class="card-h"><div><h2>Fechou negócio?</h2><p>Leva o lead para Clientes</p></div></div><button class="btn full" type="button" id="ld-cli">Transformar em cliente</button></div></div></div>', function (bx) {
@@ -853,6 +853,14 @@ function abrirLead(id, contexto) {
       toast("Cliente criado."); fecharModal(); ir("clientes"); abrirCliente(r.data.id);
     };
     ligarMensagem(bx, "lead", l, function () { render(); abrirLead(l.id, contexto); });
+    // Melhor canal com esta empresa (regras da Prospecção): mensagem, ligação ou as duas.
+    carregarVendas().then(function () { return carregarCalendario(); }).then(function () {
+      var E = window.Estrategias, alvo = $("#ld-canal", bx); if (!E || !E.canalDoLead || !alvo) return;
+      var cn = E.canalDoLead(l, S.leads); if (!cn.melhor) return;
+      var pc = function (v) { return Math.round(v * 100) + "%"; };
+      alvo.innerHTML = '<div class="card"><div class="card-h"><div><h2>Melhor canal: ' + esc(cn.melhorNome) + '</h2><p>Mensagem ' + pc(cn.msg) + " · ligação " + pc(cn.lig) + " · as duas " + pc(cn.combo) + "</p></div></div>" +
+        '<p class="sub" style="margin:0">' + esc(cn.porque ? cn.porque.charAt(0).toUpperCase() + cn.porque.slice(1) : "") + "." + (cn.melhor !== "msg" ? " Hora de ligar: " + esc(cn.ligar) + "." : "") + (cn.melhor === "combo" ? " " + esc(cn.comoCombinar) : "") + "</p></div>";
+    });
   }, true);
 }
 
