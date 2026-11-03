@@ -541,3 +541,7 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 .mc-can-l summary small{grid-column:1/-1;color:var(--muted);font-size:12px}
 .mc-can-l p{margin:8px 0 0;font-size:13px}
 .mc-res{margin:12px 0 0;font-size:13px}
+/* Nada passa da largura da tela: senão o celular abre a página para o lado e a barra de baixo estica junto. */
+html{overflow-x:hidden}
+body{overflow-x:clip;max-width:100%;overflow-wrap:break-word}
+img,video,canvas,svg,pre{max-width:100%}
