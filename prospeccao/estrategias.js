@@ -271,7 +271,7 @@
   const CONVERSA = {
     "Saúde": { sobre: "para a agenda de vocês", pergunta: "hoje vocês marcam mais por telefone ou pelo WhatsApp?",
       ideia: "Em clínica, a recepção passa boa parte do dia marcando e remarcando horário. A ideia é um agendamento online em que o paciente marca sozinho e recebe lembrete no WhatsApp antes da consulta." },
-    "Beleza": { sobre: "para a agenda do salão", pergunta: "hoje a maioria das clientes chega pelo Instagram ou por indicação?",
+    "Beleza": { sobre: "para a agenda de vocês", pergunta: "hoje a maioria das clientes chega pelo Instagram ou por indicação?",
       ideia: "Sei que muito do dia vai em responder \"tem horário?\" no direct. A ideia é uma página com os serviços e o agendamento direto, a cliente marca sozinha a qualquer hora." },
     "Restaurantes e bares": { sobre: "para os pedidos de vocês", pergunta: "hoje os pedidos chegam mais pelo aplicativo, pelo Instagram ou pelo WhatsApp?",
       ideia: "A ideia é um cardápio online com pedido direto no WhatsApp de vocês, para o cliente que já conhece a casa pedir sem a comissão do aplicativo." },
@@ -301,7 +301,18 @@
       ideia: "A ideia é uma página simples para quem pesquisa vocês encontrar tudo e chamar direto no WhatsApp." },
   };
   // 1ª mensagem: apresentação, motivo do contato e um convite. Nada de preço, link ou proposta.
-  const ABERTURA = "{oi} {apresento} sites para {categorias} {em_cidade}.\n\nEstava pesquisando {categorias} por aqui e vi vocês. {obs_curta}Posso te mandar uma ideia rápida {sobre_convite}?{fecho_dia}";
+  const ABERTURA = "{oi} {apresento} sites para {categorias} {em_cidade}.\n\n{elogio_curto}{obs_curta}Tenho uma ideia {sobre} e queria te mostrar. Pode ser?{fecho_dia}";
+  // O que foi visto, dito como observação de quem olhou (e não como acusação). "Pode ser só comigo" quando não dá para ter certeza.
+  const OBS_LEVE = {
+    site_fora: "Tentei abrir o site de vocês e aqui não abriu, pode ser só comigo.",
+    sem_site: "Só não achei um site de vocês, aparecem só o endereço e o telefone.",
+    so_rede: "Reparei que o link do perfil leva direto para a rede social de vocês.",
+    plataforma: "Reparei que o link do perfil leva para {plataforma}.",
+    nao_responsivo: "Abri o site pelo celular e ele ficou difícil de ler.",
+    sem_agendamento: "Só não vi um jeito de agendar direto pelo site.",
+    sem_https: "Reparei que o navegador marca o site como \"não seguro\".",
+    lento: "O site demorou um pouco para abrir aqui.",
+  };
   // Lembrete 1: o lead ainda não respondeu, então não cita nada que ele não leu.
   const LEMBRETE = "{oi} Passando de novo por aqui: posso te mandar aquela ideia que comentei? Se for melhor falar com outra pessoa daí, me avisa.{fecho_dia}";
   // Quando o lead abre a conversa: a ideia do nicho e uma pergunta sobre o negócio dele.
@@ -507,8 +518,12 @@
         : vars.problema ? `Uma coisa que reparei: ${vars.problema}.` : "",
       gancho_data: g.txt, fecho_dia: ["abordagem", "follow1", "follow2"].includes(etapa) ? fechoDia(ctx, hora) : "",
       dor_curta: est.dor_curta,
-      obs_curta: ["crm", "app"].includes(vars.op_id) ? `Vi que vocês já têm uma presença forte por lá, com ${vars.avaliacoes} avaliações. `
+      obs_curta: ["crm", "app"].includes(vars.op_id) ? ""
+        : OBS_LEVE[vars.op_id] ? preencher(OBS_LEVE[vars.op_id], vars) + " "
         : vars.problema ? `${vars.problema.charAt(0).toUpperCase()}${vars.problema.slice(1)}. ` : "",
+      elogio_curto: parseFloat(String(vars.nota).replace(",", ".")) >= 4.5 && +vars.avaliacoes >= 20
+        ? `Vi vocês no Google, nota ${vars.nota} com ${vars.avaliacoes} avaliações. Parabéns pelo trabalho! `
+        : "Vi o perfil de vocês no Google. ",
       ...(CONVERSA[est.tipo] || CONVERSA.Outros),
     };
     extra.sobre_convite = extra.obs_curta ? "sobre isso" : extra.sobre;
@@ -564,5 +579,5 @@
     });
   }
 
-  window.Estrategias = { SETORES, RESPOSTAS, CANAIS, rankingCanais, canalDoNicho, canalDoLead, LIGACAO, CONVERSA, ABERTURA, IDEIA, LEMBRETE, doNicho, setorDe, texto, sequencia, diasDaSemana, localDoLead };
+  window.Estrategias = { OBS_LEVE, SETORES, RESPOSTAS, CANAIS, rankingCanais, canalDoNicho, canalDoLead, LIGACAO, CONVERSA, ABERTURA, IDEIA, LEMBRETE, doNicho, setorDe, texto, sequencia, diasDaSemana, localDoLead };
 })();

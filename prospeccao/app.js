@@ -895,6 +895,7 @@ function htmlDiagnostico(l, a) {
   const linhas = [];
   if (!l.site) linhas.push(itemDiag(false, "Não tem site"));
   else if (Vendas.soRede(l.site)) linhas.push(itemDiag(false, "O link do Google leva só para rede social"));
+  else if (Vendas.plataformaDe(l.site)) linhas.push(itemDiag(false, `O link do Google leva para ${esc(Vendas.plataformaDe(l.site))}, não para um site próprio`));
   else if (!d) linhas.push(`<li>⏳ Site ainda não analisado</li>`);
   else if (!d.abre) linhas.push(itemDiag(false, "O site não abriu"));
   else {

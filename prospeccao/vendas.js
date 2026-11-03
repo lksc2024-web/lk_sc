@@ -127,8 +127,19 @@ const ANO = new Date().getFullYear();
 
 function fmtNota(n) { return String(n).replace(".", ","); }
 // Lead com site próprio que ainda não passou pelo raio-X (busca nova ou anterior a esta versão).
-function precisaAnalise(l) { return !!l.site && !soRede(l.site) && !l.dados?.diag; }
+function precisaAnalise(l) { return !!l.site && !soLink(l.site) && !l.dados?.diag; }
 function soRede(site) { return /instagram\.com|facebook\.com|linktr\.ee|wa\.me|whatsapp\.com/i.test(site || ""); }
+// Link de ferramenta de terceiros no lugar de site (agendamento, cardápio, árvore de links): não é o site da empresa,
+// e esses serviços costumam bloquear robôs. Não pode virar "o site de vocês não carregou".
+const PLATAFORMAS = [
+  [/calendly\.com/i, "Calendly"], [/linktr\.ee|linktree/i, "Linktree"], [/booksy\./i, "Booksy"], [/trinks\./i, "Trinks"],
+  [/doctoralia\./i, "Doctoralia"], [/boaconsulta\./i, "BoaConsulta"], [/agendapro\./i, "AgendaPro"], [/simplesagenda|simples\.vet/i, "Simples Agenda"],
+  [/avec\.(app|beauty)/i, "Avec"], [/appbarber|barbeariaapp/i, "AppBarber"], [/setmore\./i, "Setmore"], [/ifood\./i, "iFood"],
+  [/goomer\.|anota\.ai|cardapioweb|menudino|instadelivery/i, "um cardápio de aplicativo"], [/sites\.google\.com|business\.site/i, "uma página gratuita do Google"],
+  [/bio\.link|beacons\.ai|linkin\.bio|taplink|campsite\.bio/i, "uma página de links"], [/bit\.ly|tinyurl|encurtador/i, "um link encurtado"],
+];
+function plataformaDe(site) { const s = String(site || ""); const p = PLATAFORMAS.find(([re]) => re.test(s)); return p ? p[1] : ""; }
+function soLink(site) { return soRede(site) || !!plataformaDe(site); }
 function pluralPalavra(p) {
   return /s$/.test(p) ? p : p.replace(/ão$/, "ões").replace(/el$/, "éis").replace(/ol$/, "óis").replace(/([aeiouáéíóú])$/, "$1s").replace(/([rz])$/, "$1es").replace(/l$/, "is");
 }
@@ -149,7 +160,7 @@ function emCidade(c) {
 // Os textos usam só o que foi observado; {x} é trocado pelos dados do lead.
 const OPORTUNIDADES = [
   { id: "site_fora", grupo: "presenca", servico: "site", peso: 25,
-    quando: (l, d) => l.site && !soRede(l.site) && d && !d.abre,
+    quando: (l, d) => l.site && !soLink(l.site) && d && !d.abre,
     problema: "tentei abrir o site de vocês ({dominio}) e ele não carregou",
     impacto: "Quem clica no Google e encontra o site fora do ar costuma desistir e procurar outra opção",
     solucao: "sites rápidos e estáveis, pensados para o celular", curto: "o site fora do ar",
@@ -160,6 +171,12 @@ const OPORTUNIDADES = [
     impacto: "Quem procura {categoria} {em_cidade} e quer ver serviços, fotos e como agendar acaba escolhendo quem mostra isso",
     solucao: "sites profissionais, rápidos e feitos para o celular, com botão de WhatsApp", curto: "um site para a {nome}",
     beneficio: "um site bem feito transforma quem pesquisa no Google em cliente chamando no WhatsApp" },
+  { id: "plataforma", grupo: "presenca", servico: "landing", peso: 19,
+    quando: (l) => !!l.site && !soRede(l.site) && !!plataformaDe(l.site),
+    problema: "o link do Google de vocês leva para {plataforma}, e não para uma página da {nome}",
+    impacto: "Quem pesquisa cai numa página genérica da ferramenta, sem as fotos, os serviços e a cara do negócio",
+    solucao: "páginas próprias com a cara do negócio, mantendo o agendamento ou o pedido que vocês já usam", curto: "uma página própria",
+    beneficio: "a página própria mostra o trabalho de vocês e continua levando para o mesmo agendamento" },
   { id: "so_rede", grupo: "presenca", servico: "landing", peso: 18,
     quando: (l) => soRede(l.site),
     problema: "o link do Google de vocês leva direto para uma rede social, sem uma página própria",
@@ -256,8 +273,8 @@ function contextoComparacao(leads) {
 
 // Diagnóstico completo de um lead -> { grupo, oportunidades, principal, potencial }
 function analisar(l, medianas = {}) {
-  const d = l.dados?.diag || null;
-  const temSiteProprio = l.site && !soRede(l.site);
+  const d = soLink(l.site) ? null : (l.dados?.diag || null);
+  const temSiteProprio = l.site && !soLink(l.site);
   if (temSiteProprio && !d) return { grupo: "analisando", oportunidades: [], principal: null, potencial: 0, ctx: {} };
   const ctx = { mediana: medianas[l.nicho] || 0 };
   // primeiro o que falta (presença), depois o que está errado (melhoria), por último o crescimento
@@ -291,7 +308,7 @@ function planoMensal(l, a, perfil = {}) {
   else if (l.avaliacoes >= 15) pts += 1;
   if (ticket >= TICKET_ALTO) { pts += 2; porques.push("ticket alto do setor"); }
   if (d.pixel || d.google_tag) { pts += 1; porques.push("já investe em anúncios"); }
-  if (l.site && !soRede(l.site)) pts += 1;
+  if (l.site && !soLink(l.site)) pts += 1;
   if (l.nota >= 4.5) pts += 1;
   if (p.mensal) return { recomendado: true, nivel: "Recorrente", motivo: "O serviço já é mensal por natureza.", valor: [p.mmin, p.mmax], p, pts };
   const faixa = (f0, f1) => [Math.round((p.mmin + (p.mmax - p.mmin) * f0) / 10) * 10, Math.round((p.mmin + (p.mmax - p.mmin) * f1) / 10) * 10];
@@ -358,7 +375,7 @@ function montarMensagem(l, etapa, analise, perfil = {}, oportunidade = null, con
     nome: l.nome, cidade: l.cidade || "sua cidade", em_cidade: emCidade(l.cidade), categoria: (l.categoria || l.nicho || "empresas").toLowerCase(),
     categorias: plural(l.categoria || l.nicho), avaliacoes: l.avaliacoes, nota: fmtNota(l.nota), mediana: analise.ctx?.mediana || "",
     dominio: d.dominio || (l.site || "").replace(/^https?:\/\/(www\.)?/, "").replace(/\/.*/, ""),
-    segundos: d.ms ? Math.round(d.ms / 1000) : "", ano: d.ano_rodape || "",
+    segundos: d.ms ? Math.round(d.ms / 1000) : "", ano: d.ano_rodape || "", plataforma: (() => { const p = plataformaDe(l.site); return /^(um|uma) /.test(p) ? p : p ? "o " + p : ""; })(),
   };
   const bloco = (t) => preencherBlocos(t, base);
   const elogio = l.nota >= 4.5 && l.avaliacoes >= 20
@@ -811,6 +828,6 @@ window.Vendas = {
   FAIXAS, faixaDe, ROTINA_NICHO, rotinaDe, encaixeReferencia, desempenhoNichos, notaNichoFaixa, melhoresNichosAgora,
   SERVICOS, GRUPOS, OPORTUNIDADES, ROTEIRO_PADRAO, PROFISSAO_PADRAO, NOME_ETAPA, NOME_RESPOSTA, ICONE_RESPOSTA,
   contextoComparacao, analisar, montarMensagem, classificarResposta, ciclo, intervalos, proximaAcao,
-  taxasReais, chanceFechamento, termometro, precoDe, faixaPreco, fmtReais, soRede, precisaAnalise, etapaChance,
+  taxasReais, chanceFechamento, termometro, precoDe, faixaPreco, fmtReais, soRede, soLink, plataformaDe, precisaAnalise, etapaChance,
   planoMensal, retorno, ticketEstimado, PORTFOLIO_PADRAO, exemplosPara, linkCompleto,
 };
