@@ -44,12 +44,8 @@ function quandoTexto(d) {
 // Mensagens por tipo de resposta. Os {campos} são os mesmos do roteiro (vendas.js); {quando} vem da resposta.
 const RESPOSTA_POR_GATILHO = {
   automatica: "Oi! Recebi a resposta automática, sem pressa. Quando o responsável pela {nome} puder, queria mostrar em 2 minutos uma ideia sobre {curto}. Pode ser por aqui mesmo?",
-  remover: "Peço desculpas pelo incômodo! Não vou mais mandar mensagens. Sucesso para a {nome}.",
   quem_e: "Desculpe não ter me apresentado direito! {apresentacao} Encontrei a {nome} pesquisando {categoria} {em_cidade} e vi um ponto que dá para melhorar: {curto}. Se preferir que eu não mande mais mensagens, é só me avisar.",
-  ja_tem: "Que bom que vocês já têm isso resolvido! Se um dia quiserem uma segunda opinião sobre {curto}, fico à disposição. Sucesso para a {nome}!",
   horario: "Combinado! Fica marcado {quando}. Até lá!",
-  caro: "Entendo, e faz sentido olhar o investimento com calma. Dá para começar só com o essencial para {curto} e ampliar depois, com pagamento parcelado. Quer que eu monte uma opção mais enxuta?",
-  sem_tempo: "Sem problema! Te chamo de novo {quando}. Se antes disso quiser ver a ideia para {curto}, é só me chamar por aqui.",
   pensar: "Claro, fique à vontade! Se ajudar na decisão, te mando um resumo curto com o que muda, o prazo ({prazo}) e o valor. Te chamo {quando} para saber o que achou, pode ser?",
   exemplos: "Claro!{exemplos}{portfolio_frase2}\n\nQuer que eu prepare algo parecido para a {nome}?",
   preco: "Depende do que vocês precisam: {servico} costuma ficar entre {min} e {max}, com prazo de {prazo}. Antes, faço um diagnóstico gratuito da {nome} para chegar no valor certo. Posso preparar?",
@@ -60,6 +56,13 @@ function respostaModulada(l, g, texto) {
   const dt = Nucleo.extrairData(texto);
   let quando = dt ? dt.data : null;
   if (!quando && (g.agendaDias || g.agendaReuniao)) { quando = new Date(); quando.setDate(quando.getDate() + (g.agendaReuniao ? 1 : g.agendaDias)); quando.setHours(10, 0, 0, 0); }
+  // Negativas, objeções e respostas ambíguas: a leitura vem de Estrategias (a mesma usada pela Central).
+  const plano = window.Estrategias?.respostaAoCliente ? Estrategias.respostaAoCliente(l, g, texto, Vendas.ciclo(l)) : null;
+  if (plano) {
+    let txt = Vendas.montarMensagem(l, "resposta", a, perfil(), null, { modelo: plano.modelo });
+    txt = txt.replaceAll("{quando}", quando ? quandoTexto(quando) : "daqui a umas semanas");
+    return { txt, quando, plano };
+  }
   const modelo = RESPOSTA_POR_GATILHO[g.id];
   let txt;
   if (modelo) {
@@ -101,7 +104,8 @@ function htmlResponder() {
       ${!l && resp.texto && !cands.length && !achados.length ? `<p class="dica">Não achei a empresa pelo texto. Digite o nome acima.</p>` : ""}
 
       ${g ? `<div class="r-tipo ${g.id === "automatica" ? "auto" : g.cor === "bad" ? "ruim" : ""}"><span>${g.id === "automatica" ? "🤖" : Vendas.ICONE_RESPOSTA[g.tipo4] || "💬"}</span>
-        <span><b>${esc(g.nome)}</b><br><small>${esc(g.dica)}</small></span></div>` : ""}
+        <span><b>${esc(g.nome)}</b><br><small>${esc(r?.plano ? r.plano.leitura : g.dica)}</small></span></div>` : ""}
+      ${r?.plano ? `<div class="r-leitura${r.plano.conferir ? " conferir" : ""}"><b>${r.plano.encerrar ? "Encerrar" : "Como responder"}:</b> ${esc(r.plano.estrategia)}</div>` : ""}
 
       ${r ? `<label class="campo" for="r-msg">Resposta sugerida</label>
         <textarea id="r-msg" style="min-height:150px">${esc(r.txt)}</textarea>
@@ -138,14 +142,16 @@ async function processarPrint(arquivo) {
 async function concluirResposta(enviar, canal) {
   const l = estado.leads.find((x) => x.id === resp.leadId); if (!l) return;
   const g = Nucleo.classificar(resp.texto), msg = $("#r-msg").value.trim();
+  // lido antes de registrar: a resposta de agora não pode contar como "já tinha recusado antes"
+  const plano = window.Estrategias?.respostaAoCliente ? Estrategias.respostaAoCliente(l, g, resp.texto, Vendas.ciclo(l)) : null;
   if (g.id === "automatica") {
     // robô do WhatsApp Business: fica registrado, mas não conta como resposta do cliente
     await registrar(l, "nota", `Resposta automática recebida: “${resp.texto.slice(0, 200)}”`);
   } else {
     await registrarResposta(l, g.tipo4 || "atencao", resp.texto.trim());
-    if (g.id === "remover") {
-      const c = Vendas.ciclo(l);
-      await salvarLead(l, { status: "descartado", dados: { ...(l.dados || {}), nao_contatar: true, ciclo: { ...c, encerrado: true } } });
+    if (g.id === "remover" || plano?.encerrar) {
+      const atual = estado.leads.find((x) => x.id === l.id) || l, c = Vendas.ciclo(atual);
+      await salvarLead(atual, { status: "descartado", dados: { ...(atual.dados || {}), ...(g.id === "remover" || plano?.nao_contatar ? { nao_contatar: true } : {}), ciclo: { ...c, encerrado: true } } });
     }
   }
   if (enviar) await enviarEtapa(l, g.id === "automatica" ? "extra" : g.tipo4 || "atencao", msg, `Resposta: ${g.nome.toLowerCase()}`, canal);

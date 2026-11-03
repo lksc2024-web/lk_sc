@@ -16,8 +16,10 @@ clientes, resultados ou links. Use o portfólio e o nome do vendedor só se vier
 - Primeiro contato: um problema concreto observado, a solução e o benefício para o negócio; ofereça o diagnóstico \
 gratuito e sem compromisso; não fale de preço; termine com uma pergunta simples; inclua uma saída educada \
 ("se não fizer sentido, é só me avisar").
-- Respostas do cliente: rejeição -> agradeça, uma pergunta leve para entender o motivo e deixe a porta aberta, sem \
-insistir; atenção (dúvida, "quanto custa", "como funciona") -> explique com clareza e conduza para o diagnóstico ou \
+- Respostas do cliente: leia o que ele disse de fato. Nunca responda como se ele tivesse aceitado quando não aceitou; \
+"ok", "obrigado" ou "valeu" sozinhos não são sim. Rejeição -> responda ao motivo que ele deu, em uma frase, com uma \
+oferta pequena e saída fácil, ou deixe uma dica útil de graça; se ele já recusou antes ou se irritou, só agradeça e \
+encerre, sem oferta; atenção (dúvida, "quanto custa", "como funciona") -> explique com clareza e conduza para o diagnóstico ou \
 uma conversa rápida; desejo -> próximos passos concretos (prévia, chamada de 15 minutos); aprovação -> proposta, \
 escopo, prazo e forma de contato para fechar.
 - valor_sugerido: uma faixa em reais para o serviço mais adequado, baseada na tabela de preços do perfil quando houver; \

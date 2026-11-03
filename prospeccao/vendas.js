@@ -408,7 +408,7 @@ function montarMensagem(l, etapa, analise, perfil = {}, oportunidade = null, con
   // escreveu em Ajustes continua valendo por cima dela; etapas internas ("_...") usam só os blocos.
   const E = typeof window !== "undefined" ? window.Estrategias : null;
   if (E && !String(etapa).startsWith("_") && !(perfil.roteiro && perfil.roteiro[etapa])) {
-    const t = E.texto(l, etapa, { ...vars, op_id: op.id }, perfil, conta.quando || null);
+    const t = E.texto(l, etapa, { ...vars, op_id: op.id, _modelo: conta.modelo }, perfil, conta.quando || null);
     if (t) return t;
   }
   const roteiro = { ...ROTEIRO_PADRAO, ...(perfil.roteiro || {}) };

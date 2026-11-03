@@ -527,6 +527,7 @@
       ...(CONVERSA[est.tipo] || CONVERSA.Outros),
     };
     extra.sobre_convite = extra.obs_curta ? "sobre isso" : extra.sobre;
+    extra.dica_gratis = preencher(DICA_GRATIS[vars.op_id] || DICA_PADRAO, vars);
     extra.oi_fala = saudacao(hora.h).replace(", tudo bem?", "!");
     extra.motivo_fala = vars.problema ? `${vars.problema}. Tenho uma ideia ${extra.sobre} e queria te contar em 1 minuto.`
       : `tenho uma ideia ${extra.sobre} da ${vars.nome} e queria te contar em 1 minuto.`;
@@ -536,6 +537,7 @@
     else if (etapa === "desejo") modelo = IDEIA;
     else if (etapa === "follow1") modelo = LEMBRETE;
     else if (etapa === "ligacao") modelo = LIGACAO;
+    else if (etapa === "resposta") modelo = vars._modelo || null;
     else if (est.msgs[etapa]) { const lista = est.msgs[etapa]; modelo = lista[hash(`${l.id || l.nome}|${etapa}`) % lista.length]; }
     else if (RESPOSTAS[etapa]) modelo = RESPOSTAS[etapa];
     if (!modelo) return null;
@@ -579,5 +581,136 @@
     });
   }
 
-  window.Estrategias = { OBS_LEVE, SETORES, RESPOSTAS, CANAIS, rankingCanais, canalDoNicho, canalDoLead, LIGACAO, CONVERSA, ABERTURA, IDEIA, LEMBRETE, doNicho, setorDe, texto, sequencia, diasDaSemana, localDoLead };
+
+  // ── Resposta do cliente ─────────────────────────────────────────────────────────────
+  // Lê o que ele escreveu e escolhe como responder: resgate ligado ao motivo que ele deu, saída educada
+  // quando não tem por onde seguir. Nunca responde como se ele tivesse topado quando não topou.
+  // Dica útil e de graça sobre o que foi visto no Google ou no site. Serve para quem quer que cuide disso.
+  const DICA_GRATIS = {
+    site_fora: "o link do site que aparece no Google de vocês ({dominio}) não está abrindo. Vale tirar o link ou pedir para quem cuida dar uma olhada, porque quem clica e não abre costuma desistir ali mesmo.",
+    sem_site: "deixar o perfil do Google completo, com horário, fotos recentes e o link direto do WhatsApp, já ajuda bastante quem procura vocês por lá.",
+    plataforma: "no perfil do Google, vale escrever na descrição o que vocês fazem e os principais serviços. Quem cai direto no link às vezes não entende de cara o que é.",
+    so_rede: "no perfil do Google, além do Instagram, vale colocar o link direto do WhatsApp. Muita gente só quer perguntar preço ou horário e desiste de procurar no perfil.",
+    nao_responsivo: "o site de vocês fica difícil de ler no celular, e é por ali que a maioria das pessoas chega. Pedir para quem cuida ajustar isso já faz diferença.",
+    sem_agendamento: "deixar no Google e no Instagram um link direto para marcar horário, nem que seja o WhatsApp com a mensagem pronta, tira muita pergunta repetida.",
+    sem_https: "o site aparece como \"não seguro\" no navegador. É um ajuste simples (certificado SSL) e muitas hospedagens fazem de graça.",
+    lento: "o site está demorando para abrir no celular. Diminuir o tamanho das imagens costuma resolver boa parte, e quem cuida faz isso rápido.",
+    desatualizado: "o site parece estar sem atualização faz tempo. Trocar fotos e conferir horário e telefone passa mais confiança para quem chega por lá.",
+    poucas_avaliacoes: "mandar o link de avaliação do Google pelo WhatsApp logo depois do atendimento, para quem saiu satisfeito, costuma multiplicar as avaliações em poucos meses.",
+    nota_baixa: "responder às avaliações do Google, principalmente às negativas, com calma e educação, muda muito a impressão de quem está escolhendo.",
+    sem_whatsapp_site: "um botão de WhatsApp no site, com a mensagem já pronta, faz mais gente chamar do que só o número de telefone.",
+    sem_chat: "um botão de WhatsApp no site, com a mensagem já pronta, faz mais gente chamar do que só o número de telefone.",
+  };
+  const DICA_PADRAO = "manter o perfil do Google completo, com horário, fotos e o link do WhatsApp, é o que mais traz contato de quem procura vocês por lá.";
+
+  // Assuntos que aparecem nas objeções. A objeção do nicho que mais combina com o que ele disse vira a base da resposta.
+  const ASSUNTOS = {
+    instagram: /instagram|\binsta\b|direct|rede social|redes sociais/, whatsapp: /whats|\bzap\b|wpp/, indicacao: /indica/,
+    preco: /caro|verba|dinheiro|grana|or[cç]amento|pagar|invest/, tempo: /tempo|agora n|momento|corrid|ocupad|temporada|cuidar/,
+    site: /\bsite\b/, sistema: /sistema|\bapp\b|aplicativo|agenda online|programa/, plataforma: /ifood|booking|airbnb|portal|portais|olx|plataforma/,
+    publicidade: /publicidade|conselho|\boab\b|cfm|cro\b/, mexer: /mexer|dif[ií]cil|complicad|n[aã]o sei usar/, balcao: /balc[aã]o|bairro|pessoalmente|presencial/,
+    idade: /velh|idos|terceira idade/, estoque: /estoque/, fora: /por fora|pedir fora|fora do app/, portfolio: /portf[oó]lio/,
+  };
+  function assuntosDe(t) { const s = semAcento(t); return Object.keys(ASSUNTOS).filter((k) => ASSUNTOS[k].test(s)); }
+  function objecaoDe(est, texto) {
+    const meus = assuntosDe(texto); if (!meus.length) return null;
+    let melhor = null, nota = 0;
+    for (const ob of est.objecoes || []) {
+      const n = assuntosDe(ob.o).filter((k) => meus.includes(k)).length;
+      if (n > nota) { nota = n; melhor = ob; }
+    }
+    return melhor;
+  }
+  // "fala com a Ana" -> { art: "a", nome: "Ana" }
+  function pessoaIndicada(texto) {
+    const m = String(texto).match(/\b(?:com|é|e|chama|procura|procure)\s+(o|a|seu|sua|dona|dono)\s+([A-ZÀ-Ú][a-zà-ú]{2,})/);
+    if (!m || /^(Dono|Dona|Gerente|Respons|Propriet|Sócio|Sócia|Doutor|Doutora|Recep)/.test(m[2])) return null;
+    return { art: /^(a|sua|dona)$/.test(m[1]) ? "a" : "o", nome: m[2] };
+  }
+
+  // A resposta da objeção já vem pronta para seguir a frase do cliente. Se ela mesma já oferece algo, não oferece de novo.
+  function comObjecao(ob, oferta) {
+    const jaOferece = /\?$|posso|te mostro|deixo o exemplo|te mando|sem compromisso/i.test(ob.r);
+    return ob.r + "\n\n" + (jaOferece ? "Se não fizer sentido agora, tudo bem também." : oferta);
+  }
+  const IRRITADO = /j[aá] (disse|falei|respondi|avisei)|chat[oa]|insist|incomod|enchend|encher o saco|spam|que saco|de novo isso|toda hora|para com isso/;
+  const NEGATIVOS = ["sem_interesse", "ja_tem", "nao_precisa", "remover"];
+
+  // l: lead · g: gatilho de Nucleo.classificar · texto: o que ele escreveu · c: Vendas.ciclo(l) antes de registrar esta resposta.
+  // -> { modelo, leitura, estrategia, encerrar, nao_contatar, conferir } ou null (respostas positivas seguem o roteiro normal).
+  function respostaAoCliente(l, g, texto, c = {}) {
+    const t = semAcento(texto), est = doNicho(l.nicho || l.categoria);
+    const antes = (c.respostas || []).filter((r) => r.tipo === "rejeicao").length;
+    const ultEnvio = (c.envios || []).slice(-1)[0];
+    const jaViuIdeia = ultEnvio && ["desejo", "valor", "aprovacao", "atencao"].includes(ultEnvio.etapa);
+    const negativo = NEGATIVOS.includes(g.id) || ((g.id === "caro" || g.id === "sem_tempo") && antes > 0);
+    const ob = objecaoDe(est, texto);
+
+    if (g.id === "remover" || (negativo && IRRITADO.test(t)) || (IRRITADO.test(t) && antes > 0))
+      return { modelo: "Entendido, me desculpe pelo incômodo. Não vou mais te mandar mensagem. Sucesso para a {nome}!",
+        leitura: "Pediu para parar ou mostrou irritação.", estrategia: "Encerrar com educação, sem nenhuma oferta. Insistir aqui queima seu número e a sua imagem.",
+        encerrar: true, nao_contatar: true };
+    if (negativo && antes > 0)
+      return { modelo: "Entendido, obrigado pela sinceridade, não vou insistir. Se um dia fizer sentido, é só me chamar por aqui. Sucesso para a {nome}!",
+        leitura: "Segunda negativa: ele já tinha recusado antes.", estrategia: "Sair de forma leve e encerrar o ciclo. Um terceiro pedido vira insistência.",
+        encerrar: true };
+
+    if (g.id === "sem_interesse") {
+      if (ob) return { modelo: comObjecao(ob, "Se quiser, te mando um exemplo de como ficaria para a {nome}, sem compromisso. Se não fizer sentido, tudo bem também."),
+        leitura: `Disse não, com um motivo: “${ob.o}”.`, estrategia: "Responder ao motivo que ele deu, em uma frase, e oferecer algo pequeno e sem compromisso. Deixar claro que pode dizer não." };
+      if (/estamos (bem|satisfeit|bem servid)|ta (bom|otimo) assim|esta (bom|otimo) assim|funciona bem/.test(t))
+        return { modelo: "Que bom que está funcionando! A ideia não é mexer no que já dá certo, é ter {dor_curta}, sem mudar o jeito de vocês trabalharem.\n\nSe tiver curiosidade, te mostro em 2 minutos. Se não, tudo certo, sucesso para a {nome}!",
+          leitura: "Disse que está satisfeito como está.", estrategia: "Concordar que está bom e mostrar o ganho sem trocar nada. Uma oferta só, com saída fácil." };
+      return { modelo: "Tranquilo, obrigado por responder! Não vou insistir.\n\nSó deixo uma dica que vale para quem cuidar disso aí: {dica_gratis}\n\nSe um dia quiser ver a ideia completa para a {nome}, é só me chamar.",
+        leitura: "Disse não, sem explicar o motivo.", estrategia: "Aceitar o não e deixar uma dica útil, de graça, sem pedir nada em troca. É o que mais faz o cliente lembrar de você depois." };
+    }
+    if (g.id === "ja_tem") {
+      const as = assuntosDe(texto);
+      const abre = as.includes("instagram") ? "Faz sentido, o Instagram é ótimo para atrair, e continua."
+        : as.includes("whatsapp") ? "Faz sentido, e pode continuar pelo WhatsApp."
+        : as.includes("plataforma") || as.includes("sistema") ? "Ótimo, então parte do caminho já está feita."
+        : as.includes("site") ? "Que bom que vocês já têm site!" : "Que bom que vocês já têm isso!";
+      if (ob && /site|sistema|plataforma|instagram|whatsapp|portfolio/.test(assuntosDe(ob.o).join(" ")))
+        return { modelo: comObjecao(ob, "Se quiser, te mostro como ficaria para a {nome}, sem compromisso. Se não fizer sentido, tudo bem também."),
+          leitura: `Disse que já tem: “${ob.o}”.`, estrategia: "Valorizar o que ele já tem e oferecer um ajuste em cima disso, não uma troca." };
+      if (l.dados?.diag?.ok === false || !l.site)
+        return { modelo: abre + " Só um detalhe que vi: {dica_gratis}\n\nSe quiser, te mostro onde ajusta. É rapidinho.",
+          leitura: "Disse que já tem site ou alguém cuidando.", estrategia: "Ele tem, mas o que você viu continua valendo. Passar como dica, sem vender." };
+      return { modelo: abre + " Olhei por cima e vi um ponto: {dica_gratis}\n\nSe quiser, passo isso para quem cuida. É rápido de ajustar e não muda nada do que já funciona.",
+        leitura: "Disse que já tem site ou alguém cuidando.", estrategia: "Não disputar com quem já cuida. Oferecer o que você viu como dica para essa pessoa." };
+    }
+    if (g.id === "nao_precisa")
+      return { modelo: ob ? comObjecao(ob, "Se quiser, te mostro como ficaria para a {nome}, sem compromisso. Se não, tudo certo!")
+          : "Agenda cheia é ótimo sinal! Nesse caso a ideia não é trazer mais gente, é ter {dor_curta}. E quem chega por indicação quase sempre pesquisa o nome antes de chamar.\n\nSe quiser, te mostro como ficaria para a {nome}, sem compromisso. Se não, tudo certo!",
+        leitura: "Disse que não precisa de mais clientes (indicação, agenda cheia).", estrategia: "Mudar o ganho: menos trabalho e mais confiança para quem já vem, em vez de mais clientes." };
+    if (g.id === "nao_responsavel") {
+      const p = pessoaIndicada(texto);
+      return { modelo: p ? `Pode deixar, obrigado! Você me passa o contato d${p.art} ${p.nome}? Ou, se preferir, te mando um resumo curto para repassar.`
+          : "Ah, obrigado por avisar! Quem cuida disso aí? Se puder me passar o nome ou o contato, falo direto com a pessoa. Ou, se preferir, te mando um resumo curto para repassar.",
+        leitura: p ? `Não é quem decide. Indicou ${p.art} ${p.nome}.` : "Não é a pessoa que decide.", estrategia: "Pedir o contato de quem decide, ou um resumo curto para ele repassar. Ainda não é um não." };
+    }
+    if (g.id === "ok_seco")
+      return jaViuIdeia
+        ? { modelo: "Imagina! Ficou alguma dúvida? Se for mais fácil, te explico em 5 minutos numa ligação.",
+          leitura: "Só agradeceu depois de ver a ideia, sem dizer sim nem não.", estrategia: "Não tratar como sim. Abrir espaço para dúvida, com uma pergunta só." }
+        : { modelo: "Imagina! Só para eu não te mandar mensagem à toa: faz sentido eu te mostrar a ideia, ou prefere deixar para outro momento?",
+          leitura: "Só agradeceu, sem dizer sim nem não.", estrategia: "Não tratar como interesse. Perguntar de leve, dando a opção de recusar." };
+    if (g.id === "caro")
+      return { modelo: ob && /preco/.test(assuntosDe(ob.o).join(" ")) ? comObjecao(ob, "Quer que eu te mande uma versão mais enxuta, para você ver o valor? Se não for o momento, tudo bem também.")
+          : "Entendo, e não quero te empurrar um gasto fora de hora. Dá para começar só com o essencial e parcelar, e o resto entra quando fizer sentido.\n\nQuer que eu te mande essa versão mais enxuta, para você ver o valor? Se não for o momento, tudo bem também.",
+        leitura: "Preço ou falta de verba.", estrategia: "Reduzir o tamanho, não o valor do trabalho. Uma opção menor, com saída fácil." };
+    if (g.id === "sem_tempo")
+      return { modelo: "Entendo, sem problema. Posso te chamar de novo {quando}? Se preferir que não, é só me falar que eu não mando mais.",
+        leitura: "Agora não é o momento.", estrategia: "Pedir licença para voltar numa data, em vez de marcar sozinho. Ele pode dizer não." };
+    if (g.id === "outro") {
+      if (/\?/.test(texto))
+        return { modelo: "Boa pergunta! [responda aqui o que ele perguntou]\n\nSe ajudar, te explico tudo numa ligação rápida de 5 minutos.",
+          leitura: "Fez uma pergunta que o app não reconheceu.", estrategia: "Responder a pergunta antes de qualquer oferta. Complete o trecho entre colchetes.", conferir: true };
+      return { modelo: "Obrigado pela resposta! Para eu não te mandar nada fora de hora: faz sentido eu te mostrar a ideia, ou agora não é o momento?",
+        leitura: "Não deu para entender com certeza o que ele quis dizer.", estrategia: "Leia a mensagem dele e ajuste. Na dúvida, pergunte em vez de supor que ele topou.", conferir: true };
+    }
+    return null;
+  }
+
+  window.Estrategias = { OBS_LEVE, SETORES, RESPOSTAS, CANAIS, rankingCanais, canalDoNicho, canalDoLead, LIGACAO, CONVERSA, ABERTURA, IDEIA, LEMBRETE, doNicho, setorDe, texto, sequencia, diasDaSemana, localDoLead, respostaAoCliente, DICA_GRATIS };
 })();
