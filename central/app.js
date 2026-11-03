@@ -1577,7 +1577,7 @@ sb.auth.getSession().then(function (r) { if (!r.data.session) mostrarLogin(); })
 // Qual nicho abordar de manhã, à tarde e à noite em cada dia, no Brasil ou fora, e quais leads
 // (só os que têm alguma forma de contato) valem mais agora. Regras em vendas.js da Prospecção.
 var vMelhores = (function () {
-  var MC = { estNicho: null, data: null, periodo: null, nichos: [], area: "", raio: 0, mercado: "BR", verTodos: false, mundo: null, mundoP: null, timer: null };
+  var MC = { canal: "msg", estNicho: null, data: null, periodo: null, nichos: [], area: "", raio: 0, mercado: "BR", verTodos: false, mundo: null, mundoP: null, timer: null };
   var NOME_CANAL = { whatsapp: "WhatsApp", instagram: "Instagram", email: "E-mail", telefone: "Ligar", facebook: "Facebook" };
   var CLASSE_CANAL = { whatsapp: "wa", instagram: "ig", email: "pri", telefone: "", facebook: "pri" };
   var ORDEM = ["América do Sul", "América do Norte", "América Central e Caribe", "Europa", "África", "Ásia", "Oceania"];
@@ -1782,8 +1782,28 @@ var vMelhores = (function () {
         return '<div class="mc-ideia"><div><b>' + esc(cap(x.nicho)) + '</b> <span class="num">' + Math.round(x.taxa * 100) + "%</span><small>" + (x.x ? x.x.ev.icone + " " + esc(x.x.ev.nome) + " " + emDias(x.x.d) + " · oferecer " + esc(x.x.ev.oferta) : esc(r.tipo) + ": " + esc(r.nota)) + " · melhor " + esc(horaLocal(V, x.rotulo)) + '</small></div><button type="button" class="btn sm pri" data-buscar="' + esc(x.nicho) + '">Buscar</button></div>'; }).join("")
         : '<p class="mc-vazio">Você já tem leads de todos os setores com bom horário agora.</p>') + "</div>";
 
-    box.innerHTML = '<div class="mc">' + hFiltros + hDatas + hEst + '<div class="mc-col">' + hPer + hSem + '</div><div class="mc-col">' + hLeads + hExp + "</div></div>";
+    var hCan = window.Estrategias && window.Estrategias.rankingCanais ? blocoCanais(window.Estrategias) : "";
+    box.innerHTML = '<div class="mc">' + hFiltros + hDatas + hEst + '<div class="mc-col">' + hPer + hCan + hSem + '</div><div class="mc-col">' + hLeads + hExp + "</div></div>";
     ligar($(".mc", box), V); // eventos presos ao painel, não ao #conteudo (que as outras telas reaproveitam)
+  }
+
+  // Melhor canal por nicho (mesmas regras da Prospecção, em estrategias.js): mensagem, ligação ou as duas.
+  function blocoCanais(E) {
+    var R = E.rankingCanais(S.leads), k = MC.canal, lista = R[k];
+    var topo = Math.max.apply(null, lista.map(function (x) { return x.taxa[k]; }).concat([0.01]));
+    var pc = function (v) { return Math.round(v * 100) + "%"; };
+    var tres = function (l) { return l.slice(0, 3).map(function (x) { return x.tipo.toLowerCase(); }).join(", "); };
+    var seus = lista.some(function (x) { return x.fonte[k] !== "estimativa"; });
+    return '<div class="card mc-can"><div class="card-h"><div><h2>Melhor canal por nicho</h2><p>Chance de abrir conversa a cada 100 empresas do setor. ' +
+      (seus ? "Onde aparece “seus envios”, o número é o seu." : "Estimativa pela rotina de quem atende; com 10 envios seus por canal num setor, passa a ser o seu número.") + "</p></div>" +
+      '<div class="seg" id="mc-canal"><button type="button" data-canal="msg" aria-pressed="' + (k === "msg") + '">Mensagem</button><button type="button" data-canal="lig" aria-pressed="' + (k === "lig") + '">Ligação</button><button type="button" data-canal="combo" aria-pressed="' + (k === "combo") + '">As duas</button></div></div>' +
+      lista.slice(0, 8).map(function (x, i) {
+        return '<details class="mc-can-l"' + (i === 0 ? " open" : "") + '><summary><b>' + esc(x.tipo) + '</b><span class="pct num">' + pc(x.taxa[k]) + (k === "combo" ? " <small>+" + Math.round(x.ganho * 100) + " pts</small>" : "") + "</span>" +
+          '<span class="trilho"><i style="width:' + Math.round(x.taxa[k] / topo * 100) + '%"></i></span><small>' + x.exemplos.slice(0, 3).map(esc).join(", ") + (x.fonte[k] !== "estimativa" ? " · " + esc(x.fonte[k]) : "") + " · melhor: <b>" + esc(x.melhorNome) + "</b></small></summary>" +
+          "<p>" + esc(x.quem) + "</p><p><b>Mensagem</b> " + pc(x.taxa.msg) + " · <b>Ligação</b> " + pc(x.taxa.lig) + " · <b>As duas</b> " + pc(x.taxa.combo) + "</p>" +
+          "<p><b>Hora de ligar:</b> " + esc(x.ligar) + ".<br><b>Como combinar:</b> " + esc(x.combo) + "</p></details>";
+      }).join("") +
+      '<p class="mc-res">Mensagem rende mais em: <b>' + tres(R.msg) + "</b>. Ligação rende mais em: <b>" + tres(R.lig) + "</b>. Somar a ligação vale mais em: <b>" + tres(R.combo) + "</b>.</p></div>";
   }
 
   // Calendário de datas: o dia escolhido, as datas comerciais chegando e o plano das próximas semanas.
@@ -1841,6 +1861,7 @@ var vMelhores = (function () {
       "<div><dt>A dor do dono</dt><dd>" + esc(est.dor) + "</dd></div>" +
       "<div><dt>O que oferecer</dt><dd>" + esc(est.oferta) + " <small>(" + esc(V.faixaPreco(preco)) + ", " + esc(preco.prazo) + ")</small></dd></div>" +
       "<div><dt>Com quem você fala</dt><dd>" + esc(est.dono) + "</dd></div>" +
+      (E.canalDoNicho ? (function (cn) { return "<div><dt>Melhor canal</dt><dd><b>" + esc(cn.melhorNome) + "</b> (mensagem " + Math.round(cn.taxa.msg * 100) + "%, ligação " + Math.round(cn.taxa.lig * 100) + "%, as duas " + Math.round(cn.taxa.combo * 100) + "%). " + esc(cn.quem) + " Ligar: " + esc(cn.ligar) + ".</dd></div>"; })(E.canalDoNicho(nicho, S.leads)) : "") +
       "<div><dt>Tom</dt><dd>" + esc(est.tom) + "</dd></div>" +
       "<div><dt>Evite</dt><dd>" + est.evitar.map(esc).join(" · ") + "</dd></div>" +
       (op.ev ? "<div><dt>Ângulo da data</dt><dd>" + op.ev.icone + " " + esc(op.ev.nome) + " " + emDias(op.dias) + ": ofereça também " + esc(op.ev.oferta) + ". Abordar até " + K.curta(K.somar(op.ev.inicio, -op.ev.ate)) + ".</dd></div>" : "") + "</dl>" +
@@ -1868,6 +1889,7 @@ var vMelhores = (function () {
       var d = t.closest("#mc-dia [data-d]"); if (d) { MC.data = d.dataset.d || null; render(); return; }
       var sm = t.closest("[data-semana]"); if (sm) { MC.data = sm.dataset.semana === K.hojeEm(fuso()) ? null : sm.dataset.semana; MC.periodo = null; render(); return; }
       var es = t.closest("[data-est]"); if (es) { MC.estNicho = es.dataset.est; render(); return; }
+      var cn = t.closest("#mc-canal [data-canal]"); if (cn) { MC.canal = cn.dataset.canal; render(); return; }
       var cm = t.closest("[data-copiar-msg]"); if (cm) { var mm = MC.estMsgs && MC.estMsgs[+cm.dataset.copiarMsg]; if (mm) copiar(mm.txt); return; }
       var co = t.closest("[data-copiar-obj]"); if (co) { var oo = MC.estObj && MC.estObj[+co.dataset.copiarObj]; if (oo) copiar(oo.r); return; }
       var al = t.closest("[data-abrir-lead]"); if (al) { abrirLead(al.dataset.abrirLead); return; }

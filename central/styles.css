@@ -528,3 +528,16 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 .mc-est-cab span{font-size:12px;color:var(--muted)}
 .mc-est-seq summary{color:var(--accent);font-size:12.5px;margin-top:4px}
 .mc-est-msg{font-size:13.5px;line-height:1.55;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin:8px 0}
+
+.mc-can .card-h{flex-wrap:wrap;gap:10px}
+.mc-can-l{border-top:1px solid var(--line);padding:8px 0}
+.mc-can-l:first-of-type{border-top:0}
+.mc-can-l summary{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:3px 10px;align-items:center;cursor:pointer;list-style:none}
+.mc-can-l summary::-webkit-details-marker{display:none}
+.mc-can-l .pct{text-align:right;font-weight:600}
+.mc-can-l .pct small{color:var(--muted);font-size:11px;font-weight:500}
+.mc-can-l .trilho{grid-column:1/-1;height:5px;border-radius:3px;background:var(--line);overflow:hidden}
+.mc-can-l .trilho i{display:block;height:100%;background:var(--accent);border-radius:3px}
+.mc-can-l summary small{grid-column:1/-1;color:var(--muted);font-size:12px}
+.mc-can-l p{margin:8px 0 0;font-size:13px}
+.mc-res{margin:12px 0 0;font-size:13px}
