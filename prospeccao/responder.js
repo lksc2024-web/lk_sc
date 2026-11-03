@@ -132,8 +132,10 @@ async function processarPrint(arquivo) {
   info().textContent = "Lendo o print…";
   try {
     const bruto = await lerPrint(arquivo, (p) => { if (info()) info().textContent = `Lendo o print… ${p}%`; });
-    resp.texto = Nucleo.limparOCR(bruto);
     if (!resp.leadId) { const c = candidatosResposta(bruto)[0]; if (c) resp.leadId = c.id; }
+    // o print costuma trazer a sua mensagem também: fica só o que o cliente escreveu
+    const l = estado.leads.find((x) => x.id === resp.leadId);
+    resp.texto = Nucleo.mensagemDoCliente(bruto, l ? Vendas.ciclo(l).envios.map((e) => e.txt || "") : []);
     abrirResponder();
     if (info()) info().textContent = "Confira o texto e apague o que não for do cliente.";
   } catch (err) { if (info()) info().textContent = err.message; }

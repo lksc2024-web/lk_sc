@@ -136,6 +136,31 @@ function classificar(texto) {
   if (/^n[aã]o\b/.test(t) && !/^n[aã]o (entendi|sei|lembro|conhe[cç]o|recebi|vi)\b/.test(t)) return GATILHOS.find(function (g) { return g.id === "sem_interesse"; });
   return GATILHOS[GATILHOS.length - 1];
 }
+// Do print da conversa, só o que o cliente escreveu: separa os balões pelo horário e volta do fim até
+// encontrar um balão seu (parecido com algo que você enviou ou com os tiques de enviado). Sem pista, fica só o último balão.
+function mensagemDoCliente(txt, enviados) {
+  var linhas = String(txt || "").split(/\n+/).map(function (l) { return l.trim(); }).filter(Boolean);
+  var fimBalao = /\d{1,2}[:.]\d{2}\s*[✓✔vV√]*\s*$/, baloes = [], atual = [];
+  linhas.forEach(function (l) { atual.push(l); if (fimBalao.test(l)) { baloes.push(atual); atual = []; } });
+  if (atual.length) baloes.push(atual);
+  if (baloes.length < 2) return limparOCR(txt);
+  var palavras = function (t) { return norm(t).split(/[^a-z0-9]+/).filter(function (w) { return w.length >= 4; }); };
+  var meus = palavras((enviados || []).join(" "));
+  var meu = function (b) {
+    var t = b.join(" ");
+    if (/\d{1,2}[:.]\d{2}\s*[✓✔√]{1,2}\s*$/.test(t) || /\d{1,2}[:.]\d{2}\s*(vv|v\/|\/\/)\s*$/i.test(t)) return true;
+    var ws = palavras(t); if (!ws.length || !meus.length) return false;
+    return ws.filter(function (w) { return meus.indexOf(w) >= 0; }).length / ws.length >= 0.6;
+  };
+  var dele = [];
+  for (var i = baloes.length - 1; i >= 0; i--) {
+    if (meu(baloes[i])) break;
+    var limpo = limparOCR(baloes[i].join("\n"));
+    if (limpo) dele.unshift(limpo);
+    if (!meus.length && dele.length) break; // sem o que você enviou para comparar: só o último balão
+  }
+  return dele.length ? dele.join("\n") : limparOCR(txt);
+}
 function limparOCR(txt) {
   return String(txt || "").split(/\n+/).map(function (l) { return l.trim(); }).filter(function (l) {
     if (l.length < 2) return false;
@@ -156,7 +181,7 @@ var NICHO_GRUPOS = [
   ["servicos", /advoga|contab|consultor|agencia|escritorio|gestao|financ/]
 ];
 function grupoNicho(txt) { var t = norm(txt); for (var i = 0; i < NICHO_GRUPOS.length; i++) if (NICHO_GRUPOS[i][1].test(t)) return NICHO_GRUPOS[i][0]; return ""; }
-window.Nucleo = { grupoNicho: grupoNicho, NICHO_GRUPOS: NICHO_GRUPOS, norm: norm, radical: radical, tokensNome: tokensNome, candidatos: candidatos, numero: numero, somaDias: somaDias,
+window.Nucleo = { mensagemDoCliente: mensagemDoCliente, grupoNicho: grupoNicho, NICHO_GRUPOS: NICHO_GRUPOS, norm: norm, radical: radical, tokensNome: tokensNome, candidatos: candidatos, numero: numero, somaDias: somaDias,
   extrairData: extrairData, extrairValor: extrairValor, extrairNomeNovo: extrairNomeNovo, interpretar: interpretar,
   GATILHOS: GATILHOS, classificar: classificar, limparOCR: limparOCR, inicioDoDia: inicioDoDia };
 })();

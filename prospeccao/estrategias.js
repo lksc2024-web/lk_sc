@@ -314,6 +314,7 @@
     lento: "O site demorou um pouco para abrir aqui.",
   };
   // Lembrete 1: o lead ainda não respondeu, então não cita nada que ele não leu.
+  const IDEIA_CURTA = "Que bom! Vou montar como ficaria para a {nome} e te mando por aqui.\n\nSó para eu acertar: {pergunta}{exemplos}";
   const LEMBRETE = "{oi} Passando de novo por aqui: posso te mandar aquela ideia que comentei? Se for melhor falar com outra pessoa daí, me avisa.{fecho_dia}";
   // Quando o lead abre a conversa: a ideia do nicho e uma pergunta sobre o negócio dele.
   const IDEIA = "Boa! {ideia}\n\n{gancho_data}Antes de te mostrar como ficaria para a {nome}, me conta: {pergunta}{exemplos}";
@@ -534,7 +535,12 @@
     const todas = { ...vars, ...extra };
     let modelo = null;
     if (etapa === "abordagem") modelo = ABERTURA;
-    else if (etapa === "desejo") modelo = IDEIA;
+    else if (etapa === "desejo") {
+      const ult = ((l.dados && l.dados.ciclo && l.dados.ciclo.envios) || []).slice(-1)[0];
+      const t = semAcento(ult && ult.txt);
+      const jaExplicou = t && (/como ficaria|pensei (numa|em uma) pagina|a ideia e/.test(t) || (todas.ideia && t.includes(semAcento(todas.ideia).slice(-40))));
+      modelo = jaExplicou ? IDEIA_CURTA : IDEIA;
+    }
     else if (etapa === "follow1") modelo = LEMBRETE;
     else if (etapa === "ligacao") modelo = LIGACAO;
     else if (etapa === "resposta") modelo = vars._modelo || null;
