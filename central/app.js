@@ -1218,9 +1218,11 @@ async function processarPrint(arquivo) {
   var info = $("#rp-ocr"); if (info) info.textContent = "Lendo o print…";
   try {
     var bruto = await lerPrint(arquivo, function (p) { var i = $("#rp-ocr"); if (i) i.textContent = "Lendo o print… " + p + "%"; });
-    var limpo = limparOCR(bruto);
-    S.resp.texto = limpo;
     if (!S.resp.alvo) { var c = candidatos(bruto).filter(function (x) { return x.tipo !== "projeto"; })[0]; if (c) S.resp.alvo = c.tipo + ":" + c.obj.id; }
+    // o print costuma trazer a sua mensagem também: fica só o que o cliente escreveu
+    var alv = alvoResp(), env = alv && alv.tipo === "lead" && alv.obj && alv.obj.dados && alv.obj.dados.ciclo ? (alv.obj.dados.ciclo.envios || []).map(function (e) { return e.txt || ""; }) : [];
+    var limpo = NUC.mensagemDoCliente ? NUC.mensagemDoCliente(bruto, env) : limparOCR(bruto);
+    S.resp.texto = limpo;
     if (S.view !== "responder") ir("responder"); else render();
     var i2 = $("#rp-ocr"); if (i2) i2.textContent = "Confira o texto e apague o que não for do cliente.";
     if (limpo) analisar();
