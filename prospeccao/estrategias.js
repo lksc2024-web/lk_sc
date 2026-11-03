@@ -464,7 +464,29 @@
   const semAcento = (s) => String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
   const V = () => window.Vendas;
   const K = () => (window.Calendario && window.Calendario.pronto() ? window.Calendario : null);
-  function setorDe(nicho) { const v = V(); const t = v ? v.rotinaDe(nicho || "").tipo : "Outros"; return SETORES[t] ? t : "Outros"; }
+  // Ajustes por nicho dentro do setor: nome no plural, setor certo e a ideia concreta da primeira mensagem.
+  const POR_NICHO = [
+    [/(aluguel|locacao|loca) .*(festa|evento)|(festa|evento).*(aluguel|locacao)|pegue e monte|pague e leve/, { setor: "Eventos", proposta: "Pensei num catálogo da {nome} com os itens para locação, em que o cliente escolhe o que precisa e o pedido de orçamento já chega com a data e as quantidades." }],
+    [/salao de festa|casa de festa|espaco de evento|espaco para evento/, { setor: "Eventos", categorias: "salões de festas", proposta: "Pensei numa página do espaço da {nome} com fotos, capacidade e um pedido de orçamento que já chega com a data e o número de convidados." }],
+    [/veterin/, { setor: "Pet", categorias: "clínicas veterinárias", proposta: "Pensei num agendamento online para a {nome}: o tutor marca a consulta sozinho e recebe lembrete de vacina e retorno no WhatsApp." }],
+    [/banho e tosa/, { setor: "Pet", categorias: "pet shops e banho e tosa" }],
+    [/oficina|mecanic|funilaria/, { setor: "Automotivo", categorias: "oficinas mecânicas" }],
+    [/lava.?jato|lava rapido|estetica automotiva/, { setor: "Automotivo", proposta: "Pensei numa página da {nome} com os serviços e preços, onde o cliente já marca o horário da lavagem pelo WhatsApp." }],
+    [/autopeca|auto peca/, { setor: "Automotivo", categorias: "lojas de autopeças", proposta: "Pensei num catálogo da {nome} em que o cliente manda o modelo do carro e a peça que procura, e o pedido já chega completo no WhatsApp." }],
+    [/material de construcao|materiais de construcao|home center/, { setor: "Lojas", categorias: "lojas de material de construção", proposta: "Pensei num catálogo da {nome} em que o cliente monta a lista de materiais e o orçamento já chega pronto no WhatsApp." }],
+    [/arquitet|interiores/, { setor: "Escritórios", categorias: "escritórios de arquitetura", proposta: "Pensei num site com o portfólio da {nome}, onde o cliente vê os projetos e já manda o briefing com o tipo de obra e o tamanho do espaço." }],
+    [/contab/, { setor: "Escritórios", categorias: "escritórios de contabilidade", proposta: "Pensei num site sóbrio para a {nome}, com os serviços e um contato que já chega com o tipo e o porte da empresa." }],
+    [/fisioterap/, { setor: "Saúde", categorias: "clínicas de fisioterapia" }],
+    [/estetica/, { setor: "Beleza", categorias: "clínicas de estética", proposta: "Pensei numa página da {nome} com os procedimentos e o agendamento direto: a cliente marca a avaliação sozinha, sem esperar resposta no direct." }],
+    [/fotograf/, { setor: "Eventos", categorias: "fotógrafos", proposta: "Pensei num site com o portfólio da {nome} e um pedido de orçamento que já chega com o tipo de ensaio ou evento e a data." }],
+    [/agencia de (turismo|viage)|turismo/, { setor: "Turismo e hospedagem", categorias: "agências de turismo", proposta: "Pensei num site da {nome} com os pacotes organizados e um pedido de orçamento que já chega com o destino, as datas e o número de pessoas." }],
+    [/idioma|curso|ingles|espanhol/, { setor: "Educação", proposta: "Pensei numa página da {nome} para o aluno marcar a aula experimental ou o teste de nível sozinho, a qualquer hora." }],
+    [/escola infantil|creche|bercario|educacao infantil/, { setor: "Educação", categorias: "escolas infantis" }],
+    [/chocolat|doceria|bombon/, { setor: "Padarias e cafés", categorias: "chocolaterias e docerias" }],
+    [/floricultura|flores/, { setor: "Lojas", proposta: "Pensei num catálogo da {nome} com os arranjos e preços, e o pedido de entrega chegando completo no WhatsApp, com data e endereço." }],
+  ];
+  function porNicho(nicho) { const t = semAcento(nicho); const a = POR_NICHO.find(([rx]) => rx.test(t)); return a ? a[1] : {}; }
+  function setorDe(nicho) { const o = porNicho(nicho); if (o.setor && SETORES[o.setor]) return o.setor; const v = V(); const t = v ? v.rotinaDe(nicho || "").tipo : "Outros"; return SETORES[t] ? t : "Outros"; }
   function doNicho(nicho) { return { tipo: setorDe(nicho), ...SETORES[setorDe(nicho)] }; }
   function hash(s) { let h = 0; for (const c of String(s)) h = (h * 31 + c.charCodeAt(0)) | 0; return Math.abs(h); }
   const preencher = (t, vars) => t.replace(/\{(\w+)\}/g, (m, k) => (k in vars ? vars[k] : m));
@@ -533,7 +555,9 @@
     };
     extra.sobre_convite = extra.obs_curta ? "sobre isso" : extra.sobre;
     extra.apresento_b = nome ? `Meu nome é ${nome}, faço` : extra.apresento;
-    extra.proposta = preencher(extra.proposta || CONVERSA.Outros.proposta, vars);
+    const ajuste = porNicho(nicho);
+    if (ajuste.categorias) vars = { ...vars, categorias: ajuste.categorias };
+    extra.proposta = preencher(ajuste.proposta || extra.proposta || CONVERSA.Outros.proposta, vars);
     extra.dica_gratis = preencher(DICA_GRATIS[vars.op_id] || DICA_PADRAO, vars);
     extra.oi_fala = saudacao(hora.h).replace(", tudo bem?", "!");
     extra.motivo_fala = vars.problema ? `${vars.problema}. Tenho uma ideia ${extra.sobre} e queria te contar em 1 minuto.`
