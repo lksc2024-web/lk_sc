@@ -655,6 +655,16 @@
         leitura: "Segunda negativa: ele já tinha recusado antes.", estrategia: "Sair de forma leve e encerrar o ciclo. Um terceiro pedido vira insistência.",
         encerrar: true };
 
+    if (g.id === "concorrente")
+      return { modelo: "Ah, entendi, então somos da mesma área! Obrigado pelo retorno e sucesso para a {nome}.",
+        leitura: "É da mesma área (faz sites ou sistemas).", estrategia: "Agradecer e encerrar. Não há venda aqui.", encerrar: true, nao_contatar: true };
+    if (g.id === "elogio_sem_seguir") {
+      const loja = /e-?commerce|loja (online|virtual)|vender (online|pela internet)|administrar/.test(t);
+      return { modelo: "Muito obrigado, fico feliz que tenha gostado! Entendo e respeito a decisão. Fica meu contato aqui: se um dia fizer sentido, é só me chamar. Sucesso para a {nome}!",
+        leitura: "Gostou do trabalho, mas disse que não vai seguir agora." + (loja ? " Não quer cuidar de loja online." : ""),
+        estrategia: "Agradecer e respeitar. Sem nova oferta e sem lembretes: fica como relacionamento futuro." + (loja ? " Se voltar a falar com ele, não ofereça e-commerce." : ""),
+        encerrar: true, futuro: true };
+    }
     if (g.id === "sem_interesse") {
       if (ob) return { modelo: comObjecao(ob, "Se quiser, te mando um exemplo de como ficaria para a {nome}, sem compromisso. Se não fizer sentido, tudo bem também."),
         leitura: `Disse não, com um motivo: “${ob.o}”.`, estrategia: "Responder ao motivo que ele deu, em uma frase, e oferecer algo pequeno e sem compromisso. Deixar claro que pode dizer não." };
@@ -684,6 +694,9 @@
           : "Agenda cheia é ótimo sinal! Nesse caso a ideia não é trazer mais gente, é ter {dor_curta}. E quem chega por indicação quase sempre pesquisa o nome antes de chamar.\n\nSe quiser, te mostro como ficaria para a {nome}, sem compromisso. Se não, tudo certo!",
         leitura: "Disse que não precisa de mais clientes (indicação, agenda cheia).", estrategia: "Mudar o ganho: menos trabalho e mais confiança para quem já vem, em vez de mais clientes." };
     if (g.id === "nao_responsavel") {
+      if (/transfer|encaminh|repassei|repassad|direcion/.test(t))
+        return { modelo: "Obrigado! Fico no aguardo da equipe, então. Se precisarem de alguma informação antes, é só me chamar por aqui.",
+          leitura: "Passou a conversa para outra equipe. Ainda não é interesse.", estrategia: "Agradecer e esperar o contato da equipe. Não tratar como sim e não mandar proposta ainda." };
       const p = pessoaIndicada(texto);
       return { modelo: p ? `Pode deixar, obrigado! Você me passa o contato d${p.art} ${p.nome}? Ou, se preferir, te mando um resumo curto para repassar.`
           : "Ah, obrigado por avisar! Quem cuida disso aí? Se puder me passar o nome ou o contato, falo direto com a pessoa. Ou, se preferir, te mando um resumo curto para repassar.",

@@ -151,7 +151,9 @@ async function concluirResposta(enviar, canal) {
     await registrarResposta(l, g.tipo4 || "atencao", resp.texto.trim());
     if (g.id === "remover" || plano?.encerrar) {
       const atual = estado.leads.find((x) => x.id === l.id) || l, c = Vendas.ciclo(atual);
-      await salvarLead(atual, { status: "descartado", dados: { ...(atual.dados || {}), ...(g.id === "remover" || plano?.nao_contatar ? { nao_contatar: true } : {}), ciclo: { ...c, encerrado: true } } });
+      // relacionamento futuro: sem lembretes, mas o lead não vai para descartados
+      if (plano?.futuro) await salvarLead(atual, { dados: { ...(atual.dados || {}), relacionamento_futuro: true, ciclo: { ...c, encerrado: true } } });
+      else await salvarLead(atual, { status: "descartado", dados: { ...(atual.dados || {}), ...(g.id === "remover" || plano?.nao_contatar ? { nao_contatar: true } : {}), ciclo: { ...c, encerrado: true } } });
     }
   }
   if (enviar) await enviarEtapa(l, g.id === "automatica" ? "extra" : g.tipo4 || "atencao", msg, `Resposta: ${g.nome.toLowerCase()}`, canal);

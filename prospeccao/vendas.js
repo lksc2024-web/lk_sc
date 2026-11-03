@@ -145,7 +145,11 @@ function pluralPalavra(p) {
 }
 // "Clínica de estética" -> "clínicas de estética"; "Imobiliária" -> "imobiliárias"; casos difíceis -> genérico
 function plural(cat) {
-  const p = (cat || "").toLowerCase().trim().split(/\s+/).filter(Boolean);
+  let c = (cat || "").toLowerCase().trim().replace(/^servi[cç]os? (de|para) /, "");
+  if (/^pet ?shop$/.test(c)) return "pet shops";
+  if (/^(pilates|yoga|ioga|crossfit|funcional)\b/.test(c)) return "estúdios de " + c;
+  if (/^(alug|loca[cç]|venda|com[eé]rcio|transporte|produ[cç]|fabrica[cç]|organiza[cç]|decora[cç]|manuten[cç]|instala[cç]|limpeza|seguran[cç])/.test(c) || /^\S+(cao|ção|gem|mento)$/.test(c)) return "empresas de " + c;
+  const p = c.split(/\s+/).filter(Boolean);
   if (p.length === 1) return pluralPalavra(p[0]);
   if (p.length > 1 && ["de", "do", "da", "dos", "das", "para"].includes(p[1])) return [pluralPalavra(p[0]), ...p.slice(1)].join(" ");
   return "negócios como o de vocês";
@@ -162,9 +166,9 @@ const OPORTUNIDADES = [
   { id: "site_fora", grupo: "presenca", servico: "site", peso: 25,
     quando: (l, d) => l.site && !soLink(l.site) && d && !d.abre,
     problema: "tentei abrir o site de vocês ({dominio}) e ele não carregou",
-    impacto: "Quem clica no Google e encontra o site fora do ar costuma desistir e procurar outra opção",
-    solucao: "sites rápidos e estáveis, pensados para o celular", curto: "o site fora do ar",
-    beneficio: "com o site no ar de novo, todo cliente que chega pelo Google encontra vocês na hora" },
+    impacto: "Quem clica no Google e não consegue abrir o site costuma desistir e procurar outra opção",
+    solucao: "sites rápidos e estáveis, pensados para o celular", curto: "o acesso ao site",
+    beneficio: "com o site abrindo sempre, todo cliente que chega pelo Google encontra vocês na hora" },
   { id: "sem_site", grupo: "presenca", servico: "site", peso: 20,
     quando: (l) => !l.site,
     problema: "não encontrei um site da {nome}, e no Google aparecem só o endereço e o telefone",
@@ -400,7 +404,7 @@ function montarMensagem(l, etapa, analise, perfil = {}, oportunidade = null, con
     : "";
   const r = retorno(l, { principal: op }, perfil, conta.ticket, conta.clientes || 2);
   vars.exemplo_retorno = `se isso trouxer só ${r.clientes} cliente${r.clientes > 1 ? "s" : ""} a mais por mês (ticket médio de ${fmtReais(r.ticket)}), ` +
-    `são ${fmtReais(r.ganhoMes)} a mais por mês, e o investimento se paga em cerca de ${r.meses} ${r.meses > 1 ? "meses" : "mês"}.`;
+    `são cerca de ${fmtReais(r.ganhoMes)} a mais de faturamento por mês, e o investimento se paga em cerca de ${r.meses} ${r.meses > 1 ? "meses" : "mês"}.`;
   const plano = planoMensal(l, { principal: op }, perfil);
   vars.manutencao_frase = plano?.recomendado && servico.manutencao
     ? `\n\nE vocês não precisam se preocupar com a parte técnica: eu cuido de tudo todo mês (${servico.manutencao}).` : "";
