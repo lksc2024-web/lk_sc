@@ -1236,17 +1236,33 @@ function analisar() {
   if (!quandoD && (g.agendaDias || g.agendaReuniao)) { quandoD = somaDias(inicioDoDia(new Date()), g.agendaReuniao ? 1 : g.agendaDias); while (quandoD.getDay() === 0 || quandoD.getDay() === 6) quandoD = somaDias(quandoD, 1); quandoD.setHours(10, 0, 0, 0); }
   r.resultado = { g: g, quando: quandoD, temData: !!dt, comHora: !!(dt && !dt.semHora) || !!g.agendaReuniao };
   mostrarSugestao();
+  // a leitura da resposta (negativa, objeção, ambígua) vem da Prospecção: mesma lógica nos dois apps
+  if (!window.Vendas || !window.Estrategias) Promise.all([carregarVendas(), carregarCalendario()]).then(function () { if (S.resp.resultado === r.resultado) mostrarSugestao(); }, function () {});
 }
+// -> { plano, txt } quando a resposta é negativa, objeção ou ambígua; null nos casos positivos (seguem os modelos)
+function leituraResposta(al, g, texto) {
+  var V = window.Vendas, E = window.Estrategias;
+  if (!al || al.tipo !== "lead" || !al.obj || !V || !E || !E.respostaAoCliente) return null;
+  try {
+    var l = al.obj, c = (l.dados && l.dados.ciclo) || {};
+    var plano = E.respostaAoCliente(l, g, texto, { envios: c.envios || [], respostas: c.respostas || [] });
+    if (!plano) return null;
+    return { plano: plano, txt: V.montarMensagem(l, "resposta", V.analisar(l, {}), S.perfil || {}, null, { modelo: plano.modelo }) };
+  } catch (e) { return null; }
+}
+var NEGATIVOS_RESGATE = ["sem_interesse", "ja_tem", "nao_precisa"]; // 1ª negativa com resgate: ainda não é descarte
 function alvoResp() { var p = (S.resp.alvo || "").split(":"); if (p[0] === "lead") return { tipo: "lead", obj: S.leads.find(function (x) { return x.id === p[1]; }) }; if (p[0] === "cliente") return { tipo: "cliente", obj: S.clientes.find(function (x) { return x.id === p[1]; }) }; return null; }
 function mostrarSugestao() {
   var box = $("#rp-res"); if (!box || !S.resp.resultado) return;
   var res = S.resp.resultado, g = res.g, al = alvoResp(), mods = respostasDe(g.id);
   if (!mods.length) mods = respostasDe("outro");
+  var lei = leituraResposta(al, g, S.resp.texto); res.leitura = lei;
   var outros = S.modelos.filter(function (m) { return m.objetivo === "resposta" && m.gatilho !== g.id; });
   var num = al && al.obj ? numeroDe(al.tipo, al.obj) : "";
   var temAgenda = !!(g.agendaDias || g.agendaReuniao || res.temData);
-  box.innerHTML = '<div class="card plano"><div class="card-h"><div><h2>Resposta sugerida</h2><p>' + esc(g.dica) + '</p></div><span class="tag t-' + g.cor + '">' + esc(g.nome) + "</span></div>" +
-    '<div class="campo"><label for="rs-mod">Modelo</label><select class="inp" id="rs-mod">' + mods.map(function (m) { return '<option value="' + m.id + '">' + esc(m.nome) + "</option>"; }).join("") + (outros.length ? '<optgroup label="Outros tipos de resposta">' + outros.map(function (m) { return '<option value="' + m.id + '">' + esc(m.nome) + "</option>"; }).join("") + "</optgroup>" : "") + "</select></div>" +
+  box.innerHTML = '<div class="card plano"><div class="card-h"><div><h2>Resposta sugerida</h2><p>' + esc(lei ? lei.plano.leitura : g.dica) + '</p></div><span class="tag t-' + g.cor + '">' + esc(g.nome) + "</span></div>" +
+    (lei ? '<p class="hint" style="margin:0 0 12px;padding:9px 12px;border-left:3px solid ' + (lei.plano.conferir ? "var(--warn, #d9a441)" : "var(--accent, #2bb39b)") + ';border-radius:0 8px 8px 0;background:rgba(127,127,127,.08)"><b>' + (lei.plano.encerrar ? "Encerrar" : "Como responder") + ":</b> " + esc(lei.plano.estrategia) + "</p>" : "") +
+    '<div class="campo"><label for="rs-mod">Modelo</label><select class="inp" id="rs-mod">' + (lei ? '<option value="__leitura">Pela leitura da resposta (recomendado)</option>' : "") + mods.map(function (m) { return '<option value="' + m.id + '">' + esc(m.nome) + "</option>"; }).join("") + (outros.length ? '<optgroup label="Outros tipos de resposta">' + outros.map(function (m) { return '<option value="' + m.id + '">' + esc(m.nome) + "</option>"; }).join("") + "</optgroup>" : "") + "</select></div>" +
     '<textarea class="inp" id="rs-txt" style="min-height:120px"></textarea>' +
     '<div class="form" style="margin-top:12px">' + (al ? '<div class="f full chk"><label><input type="checkbox" id="rs-st-on" checked> Atualizar status para</label><select class="inp" id="rs-st">' + (al.tipo === "lead" ? LEAD_ST : CLI_ST).map(function (s) { return '<option value="' + s[0] + '">' + s[1] + "</option>"; }).join("") + "</select></div>" : '<p class="hint full">Escolha de quem é a mensagem para atualizar o status e o histórico automaticamente.</p>') +
     '<div class="f full chk"><label><input type="checkbox" id="rs-ag-on"' + (temAgenda && g.id !== "remover" && g.id !== "sem_interesse" ? " checked" : "") + '> Agendar ' + (g.agendaReuniao ? "reunião" : "retomada") + '</label><input class="inp" id="rs-ag-q" type="datetime-local" value="' + valorDataLocal(res.quando || somaDias(new Date(), 15)) + '"></div>' +
@@ -1256,13 +1272,14 @@ function mostrarSugestao() {
   function aplicar() {
     var m = S.modelos.find(function (x) { return x.id === sel.value; }); var alvo = al && al.obj ? al.obj : { nome: "" };
     var q = $("#rs-ag-q", box).value ? new Date($("#rs-ag-q", box).value) : res.quando;
-    var txt = m ? preencher(m.corpo, alvo, al ? al.tipo : "lead") : "";
+    var txt = sel.value === "__leitura" && lei ? lei.txt : m ? preencher(m.corpo, alvo, al ? al.tipo : "lead") : "";
     txt = txt.replace(/\{portfolio\}/g, portfolioTexto()).replace(/\{quando\}/g, q ? quandoTexto(q, res.comHora) : "em breve");
     if (!al || !al.obj) txt = txt.replace(/^(Olá|Oi),\s*!/, "$1!").replace(/,\s*!/, "!");
     tx.value = txt;
   }
   sel.onchange = aplicar; $("#rs-ag-q", box).onchange = aplicar; aplicar();
-  if (al) { var stSel = $("#rs-st", box); var sug = g.st; if (al.tipo === "cliente") sug = { descartado: "encerrado", fechado: "ativo", reuniao: al.obj.status, respondeu: al.obj.status }[g.st] || al.obj.status; stSel.value = sug; if (al.obj && al.obj.status === sug) $("#rs-st-on", box).checked = false; }
+  if (lei && (lei.plano.encerrar || ["ok_seco", "nao_responsavel", "outro"].indexOf(g.id) >= 0)) $("#rs-ag-on", box).checked = false;
+  if (al) { var stSel = $("#rs-st", box); var sug = lei && lei.plano.encerrar ? "descartado" : NEGATIVOS_RESGATE.indexOf(g.id) >= 0 && lei ? "respondeu" : g.st; if (al.tipo === "cliente") sug = { descartado: "encerrado", fechado: "ativo", reuniao: al.obj.status, respondeu: al.obj.status }[g.st] || al.obj.status; stSel.value = sug; if (al.obj && al.obj.status === sug) $("#rs-st-on", box).checked = false; }
   $("#rs-copiar", box).onclick = function () { copiar(tx.value); };
   $("#rs-salvar", box).onclick = function () { concluirResposta(box, false); };
   $("#rs-wa", box).onclick = function () { concluirResposta(box, true); };
@@ -1285,10 +1302,11 @@ async function concluirResposta(box, enviar) {
         var robo = g.id === "automatica"; // o robô do WhatsApp Business não conta como resposta do cliente
         var respostas = robo ? (c.respostas || []) : (c.respostas || []).concat([{ t: agora.toISOString(), tipo: g.tipo4, txt: S.resp.texto.slice(0, 1000) }]);
         var envios = c.envios || []; if (enviar) envios = envios.concat([{ t: agora.toISOString(), etapa: robo ? "extra" : g.tipo4, dow: agora.getDay(), h: agora.getHours(), txt: txt.slice(0, 1000) }]);
-        dados.ciclo = { envios: envios, respostas: respostas, encerrado: !!c.encerrado || g.id === "remover" };
-        if (g.id === "remover") dados.nao_contatar = true;
+        var plano = res.leitura && res.leitura.plano;
+        dados.ciclo = { envios: envios, respostas: respostas, encerrado: !!c.encerrado || g.id === "remover" || !!(plano && plano.encerrar) };
+        if (g.id === "remover" || (plano && plano.nao_contatar)) dados.nao_contatar = true;
         var hist = (l.historico || []).concat([{ t: agora.toISOString(), tipo: robo ? "nota" : "resposta", txt: robo ? "Caiu na mensagem automática: " + S.resp.texto.slice(0, 200) : "Cliente respondeu (" + g.nome.toLowerCase() + "): " + S.resp.texto.slice(0, 300) }]);
-        if (enviar) hist.push({ t: agora.toISOString(), tipo: "whatsapp", txt: "Resposta enviada pela Central: " + (m ? m.nome : "") });
+        if (enviar) hist.push({ t: agora.toISOString(), tipo: "whatsapp", txt: "Resposta enviada pela Central: " + (m ? m.nome : res.leitura ? "pela leitura da resposta" : "") });
         var mud = { dados: dados, historico: hist, ultimo_contato: agora.toISOString() };
         if (stOn && st && st !== l.status) { mud.status = st; feito.push("status " + LEAD_ST.find(function (s) { return s[0] === st; })[1].toLowerCase()); }
         await salvarLead(l, mud);
