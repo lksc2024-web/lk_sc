@@ -1031,13 +1031,29 @@ function htmlPrevia(l) {
         <button class="btn" type="button" data-pv="prompt">Copiar prompt da versão completa</button>
         <button class="btn" type="button" data-pv="atualizar">Buscar fotos de novo</button>
       </div>
-      <button class="btn cheio" type="button" data-pv="editar" style="margin-top:8px">Editar prévia (fotos, textos, cor)</button>
+      <label class="campo" for="l-pv-cmd">Pedir mudança na prévia</label>
+      <textarea id="l-pv-cmd" style="min-height:70px" placeholder="Ex.: estilo elegante, cor verde-escuro e título: Móveis sob medida em Benfica"></textarea>
+      <div class="chips-cmd">${EXEMPLOS_COMANDO.map((e) => `<button type="button" class="chip" data-cmd-ex="${esc(e)}">${esc(e)}</button>`).join("")}</div>
+      <button class="btn pri cheio" type="button" data-pv="comando" style="margin-top:8px">Aplicar na prévia</button>
+      <p class="dica" id="l-pv-cmd-res" aria-live="polite">${pv.comandos?.length ? `Último pedido: “${esc(pv.comandos[pv.comandos.length - 1].texto)}”` : "Fotos numeradas na ordem da prévia: 1 é a capa."}</p>
+      <button class="btn" type="button" data-pv="editar" style="margin-top:4px;width:100%">Editar à mão (fotos, textos, cor)</button>
       <p class="dica">Na prévia tem o botão “Salvar em PDF”, se o cliente preferir arquivo.</p>`
     : `<p class="dica" style="margin-top:0">Uma página de demonstração com o nome e o nicho de ${esc(l.nome)}: o cliente vê como os pedidos chegariam pelo WhatsApp. Fica pronta na hora, num link curto.</p>
-      <button class="btn cheio" type="button" data-pv="criar">Criar prévia</button>`}
+      <button class="btn pri cheio" type="button" data-pv="criar">Criar prévia</button>`}
   </div>`;
 }
 async function acaoPrevia(l, acao, dlg) {
+  if (acao === "comando") {
+    const tx = $("#l-pv-cmd", dlg), res = $("#l-pv-cmd-res", dlg), texto = tx.value.trim();
+    if (!texto) { tx.focus(); return; }
+    if (!l.dados?.previa?.fotos) await criarPrevia(l, { novasFotos: true });
+    res.textContent = "Aplicando…";
+    const { feitos, naoEntendi } = await comandoPrevia(l, texto);
+    res.innerHTML = (feitos.length ? `Feito: ${esc(feitos.join(" · "))}. O link já mostra a nova versão. <a href="${esc(linkPrevia(l.dados.previa.slug))}?eu" target="_blank" rel="noopener">Ver prévia</a>` : "")
+      + (naoEntendi.length ? `<br>Não entendi: “${esc(naoEntendi.join("”, “"))}”. Tente como nos exemplos acima${estado.config.ia_key ? "" : ", ou ligue a IA em Ajustes para pedidos livres"}.` : "");
+    if (feitos.length) tx.value = "";
+    return;
+  }
   if (acao === "editar") {
     if (!l.dados?.previa?.fotos) { toast("Buscando as fotos da empresa…"); await criarPrevia(l, { novasFotos: true }); }
     return abrirEditorPrevia(l);
@@ -1057,6 +1073,90 @@ async function acaoPrevia(l, acao, dlg) {
     $("#l-msg", dlg).scrollIntoView({ behavior: "smooth", block: "center" });
   }
 }
+// ── Comandos em palavras para a prévia ─────────────────────────────────────────────
+// Entende frases como "cor verde-escuro", "estilo elegante", "título: Móveis sob medida", "adiciona serviço Closet",
+// "tira o serviço Banheiro", "capa foto 2", "tira a foto 3", "pergunta: Prazo desejado". Sem custo e sem IA.
+const CORES_NOME = [
+  ["verde escuro|verde-escuro|verde musgo|verde floresta", "#1f4d3a"], ["verde agua|verde-agua|menta", "#2a8c7a"], ["verde", "#2f6b3a"],
+  ["azul escuro|azul-escuro|azul marinho|marinho|navy", "#1e3a5f"], ["azul claro|azul-claro|celeste", "#2b7bb9"], ["petroleo|petróleo", "#0f5e74"], ["turquesa", "#138a8a"], ["azul", "#1d4ed8"],
+  ["vinho|bordo|bordô|marsala", "#6b1f2e"], ["rosa|rose|rosé", "#b84a6e"], ["vermelho", "#b91c1c"], ["terracota|tijolo", "#a4492d"], ["laranja", "#c2410c"],
+  ["mostarda|amarelo|dourado|ouro", "#b8860b"], ["marrom|madeira|cafe|café|chocolate", "#5b4636"], ["bege|areia|nude", "#a68a64"],
+  ["roxo|lilas|lilás|violeta", "#6d28d9"], ["preto|black", "#18181b"], ["grafite|chumbo|cinza", "#3f3f46"],
+];
+function interpretarComando(texto, ctx) {
+  const feitos = [], naoEntendi = [];
+  const partes = String(texto).split(/\n|;|\.\s+|\s+e depois\s+/).map((x) => x.trim()).filter(Boolean);
+  const lista = (t) => t.split(/,|\s+e\s+/).map((x) => x.trim().replace(/^["“”']|["“”']$/g, "")).filter(Boolean);
+  const cap = (t) => t.charAt(0).toUpperCase() + t.slice(1);
+  for (const original of partes) {
+    const t = Nucleo.norm(original);
+    const valor = (rx) => { const m = original.match(rx); return m ? m[m.length - 1].trim().replace(/^["“”']|["“”']$/g, "") : ""; };
+    let ok = false;
+    if (/\b(titulo)\b/.test(t)) { const v = valor(/t[ií]tulo\s*(?:para|pra|por|:|=|é|como)?\s*(.+)$/i); if (v) { ctx.titulo = cap(v); feitos.push(`título: “${ctx.titulo}”`); ok = true; } }
+    else if (/\b(frase|subtitulo|apoio|descricao)\b/.test(t)) { const v = valor(/(?:frase(?: de apoio)?|subt[ií]tulo|apoio|descri[cç][aã]o)\s*(?:para|pra|por|:|=)?\s*(.+)$/i); if (v) { ctx.sub = cap(v); feitos.push(`frase: “${ctx.sub}”`); ok = true; } }
+    else if (/\bbotao\b/.test(t)) { const v = valor(/bot[aã]o\s*(?:para|pra|por|:|=)?\s*(.+)$/i); if (v) { ctx.acao = cap(v); feitos.push(`botão: “${ctx.acao}”`); ok = true; } }
+    else if (/^(servicos|produtos|itens)\s*[:=]/.test(t)) { ctx.itens = lista(original.replace(/^[^:=]+[:=]/, "")).map(cap); feitos.push(`serviços: ${ctx.itens.join(", ")}`); ok = true; }
+    else if (/^perguntas\s*[:=]/.test(t)) { ctx.campos = lista(original.replace(/^[^:=]+[:=]/, "")).map(cap); feitos.push(`perguntas: ${ctx.campos.join(", ")}`); ok = true; }
+    else if (/\b(adiciona|adicionar|acrescenta|acrescentar|coloca|colocar|inclui|incluir|bota|botar|poe|por)\b/.test(t) && /\bpergunta/.test(t)) {
+      const novos = lista(valor(/perguntas?\s*:?\s*(.+)$/i)).map(cap); ctx.campos = [...ctx.campos, ...novos]; if (novos.length) { feitos.push(`pergunta nova: ${novos.join(", ")}`); ok = true; }
+    }
+    else if (/\b(tira|tirar|remove|remover|retira|retirar|apaga|apagar|exclui|excluir)\b/.test(t) && /\bpergunta/.test(t)) {
+      const alvo = lista(valor(/perguntas?\s*:?\s*(.+)$/i)).map((x) => Nucleo.norm(x)); const antes = ctx.campos.length;
+      ctx.campos = ctx.campos.filter((c) => !alvo.some((a) => Nucleo.norm(c).includes(a))); if (ctx.campos.length < antes) { feitos.push(`pergunta removida`); ok = true; }
+    }
+    else if (/\b(tira|tirar|remove|remover|esconde|esconder|retira|retirar|apaga|apagar)\b/.test(t) && /\bfotos?\b/.test(t)) {
+      if (/todas|sem foto/.test(t)) { ctx.fotos.forEach((f) => ctx.ocultas.add(f.url)); ctx.capa = ""; feitos.push("fotos escondidas"); ok = true; }
+      else for (const n of (t.match(/\d+/g) || [])) { const f = ctx.fotos[+n - 1]; if (f) { ctx.ocultas.add(f.url); if (ctx.capa === f.url) ctx.capa = ""; feitos.push(`foto ${n} escondida`); ok = true; } }
+    }
+    else if (/\bsem fotos?\b/.test(t)) { ctx.fotos.forEach((f) => ctx.ocultas.add(f.url)); ctx.capa = ""; feitos.push("fotos escondidas"); ok = true; }
+    else if (/\bcapa\b/.test(t)) { const n = +(t.match(/\d+/) || [0])[0]; const f = ctx.fotos[n - 1]; if (f) { ctx.capa = f.url; ctx.ocultas.delete(f.url); feitos.push(`capa: foto ${n}`); ok = true; } }
+    else if (/\b(tira|tirar|remove|remover|retira|retirar|apaga|apagar|exclui|excluir)\b/.test(t)) {
+      const alvo = lista(valor(/(?:tira|tirar|remove|remover|retira|retirar|apaga|apagar|exclui|excluir)\s+(?:o |a |os |as )?(?:servi[cç]os?|produtos?|itens?|item)?\s*:?\s*(?:de |do |da )?(.+)$/i)).map((x) => Nucleo.norm(x));
+      const antes = ctx.itens.length; ctx.itens = ctx.itens.filter((c) => !alvo.some((a) => Nucleo.norm(c).includes(a) || a.includes(Nucleo.norm(c))));
+      if (ctx.itens.length < antes) { feitos.push(`serviço removido`); ok = true; }
+    }
+    else if (/\b(adiciona|adicionar|acrescenta|acrescentar|coloca|colocar|inclui|incluir|bota|botar)\b/.test(t) && !/\bcor\b/.test(t)) {
+      const novos = lista(valor(/(?:adiciona|adicionar|acrescenta|acrescentar|coloca|colocar|inclui|incluir|bota|botar)\s+(?:o |a |os |as )?(?:servi[cç]os?|produtos?|itens?|item)?\s*:?\s*(.+)$/i)).map(cap);
+      if (novos.length) { ctx.itens = [...ctx.itens, ...novos]; feitos.push(`serviço novo: ${novos.join(", ")}`); ok = true; }
+    }
+    // cor e estilo podem vir junto com outra coisa na mesma frase
+    const hex = original.match(/#[0-9a-f]{6}\b/i);
+    const nomeCor = CORES_NOME.find(([n]) => new RegExp(`\\b(${n.replace(/-/g, "[- ]")})\\b`).test(t));
+    if (hex || (nomeCor && /\b(cor|tom|cores|deixa|deixar|muda|mudar|troca|trocar|fica|ficar|em|mais)\b/.test(t)) || (nomeCor && t.split(/\s+/).length <= 3)) {
+      ctx.cor = hex ? hex[0] : nomeCor[1]; feitos.push(`cor: ${hex ? hex[0] : nomeCor[0].split("|")[0]}`); ok = true;
+    }
+    if (/\b(escuro|escura|dark|noturno)\b/.test(t) && !/\b(verde|azul|vermelho|cinza|marrom)[ -]escur/.test(t)) { ctx.estilo = "escuro"; feitos.push("estilo: escuro"); ok = true; }
+    else if (/\b(elegante|sofisticad\w*|premium|luxo|luxuos\w*|chique|refinad\w*|classic\w*|alto padrao)\b/.test(t)) { ctx.estilo = "elegante"; feitos.push("estilo: elegante"); ok = true; }
+    else if (/\b(claro|clara|leve|clean|limpo|simples)\b/.test(t) && !/\b(azul|verde)[ -]clar/.test(t)) { ctx.estilo = "claro"; feitos.push("estilo: claro"); ok = true; }
+    if (!ok) naoEntendi.push(original);
+  }
+  return { feitos, naoEntendi };
+}
+// Aplica os comandos na prévia do lead e já atualiza o link. Com a IA ligada, o que o leitor não entender vai para a IA.
+async function comandoPrevia(l, texto) {
+  const pv = l.dados?.previa || {}, aj = { ...(pv.ajustes || {}) }, d = dadosPrevia(l);
+  const ctx = { titulo: d.titulo, sub: aj.sub || "", acao: d.acao, itens: [...d.itens], campos: [...(d.campos || [])], cor: d.cor, estilo: d.estilo || "claro",
+    capa: aj.capa || "", ocultas: new Set(aj.ocultas || []), fotos: d.fotos || [] };
+  let { feitos, naoEntendi } = interpretarComando(texto, ctx);
+  if (naoEntendi.length && estado.config.ia_key) {
+    try {
+      const r = await api("/api/ia", { tarefa: "previa", contexto: { nicho: l.nicho || l.categoria, empresa: l.nome, previa: { titulo: ctx.titulo, sub: ctx.sub, acao: ctx.acao, itens: ctx.itens, campos: ctx.campos, cor: ctx.cor, estilo: ctx.estilo } }, texto: naoEntendi.join(". ") });
+      const novo = JSON.parse(r.mensagem || "{}");
+      for (const k of ["titulo", "sub", "acao", "itens", "campos"]) if (novo[k] && (!Array.isArray(novo[k]) || novo[k].length)) { ctx[k] = novo[k]; feitos.push(`${k} (IA)`); }
+      if (/^#[0-9a-f]{6}$/i.test(novo.cor || "")) ctx.cor = novo.cor;
+      if (["claro", "escuro", "elegante"].includes(novo.estilo)) ctx.estilo = novo.estilo;
+      naoEntendi = [];
+    } catch { /* fica com o que o leitor entendeu */ }
+  }
+  if (!feitos.length) return { feitos, naoEntendi };
+  const ajustes = { ...aj, titulo: ctx.titulo, sub: ctx.sub, acao: ctx.acao, itens: ctx.itens, campos: ctx.campos, cor: ctx.cor, estilo: ctx.estilo, capa: ctx.capa, ocultas: [...ctx.ocultas] };
+  const historico = [...(pv.comandos || []), { t: new Date().toISOString(), texto: String(texto).slice(0, 300) }].slice(-10);
+  await salvarLead(l, { dados: { ...(l.dados || {}), previa: { ...pv, ajustes, comandos: historico } } });
+  await criarPrevia(l);
+  return { feitos, naoEntendi };
+}
+const EXEMPLOS_COMANDO = ["estilo elegante e cor verde-escuro", "título: Móveis planejados sob medida", "adiciona serviço Closet, Home office", "tira o serviço Banheiro", "capa foto 2", "botão: Quero meu orçamento"];
+
 // Editor da prévia: escolher as fotos e a capa, mudar textos, serviços, cor e estilo, ou pedir a mudança em palavras (com IA ligada).
 function abrirEditorPrevia(l) {
   const dlg = $("#folha-previa"), pv = l.dados?.previa || {}, aj = { ...(pv.ajustes || {}) }, d = dadosPrevia(l);
@@ -1099,7 +1199,7 @@ function abrirEditorPrevia(l) {
         <button class="btn" type="button" data-pe="ia" style="margin-top:8px">✨ Aplicar com IA</button><p class="dica" id="pe-ia-status"></p></div>`
         : `<p class="dica">Dica: com a IA ligada em Ajustes, dá para pedir mudanças em palavras (“mais sofisticado”, “troca a cor para verde”).</p>`}
       <div class="grade2" style="margin:14px 0">
-        <button class="btn cheio" type="button" data-pe="salvar">Salvar e atualizar o link</button>
+        <button class="btn pri cheio" type="button" data-pe="salvar">Salvar e atualizar o link</button>
         <a class="btn" href="${esc(linkPrevia(pv.slug))}?eu" target="_blank" rel="noopener">Ver prévia</a>
       </div>
     </div>`;
@@ -1297,6 +1397,7 @@ function abrirLead(id, opcoes = {}) {
     abrirLead(l.id, { etapa: $("#l-etapa", dlg)?.value, oport: oportId });
   };
   $$("[data-pv]", dlg).forEach((b) => (b.onclick = () => acaoPrevia(l, b.dataset.pv, dlg)));
+  $$("[data-cmd-ex]", dlg).forEach((b) => (b.onclick = () => { const tx = $("#l-pv-cmd", dlg); tx.value = tx.value ? `${tx.value}; ${b.dataset.cmdEx}` : b.dataset.cmdEx; tx.focus(); }));
   mostrarVistas(l, dlg);
   $("#l-resp-ok", dlg)?.addEventListener("click", () => salvarResp($("#l-resp", dlg).value));
   $("#l-resp-sug", dlg)?.addEventListener("click", (e) => { e.preventDefault(); salvarResp(e.target.dataset.nome); });
