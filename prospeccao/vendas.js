@@ -371,14 +371,17 @@ function precoDe(servicoId, perfil = {}) {
 function fmtReais(v) { return "R$ " + Number(v || 0).toLocaleString("pt-BR"); }
 function faixaPreco(p) { return `${fmtReais(p.min)} a ${fmtReais(p.max)}${p.mensal ? "/mês" : ""}${p.obs ? " " + p.obs : ""}`; }
 
+// Categoria do Google genérica ("Fabricante", "Empresa") perde para o nicho que você buscou ("marcenaria").
+const CAT_GENERICA = /^(fabricante|empresa|loja|servi[cç]os?|com[eé]rcio|estabelecimento|neg[oó]cio|prestador de servi[cç]os?|ponto de interesse|fornecedor|distribuidor|atacadista|varejista)$/i;
+function categoriaDe(l) { return (l.categoria && !CAT_GENERICA.test(l.categoria.trim()) ? l.categoria : l.nicho || l.categoria || "empresas"); }
 const PREVIA_URL = "https://praca-sites.vercel.app";
 function montarMensagem(l, etapa, analise, perfil = {}, oportunidade = null, conta = {}) {
   const op = oportunidade || analise.principal || OPORTUNIDADES[1];
   const d = l.dados?.diag || {};
   const servico = precoDe(op.servico, perfil);
   const base = {
-    nome: l.nome, cidade: l.cidade || "sua cidade", em_cidade: emCidade(l.cidade), categoria: (l.categoria || l.nicho || "empresas").toLowerCase(),
-    categorias: plural(l.categoria || l.nicho), avaliacoes: l.avaliacoes, nota: fmtNota(l.nota), mediana: analise.ctx?.mediana || "",
+    nome: l.nome, cidade: l.cidade || "sua cidade", em_cidade: emCidade(l.cidade), categoria: categoriaDe(l).toLowerCase(),
+    categorias: plural(categoriaDe(l)), avaliacoes: l.avaliacoes, nota: fmtNota(l.nota), mediana: analise.ctx?.mediana || "",
     dominio: d.dominio || (l.site || "").replace(/^https?:\/\/(www\.)?/, "").replace(/\/.*/, ""),
     segundos: d.ms ? Math.round(d.ms / 1000) : "", ano: d.ano_rodape || "", plataforma: (() => { const p = plataformaDe(l.site); return /^(um|uma) /.test(p) ? p : p ? "o " + p : ""; })(),
   };
@@ -827,7 +830,7 @@ function traduzirNicho(n, idioma) {
   return (k && NICHO_TRAD[k][idioma]) || NICHO_TRAD[k]?.en || n;
 }
 
-window.Vendas = { PREVIA_URL,
+window.Vendas = { PREVIA_URL, categoriaDe,
   PERIODOS, DIAS_CURTO, periodoDe, horaEm, difFuso, notaNichoPeriodo, rankingPeriodos, semanaNichos, catalogoNichos,
   canais, temContato, usuarioInstagram, melhoresLeads, traduzirNicho, TAXA_REF, semAcento,
   FAIXAS, faixaDe, ROTINA_NICHO, rotinaDe, encaixeReferencia, desempenhoNichos, notaNichoFaixa, melhoresNichosAgora,

@@ -879,6 +879,12 @@
     [/marcenaria|moveis planejados/, { itens: ["Cozinha planejada", "Quarto", "Banheiro", "Ambiente comercial"] }],
     [/vidrac/, { itens: ["Box de banheiro", "Janelas", "Espelhos", "Guarda-corpo"], campos: ["Peça", "Medidas aproximadas", "Bairro"] }],
   ];
+  // "RRB MARCENARIA" -> "RRB Marcenaria" (siglas curtas ficam em maiúsculas)
+  function nomeBonito(n) {
+    n = String(n || ""); if (n !== n.toUpperCase()) return n;
+    return n.toLowerCase().split(/(\s+|-|\/)/).map((w, i) => /^(da|de|do|das|dos|e)$/.test(w) && i ? w
+      : /^[b-df-hj-np-tv-z]{2,4}$/.test(w) ? w.toUpperCase() : w.charAt(0).toUpperCase() + w.slice(1)).join("");
+  }
   function slugDe(nome) { return semAcento(nome).replace(/&/g, " e ").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 50) || "previa"; }
   // Dados da prévia de um lead: só o que é público no Google, mais o seu nome e WhatsApp para o botão "quero essa página".
   function previaDe(l, perfil = {}) {
@@ -886,10 +892,10 @@
     const base = PREVIA_SETOR[setor] || PREVIA_SETOR.Outros, aj = (PREVIA_NICHO.find(([rx]) => rx.test(semAcento(nicho))) || [0, {}])[1];
     const p = { ...base, ...aj }, geo = (l.dados && l.dados.geo) || {};
     return {
-      v: 1, nome: l.nome, setor, categoria: l.categoria || l.nicho || "", cidade: l.cidade || "", bairro: l.bairro || "",
+      v: 1, nome: nomeBonito(l.nome), setor, categoria: (() => { const c = V() ? V().categoriaDe(l) : (l.categoria || l.nicho || ""); return c.charAt(0).toUpperCase() + c.slice(1); })(), cidade: l.cidade || "", bairro: l.bairro || "",
       nota: l.nota || null, avaliacoes: l.avaliacoes || null, horario: (geo.txt || []).slice(0, 7), maps: l.maps || "",
       whatsapp: l.whatsapp || "", tipo: p.tipo, titulo: p.titulo, acao: p.acao, itens: p.itens, campos: p.campos || [], foto: !!p.foto, cor: p.cor,
-      autor: { nome: perfil.nome || "", marca: perfil.marca || "", whatsapp: String(perfil.whatsapp || "5521999670781").replace(/\D/g, "") },
+      autor: { nome: perfil.nome || "", marca: perfil.marca || "", whatsapp: (() => { const w = String(perfil.whatsapp || "5521999670781").replace(/\D/g, ""); return w.length <= 11 ? "55" + w : w; })() },
     };
   }
   // Prompt para construir a versão completa em uma IA (Claude, por exemplo), já com os dados do lead e do nicho.
