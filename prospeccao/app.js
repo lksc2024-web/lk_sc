@@ -1035,7 +1035,7 @@ function htmlPrevia(l) {
       <textarea id="l-pv-cmd" style="min-height:70px" placeholder="Ex.: estilo elegante, cor verde-escuro e título: Móveis sob medida em Benfica"></textarea>
       <div class="chips-cmd">${EXEMPLOS_COMANDO.map((e) => `<button type="button" class="chip" data-cmd-ex="${esc(e)}">${esc(e)}</button>`).join("")}</div>
       <button class="btn pri cheio" type="button" data-pv="comando" style="margin-top:8px">Aplicar na prévia</button>
-      <p class="dica" id="l-pv-cmd-res" aria-live="polite">${pv.comandos?.length ? `Último pedido: “${esc(pv.comandos[pv.comandos.length - 1].texto)}”` : "Fotos numeradas na ordem da prévia: 1 é a capa."}</p>
+      <p class="dica" id="l-pv-cmd-res" aria-live="polite">${pv.comandos?.length ? `Último pedido: “${esc(pv.comandos[pv.comandos.length - 1].texto)}”. Escreva “desfaz” para voltar.` : "Pode pedir do seu jeito: “mais bonito”, “cara de luxo”, “outro título”, “troca a capa”. Fotos numeradas na ordem da prévia: 1 é a capa."}</p>
       <button class="btn" type="button" data-pv="editar" style="margin-top:4px;width:100%">Editar à mão (fotos, textos, cor)</button>
       <p class="dica">Na prévia tem o botão “Salvar em PDF”, se o cliente preferir arquivo.</p>`
     : `<p class="dica" style="margin-top:0">Uma página de demonstração com o nome e o nicho de ${esc(l.nome)}: o cliente vê como os pedidos chegariam pelo WhatsApp. Fica pronta na hora, num link curto.</p>
@@ -1089,7 +1089,7 @@ function interpretarComando(texto, ctx) {
   const lista = (t) => t.split(/,|\s+e\s+/).map((x) => x.trim().replace(/^["“”']|["“”']$/g, "")).filter(Boolean);
   const cap = (t) => t.charAt(0).toUpperCase() + t.slice(1);
   for (const original of partes) {
-    const t = Nucleo.norm(original);
+    const t = Nucleo.norm(original); ctx.corDada = false;
     const valor = (rx) => { const m = original.match(rx); return m ? m[m.length - 1].trim().replace(/^["“”']|["“”']$/g, "") : ""; };
     let ok = false;
     if (/\b(titulo)\b/.test(t)) { const v = valor(/t[ií]tulo\s*(?:para|pra|por|:|=|é|como)?\s*(.+)$/i); if (v) { ctx.titulo = cap(v); feitos.push(`título: “${ctx.titulo}”`); ok = true; } }
@@ -1115,7 +1115,7 @@ function interpretarComando(texto, ctx) {
       const antes = ctx.itens.length; ctx.itens = ctx.itens.filter((c) => !alvo.some((a) => Nucleo.norm(c).includes(a) || a.includes(Nucleo.norm(c))));
       if (ctx.itens.length < antes) { feitos.push(`serviço removido`); ok = true; }
     }
-    else if (/\b(adiciona|adicionar|acrescenta|acrescentar|coloca|colocar|inclui|incluir|bota|botar)\b/.test(t) && !/\bcor\b/.test(t)) {
+    else if (/\b(adiciona|adicionar|acrescenta|acrescentar|coloca|colocar|inclui|incluir|bota|botar)\b/.test(t) && !/\bcor\b/.test(t) && !/\b(servicos|produtos|itens|cardapio)\s+(de|do|da|para)\b/.test(t)) {
       const novos = lista(valor(/(?:adiciona|adicionar|acrescenta|acrescentar|coloca|colocar|inclui|incluir|bota|botar)\s+(?:o |a |os |as )?(?:servi[cç]os?|produtos?|itens?|item)?\s*:?\s*(.+)$/i)).map(cap);
       if (novos.length) { ctx.itens = [...ctx.itens, ...novos]; feitos.push(`serviço novo: ${novos.join(", ")}`); ok = true; }
     }
@@ -1123,20 +1123,73 @@ function interpretarComando(texto, ctx) {
     const hex = original.match(/#[0-9a-f]{6}\b/i);
     const nomeCor = CORES_NOME.find(([n]) => new RegExp(`\\b(${n.replace(/-/g, "[- ]")})\\b`).test(t));
     if (hex || (nomeCor && /\b(cor|tom|cores|deixa|deixar|muda|mudar|troca|trocar|fica|ficar|em|mais)\b/.test(t)) || (nomeCor && t.split(/\s+/).length <= 3)) {
-      ctx.cor = hex ? hex[0] : nomeCor[1]; feitos.push(`cor: ${hex ? hex[0] : nomeCor[0].split("|")[0]}`); ok = true;
+      ctx.cor = hex ? hex[0] : nomeCor[1]; ctx.corDada = true; feitos.push(`cor: ${hex ? hex[0] : nomeCor[0].split("|")[0]}`); ok = true;
     }
-    if (/\b(escuro|escura|dark|noturno)\b/.test(t) && !/\b(verde|azul|vermelho|cinza|marrom)[ -]escur/.test(t)) { ctx.estilo = "escuro"; feitos.push("estilo: escuro"); ok = true; }
+    if (/\b(escuro|escura|dark|noturno)\b/.test(t) && !/\b(verde|azul|vermelho|cinza|marrom)[ -]escur/.test(t) && !/\bcor\b.*\bmais escur|\bmais escur\w*.*\bcor\b/.test(t)) { ctx.estilo = "escuro"; feitos.push("estilo: escuro"); ok = true; }
     else if (/\b(elegante|sofisticad\w*|premium|luxo|luxuos\w*|chique|refinad\w*|classic\w*|alto padrao)\b/.test(t)) { ctx.estilo = "elegante"; feitos.push("estilo: elegante"); ok = true; }
-    else if (/\b(claro|clara|leve|clean|limpo|simples)\b/.test(t) && !/\b(azul|verde)[ -]clar/.test(t)) { ctx.estilo = "claro"; feitos.push("estilo: claro"); ok = true; }
+    else if (/\b(claro|clara|leve|clean|limpo|simples)\b/.test(t) && !/\b(azul|verde)[ -]clar/.test(t) && !/\bcor\b.*\bmais clar|\bmais clar\w*.*\bcor\b/.test(t)) { ctx.estilo = "claro"; feitos.push("estilo: claro"); ok = true; }
+    if (intencao(t, ctx, feitos)) ok = true;
     if (!ok) naoEntendi.push(original);
   }
-  return { feitos, naoEntendi };
+  return { feitos: [...new Set(feitos)], naoEntendi };
+}
+// Pedidos vagos: "mais bonito", "cara de luxo", "mais moderno", "mais vendedor", "outro título", "troca a capa", "desfaz"...
+const TITULOS = {
+  agenda: ["Agende em poucos toques, a qualquer hora", "Seu horário marcado, sem esperar resposta", "Escolha o dia e o horário, a gente confirma"],
+  orcamento: ["Peça seu orçamento em 1 minuto", "Conte o que precisa e receba seu orçamento", "Orçamento rápido, direto no WhatsApp"],
+  catalogo: ["Escolha, monte seu pedido e mande pelo WhatsApp", "Tudo o que temos, a um toque do pedido", "Veja, escolha e peça sem esperar"],
+  reserva: ["Reserve direto com a gente, sem taxas", "Escolha as datas e garanta sua reserva", "Sua estadia reservada em poucos toques"],
+};
+const BOTAO_FORTE = { agenda: "Agendar agora", orcamento: "Quero meu orçamento", catalogo: "Fazer meu pedido", reserva: "Garantir minha reserva" };
+const escurecer = (hex, f = 0.72) => "#" + hex.replace("#", "").match(/../g).map((h) => Math.round(parseInt(h, 16) * f).toString(16).padStart(2, "0")).join("");
+const clarear = (hex, f = 0.3) => "#" + hex.replace("#", "").match(/../g).map((h) => { const v = parseInt(h, 16); return Math.round(v + (255 - v) * f).toString(16).padStart(2, "0"); }).join("");
+function intencao(t, ctx, feitos) {
+  let ok = false;
+  const tipo = ctx.tipo || "orcamento", lugar = ctx.bairro || ctx.cidade || "";
+  const novoTitulo = (lista) => { if (/[:=]/.test(t)) return; const i = (lista.indexOf(ctx.titulo) + 1) % lista.length; ctx.titulo = lista[i]; feitos.push(`título: “${ctx.titulo}”`); };
+  if (/\b(desfaz|desfazer|volta como estava|voltar como estava|volta atras|voltar atras|cancela isso)\b/.test(t)) { ctx.desfazer = true; feitos.push("voltou para a versão anterior"); return true; }
+  if (/\b(volta ao original|voltar ao original|original de novo|zera|zerar|recomeca|recomecar|reseta|resetar)\b/.test(t)) { ctx.zerar = true; feitos.push("voltou para a prévia original"); return true; }
+  if (/\b(luxo|luxuos\w*|premium|sofisticad\w*|chique|requintad\w*|alto padrao|exclusiv\w*|refinad\w*|elegante)\b/.test(t)) {
+    ctx.estilo = "elegante"; if (!ctx.corDada) ctx.cor = /dourad|ouro/.test(t) ? "#8a6d1f" : escurecer(ctx.cor, 0.8);
+    if (!/\bestilo\b/.test(t)) novoTitulo([`${ctx.categoria} com atendimento sob medida${lugar ? " em " + lugar : ""}`, "Cuidado em cada detalhe", `${ctx.nome}: atendimento exclusivo, com hora marcada`]);
+    feitos.push("estilo: elegante"); ok = true;
+  }
+  if (/\b(moderno|moderna|atual|jovem|clean|minimalista|despojad\w*)\b/.test(t)) { ctx.estilo = "claro"; if (!ctx.corDada) ctx.cor = clarear(ctx.cor, 0.15); if (!/\bestilo\b/.test(t)) novoTitulo(TITULOS[tipo] || TITULOS.orcamento); feitos.push("estilo: claro e mais leve"); ok = true; }
+  if (/\b(bonit\w*|melhor\w*|caprich\w*|profissional|mais bem feit\w*|impression\w*|atraente|chamativ\w*|bacana|legal)\b/.test(t) && !ok) {
+    ctx.estilo = ctx.estilo === "claro" ? "elegante" : ctx.estilo; if (ctx.fotos.length && !ctx.capa) ctx.capa = ctx.fotos[0].url;
+    novoTitulo([`${ctx.categoria}${lugar ? " em " + lugar : ""}, do jeito que você procura`, ...(TITULOS[tipo] || TITULOS.orcamento)]);
+    feitos.push("visual mais caprichado"); ok = true;
+  }
+  if (/\b(vendedor\w*|persuasiv\w*|convenc\w*|converte\w*|vender mais|mais clientes|urgencia|apelativ\w*|forte)\b/.test(t)) {
+    ctx.acao = BOTAO_FORTE[tipo] || "Falar agora"; novoTitulo(TITULOS[tipo] || TITULOS.orcamento);
+    ctx.sub = tipo === "agenda" ? "Escolha o horário agora e receba a confirmação no WhatsApp. Leva menos de um minuto." : tipo === "catalogo" ? "Monte o pedido em poucos toques e receba a confirmação no WhatsApp." : "Conte o que precisa em poucos campos e receba a resposta no WhatsApp.";
+    feitos.push(`botão: “${ctx.acao}”`, "frase mais direta"); ok = true;
+  }
+  if (/\b(curto|curta|direto|direta|resumid\w*|menos texto|enxut\w*)\b/.test(t)) { ctx.sub = ""; const curtos = (TITULOS[tipo] || TITULOS.orcamento).slice().sort((a, b) => a.length - b.length); ctx.titulo = curtos[0]; feitos.push(`título curto: “${ctx.titulo}”`); ok = true; }
+  if (!ok && /\b(outro|outra|muda|mudar|troca|trocar|novo|nova)\b/.test(t) && /\btitulo\b/.test(t)) { novoTitulo(TITULOS[tipo] || TITULOS.orcamento); ok = true; }
+  if (!ok && /\b(outra|troca|trocar|muda|mudar|proxima)\b/.test(t) && /\bcapa\b/.test(t) && ctx.fotos.length > 1) {
+    const vis = ctx.fotos.filter((f) => !ctx.ocultas.has(f.url)); const i = vis.findIndex((f) => f.url === (ctx.capa || vis[0].url)); ctx.capa = vis[(i + 1) % vis.length].url; feitos.push("outra foto na capa"); ok = true;
+  }
+  if (/\b(cor )?mais escur\w*\b/.test(t) && /\bcor\b/.test(t)) { ctx.cor = escurecer(ctx.cor); feitos.push("cor mais escura"); ok = true; }
+  else if (/\b(cor )?mais clar\w*\b/.test(t) && /\bcor\b/.test(t)) { ctx.cor = clarear(ctx.cor, 0.25); feitos.push("cor mais clara"); ok = true; }
+  const humor = [[/feminin\w*|delicad\w*|romantic\w*/, "#b84a6e"], [/masculin\w*|sobri\w*|seri[oa]/, "#27272a"], [/natural|organic\w*|verde|sustentavel/, "#2f6b3a"],
+    [/confianca|confiavel|seguranca|tecnic\w*|saude|clinic\w*/, "#1e3a5f"], [/alegre|colorid\w*|divertid\w*|infantil|festa|vibrante/, "#c2410c"], [/aconchegante|quente|acolhedor\w*|rustic\w*/, "#a4492d"]];
+  for (const [rx, cor] of humor) if (!ctx.corDada && rx.test(t) && /\b(cara|clima|jeito|mais|tom|deixa|deixar|visual|ar)\b/.test(t)) { ctx.cor = cor; feitos.push("cor combinando com o clima pedido"); ok = true; break; }
+  const nicho = t.match(/\b(?:servicos|produtos|itens|cardapio)\s+(?:de|do|da|para)\s+(.+)$/);
+  if (nicho && window.Estrategias?.itensDoNicho) { const it = Estrategias.itensDoNicho(nicho[1]); if (it) { ctx.itens = [...it]; feitos.push(`serviços de ${nicho[1]}`); ok = true; } }
+  const troca = t.match(/\btroca(?:r)?\s+(?:o |a )?(.+?)\s+por\s+(.+)$/);
+  if (troca && !/\b(capa|foto|cor|titulo|botao|frase)\b/.test(troca[1])) {
+    const i = ctx.itens.findIndex((x) => Nucleo.norm(x).includes(troca[1].trim()));
+    if (i >= 0) { const novo = troca[2].trim(); ctx.itens[i] = novo.charAt(0).toUpperCase() + novo.slice(1); feitos.push(`serviço trocado: ${ctx.itens[i]}`); ok = true; }
+  }
+  if (/\bsem galeria\b|\bso a capa\b|\bso uma foto\b/.test(t) && ctx.fotos.length > 1) { const capa = ctx.capa || ctx.fotos[0].url; ctx.fotos.forEach((f) => { if (f.url !== capa) ctx.ocultas.add(f.url); }); feitos.push("só a foto da capa"); ok = true; }
+  return ok;
 }
 // Aplica os comandos na prévia do lead e já atualiza o link. Com a IA ligada, o que o leitor não entender vai para a IA.
 async function comandoPrevia(l, texto) {
   const pv = l.dados?.previa || {}, aj = { ...(pv.ajustes || {}) }, d = dadosPrevia(l);
   const ctx = { titulo: d.titulo, sub: aj.sub || "", acao: d.acao, itens: [...d.itens], campos: [...(d.campos || [])], cor: d.cor, estilo: d.estilo || "claro",
-    capa: aj.capa || "", ocultas: new Set(aj.ocultas || []), fotos: d.fotos || [] };
+    capa: aj.capa || "", ocultas: new Set(aj.ocultas || []), fotos: d.fotos || [], tipo: d.tipo, nome: d.nome, categoria: d.categoria, bairro: d.bairro, cidade: d.cidade };
   let { feitos, naoEntendi } = interpretarComando(texto, ctx);
   if (naoEntendi.length && estado.config.ia_key) {
     try {
@@ -1149,13 +1202,15 @@ async function comandoPrevia(l, texto) {
     } catch { /* fica com o que o leitor entendeu */ }
   }
   if (!feitos.length) return { feitos, naoEntendi };
-  const ajustes = { ...aj, titulo: ctx.titulo, sub: ctx.sub, acao: ctx.acao, itens: ctx.itens, campos: ctx.campos, cor: ctx.cor, estilo: ctx.estilo, capa: ctx.capa, ocultas: [...ctx.ocultas] };
+  const anteriores = [...(pv.versoes || [])];
+  let ajustes = { ...aj, titulo: ctx.titulo, sub: ctx.sub, acao: ctx.acao, itens: ctx.itens, campos: ctx.campos, cor: ctx.cor, estilo: ctx.estilo, capa: ctx.capa, ocultas: [...ctx.ocultas] };
+  if (ctx.desfazer) ajustes = anteriores.pop() || {}; else if (ctx.zerar) { anteriores.push(aj); ajustes = { extras: aj.extras || [] }; } else anteriores.push(aj);
   const historico = [...(pv.comandos || []), { t: new Date().toISOString(), texto: String(texto).slice(0, 300) }].slice(-10);
-  await salvarLead(l, { dados: { ...(l.dados || {}), previa: { ...pv, ajustes, comandos: historico } } });
+  await salvarLead(l, { dados: { ...(l.dados || {}), previa: { ...pv, ajustes, versoes: anteriores.slice(-10), comandos: historico } } });
   await criarPrevia(l);
   return { feitos, naoEntendi };
 }
-const EXEMPLOS_COMANDO = ["estilo elegante e cor verde-escuro", "título: Móveis planejados sob medida", "adiciona serviço Closet, Home office", "tira o serviço Banheiro", "capa foto 2", "botão: Quero meu orçamento"];
+const EXEMPLOS_COMANDO = ["deixa com cara de luxo", "mais moderno", "mais vendedor", "outro título", "troca a capa", "desfaz", "estilo elegante e cor verde-escuro", "título: Móveis planejados sob medida", "adiciona serviço Closet, Home office", "tira o serviço Banheiro", "capa foto 2", "botão: Quero meu orçamento"];
 
 // Editor da prévia: escolher as fotos e a capa, mudar textos, serviços, cor e estilo, ou pedir a mudança em palavras (com IA ligada).
 function abrirEditorPrevia(l) {

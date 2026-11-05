@@ -885,6 +885,9 @@
     return n.toLowerCase().split(/(\s+|-|\/)/).map((w, i) => /^(da|de|do|das|dos|e)$/.test(w) && i ? w
       : /^[b-df-hj-np-tv-z]{2,4}$/.test(w) ? w.toUpperCase() : w.charAt(0).toUpperCase() + w.slice(1)).join("");
   }
+  // Serviços de exemplo de um nicho pelo nome ("coloca serviços de barbearia").
+  function itensDoNicho(texto) { const t = semAcento(texto); const a = PREVIA_NICHO.find(([rx]) => rx.test(t)); if (a && a[1].itens) return a[1].itens;
+    const set = Object.keys(PREVIA_SETOR).find((k) => t.includes(semAcento(k).split(" ")[0])); return set ? PREVIA_SETOR[set].itens : null; }
   function slugDe(nome) { return semAcento(nome).replace(/&/g, " e ").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 50) || "previa"; }
   // Dados da prévia de um lead: só o que é público no Google, mais o seu nome e WhatsApp para o botão "quero essa página".
   function previaDe(l, perfil = {}) {
@@ -921,5 +924,5 @@
     ].join("\n");
   }
 
-  window.Estrategias = { OBS_LEVE, SETORES, RESPOSTAS, CANAIS, rankingCanais, canalDoNicho, canalDoLead, LIGACAO, CONVERSA, ABERTURA, IDEIA, LEMBRETE, doNicho, setorDe, texto, sequencia, diasDaSemana, localDoLead, respostaAoCliente, DICA_GRATIS, varianteAbertura, testeAbertura, responsavelDe, responsavelSugerido, previaDe, promptCompleto, slugDe };
+  window.Estrategias = { OBS_LEVE, SETORES, RESPOSTAS, CANAIS, rankingCanais, canalDoNicho, canalDoLead, LIGACAO, CONVERSA, ABERTURA, IDEIA, LEMBRETE, doNicho, setorDe, texto, sequencia, diasDaSemana, localDoLead, respostaAoCliente, DICA_GRATIS, varianteAbertura, testeAbertura, responsavelDe, responsavelSugerido, previaDe, promptCompleto, slugDe, itensDoNicho };
 })();
