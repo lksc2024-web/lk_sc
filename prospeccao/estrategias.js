@@ -332,6 +332,7 @@
   };
   // Lembrete 1: o lead ainda não respondeu, então não cita nada que ele não leu.
   const IDEIA_CURTA = "Que bom! Vou montar como ficaria para a {nome} e te mando por aqui.\n\nSó para eu acertar: {pergunta}{exemplos}";
+  const COM_PREVIA = "{abre_previa} Fiz uma prévia rápida de como ficaria para a {nome}:\n{link_previa}\n\nÉ uma primeira ideia, montada com o que encontrei no Google. Dá para mudar tudo: fotos, cores e textos. Dá uma olhada e me diz o que achou?";
   const LEMBRETE = "{oi} Passando de novo por aqui: posso te mandar aquela ideia que comentei? Se for melhor falar com outra pessoa daí, me avisa.{fecho_dia}";
   // Quando o lead abre a conversa: a ideia do nicho e uma pergunta sobre o negócio dele.
   const IDEIA = "Boa! {ideia}\n\n{gancho_data}Antes de te mostrar como ficaria para a {nome}, me conta: {pergunta}{exemplos}";
@@ -593,6 +594,8 @@
     extra.importancia = ajuste.importancia || extra.importancia || CONVERSA.Outros.importancia;
     extra.obs_ctx = OBS_CTX[vars.op_id] ? preencher(OBS_CTX[vars.op_id], vars) : "";
     extra.quem_cuida = resp ? "" : " Se não for você quem cuida disso, me avisa com quem eu falo?";
+    const ultResp = (((l.dados && l.dados.ciclo && l.dados.ciclo.respostas) || []).slice(-1)[0] || {}).tipo;
+    extra.abre_previa = ["desejo", "aprovacao"].includes(ultResp) ? "Que bom!" : extra.oi_nome;
     if (ajuste.categorias) vars = { ...vars, categorias: ajuste.categorias };
     extra.proposta = preencher(ajuste.proposta || extra.proposta || CONVERSA.Outros.proposta, vars);
     extra.forma = ajuste.forma || extra.forma || CONVERSA.Outros.forma;
@@ -608,7 +611,7 @@
       const ult = ((l.dados && l.dados.ciclo && l.dados.ciclo.envios) || []).slice(-1)[0];
       const t = semAcento(ult && ult.txt);
       const jaExplicou = t && (/como ficaria|pensei (numa|em uma) pagina|a ideia e/.test(t) || (todas.ideia && t.includes(semAcento(todas.ideia).slice(-40))));
-      modelo = jaExplicou ? IDEIA_CURTA : IDEIA;
+      modelo = vars.link_previa ? COM_PREVIA : jaExplicou ? IDEIA_CURTA : IDEIA;
     }
     else if (etapa === "follow1") modelo = LEMBRETE;
     else if (etapa === "ligacao") modelo = LIGACAO;
@@ -820,5 +823,97 @@
     }
     return r;
   }
-  window.Estrategias = { OBS_LEVE, SETORES, RESPOSTAS, CANAIS, rankingCanais, canalDoNicho, canalDoLead, LIGACAO, CONVERSA, ABERTURA, IDEIA, LEMBRETE, doNicho, setorDe, texto, sequencia, diasDaSemana, localDoLead, respostaAoCliente, DICA_GRATIS, varianteAbertura, testeAbertura, responsavelDe, responsavelSugerido };
+
+  // ── Prévia rápida ───────────────────────────────────────────────────────────────────
+  // O que a página de prévia mostra para cada nicho: o tipo de interação (agenda, orçamento, catálogo, reserva),
+  // a frase principal, os serviços de exemplo, os campos do pedido e as cores. O texto que chega no WhatsApp
+  // é montado na própria prévia, para o dono ver como o pedido chegaria.
+  const PREVIA_SETOR = {
+    "Saúde": { tipo: "agenda", titulo: "Marque sua consulta sem esperar na linha", acao: "Escolher horário", itens: ["Primeira consulta", "Retorno", "Avaliação", "Exames"], cor: "#1f5f5b" },
+    "Beleza": { tipo: "agenda", titulo: "Escolha o serviço e o horário em poucos toques", acao: "Agendar horário", itens: ["Corte", "Escova", "Coloração", "Manicure"], cor: "#8a3b4f" },
+    "Restaurantes e bares": { tipo: "catalogo", titulo: "Peça direto com a gente, sem taxa de aplicativo", acao: "Montar pedido", itens: ["Prato do dia", "Executivo", "Porção", "Sobremesa"], campos: ["Endereço de entrega"], cor: "#9a3412" },
+    "Padarias e cafés": { tipo: "catalogo", titulo: "Faça sua encomenda com antecedência", acao: "Montar encomenda", itens: ["Bolo de aniversário", "Salgados (cento)", "Doces (cento)", "Cesta de café da manhã"], campos: ["Data de retirada"], cor: "#7c4a1e" },
+    "Academias e estúdios": { tipo: "agenda", titulo: "Venha conhecer: marque sua aula experimental", acao: "Marcar aula experimental", itens: ["Musculação", "Funcional", "Pilates", "Dança"], cor: "#1e3a5f" },
+    "Pet": { tipo: "agenda", titulo: "Banho e tosa agendados sem troca de mensagens", acao: "Agendar banho", itens: ["Banho", "Banho e tosa", "Tosa higiênica", "Hidratação"], campos: ["Nome do pet", "Porte (pequeno, médio, grande)"], cor: "#2f6b3a" },
+    "Imobiliário": { tipo: "orcamento", titulo: "Encontre o imóvel certo e fale direto com o corretor", acao: "Quero saber mais", itens: ["Apartamentos", "Casas", "Salas comerciais", "Lançamentos"], campos: ["O que você procura", "Bairro de interesse", "Faixa de valor"], cor: "#334155" },
+    "Turismo e hospedagem": { tipo: "reserva", titulo: "Reserve direto com a gente", acao: "Ver disponibilidade", itens: ["Quarto casal", "Quarto família", "Suíte", "Café da manhã incluso"], campos: ["Chegada", "Saída", "Hóspedes"], cor: "#0f5e74" },
+    "Escritórios": { tipo: "orcamento", titulo: "Conte rapidamente o seu caso", acao: "Enviar meu caso", itens: ["Consultoria", "Atendimento a empresas", "Atendimento a pessoas", "Acompanhamento"], campos: ["Assunto", "Resumo em poucas palavras"], cor: "#1e293b" },
+    "Automotivo": { tipo: "orcamento", titulo: "Peça seu orçamento já com o carro e o problema", acao: "Pedir orçamento", itens: ["Revisão", "Freios", "Suspensão", "Diagnóstico"], campos: ["Carro (modelo e ano)", "O que está acontecendo"], cor: "#7f1d1d" },
+    "Obras e serviços": { tipo: "orcamento", titulo: "Mande seu pedido de orçamento completo", acao: "Pedir orçamento", itens: ["Cozinha planejada", "Quarto", "Banheiro", "Ambiente comercial"], campos: ["Ambiente", "Medidas aproximadas", "Bairro"], foto: true, cor: "#5b4636" },
+    "Lojas": { tipo: "catalogo", titulo: "Veja o que temos e peça pelo WhatsApp", acao: "Montar pedido", itens: ["Novidades", "Mais vendidos", "Promoções", "Presentes"], campos: ["Retirar na loja ou receber"], cor: "#3f3f46" },
+    "Educação": { tipo: "agenda", titulo: "Agende uma visita e conheça a escola", acao: "Agendar visita", itens: ["Visita à escola", "Educação infantil", "Fundamental", "Período integral"], campos: ["Idade da criança"], cor: "#1d4ed8" },
+    "Eventos": { tipo: "orcamento", titulo: "Peça seu orçamento com a data da festa", acao: "Pedir orçamento", itens: ["Aniversário", "Casamento", "Corporativo", "15 anos"], campos: ["Data do evento", "Número de convidados", "Bairro"], cor: "#6d28d9" },
+    "Outros": { tipo: "orcamento", titulo: "Fale com a gente pelo WhatsApp", acao: "Enviar mensagem", itens: ["Atendimento", "Orçamento", "Informações", "Horários"], campos: ["O que você precisa"], cor: "#334155" },
+  };
+  const PREVIA_NICHO = [
+    [/dentist|odonto/, { itens: ["Avaliação", "Limpeza", "Clareamento", "Ortodontia"] }],
+    [/fisioterap/, { itens: ["Avaliação", "Sessão de fisioterapia", "Pilates clínico", "RPG"] }],
+    [/veterin/, { titulo: "Marque a consulta do seu pet sem esperar na linha", itens: ["Consulta", "Vacina", "Retorno", "Exames"], campos: ["Nome do pet", "Espécie"] }],
+    [/barbearia|barbeiro/, { titulo: "Escolha o horário e chegue na hora certa", itens: ["Corte", "Barba", "Corte e barba", "Sobrancelha"], cor: "#27272a" }],
+    [/estetica/, { titulo: "Marque sua avaliação sem esperar resposta no direct", itens: ["Avaliação", "Limpeza de pele", "Drenagem", "Depilação a laser"] }],
+    [/pilates/, { itens: ["Aula experimental", "Pilates solo", "Pilates em aparelhos", "Plano mensal"] }],
+    [/crossfit/, { itens: ["Aula experimental", "Crossfit", "LPO", "Mobilidade"] }],
+    [/pizza/, { itens: ["Margherita", "Calabresa", "Quatro queijos", "Portuguesa"] }],
+    [/hamburg|burger|lanchonete/, { itens: ["Clássico", "Cheddar e bacon", "Duplo", "Batata frita"] }],
+    [/idioma|curso|ingles|espanhol/, { titulo: "Marque sua aula experimental", itens: ["Aula experimental", "Teste de nível", "Inglês", "Espanhol"], campos: ["Idioma de interesse"] }],
+    [/escola infantil|creche|bercario/, { itens: ["Visita à escola", "Berçário", "Maternal", "Período integral"] }],
+    [/lava.?jato|lava rapido/, { tipo: "agenda", titulo: "Marque sua lavagem e evite fila", itens: ["Lavagem simples", "Lavagem completa", "Polimento", "Higienização interna"], campos: ["Carro"] }],
+    [/autopeca|auto peca/, { titulo: "Diga o carro e a peça, a gente responde com o preço", itens: ["Freios", "Suspensão", "Filtros", "Elétrica"], campos: ["Carro (modelo e ano)", "Peça que procura"] }],
+    [/material de construcao|materiais de construcao/, { tipo: "catalogo", titulo: "Monte sua lista de materiais e receba o orçamento", itens: ["Cimento", "Areia e brita", "Tijolos e blocos", "Tintas"], campos: ["Bairro de entrega"] }],
+    [/arquitet|interiores/, { titulo: "Conte sobre o seu projeto", acao: "Enviar briefing", itens: ["Residencial", "Comercial", "Interiores", "Reforma"], campos: ["Tipo de obra", "Tamanho do espaço (m²)", "Bairro"], cor: "#44403c" }],
+    [/contab/, { itens: ["Abertura de empresa", "MEI", "Imposto de renda", "Folha de pagamento"], campos: ["Tipo de empresa", "O que você precisa"] }],
+    [/advog/, { itens: ["Trabalhista", "Família", "Cível", "Previdenciário"] }],
+    [/fotograf/, { titulo: "Peça seu orçamento com a data e o tipo de ensaio", itens: ["Ensaio", "Casamento", "Aniversário", "Corporativo"], campos: ["Tipo de ensaio ou evento", "Data"] }],
+    [/salao de festa|casa de festa|espaco de evento/, { titulo: "Confira a data e peça seu orçamento", itens: ["Aniversário", "Casamento", "15 anos", "Corporativo"] }],
+    [/(aluguel|locacao|loca) .*(festa|evento)|(festa|evento).*(aluguel|locacao)|pegue e monte/, { tipo: "catalogo", titulo: "Escolha os itens da sua festa e peça o orçamento", acao: "Montar pedido", itens: ["Mesa com 4 cadeiras", "Toalhas", "Pula-pula", "Freezer"], campos: ["Data do evento", "Bairro"] }],
+    [/buffet/, { itens: ["Buffet completo", "Salgados", "Doces", "Bebidas"] }],
+    [/agencia de (turismo|viage)|turismo/, { tipo: "orcamento", titulo: "Monte sua viagem com a gente", itens: ["Pacotes nacionais", "Internacionais", "Cruzeiros", "Excursões"], campos: ["Destino", "Datas", "Número de pessoas"] }],
+    [/perfum/, { itens: ["Perfumes femininos", "Perfumes masculinos", "Kits presente", "Body splash"] }],
+    [/otica/, { itens: ["Óculos de grau", "Óculos de sol", "Lentes de contato", "Exame de vista"] }],
+    [/roupa|moda|boutique/, { itens: ["Novidades", "Vestidos", "Calças", "Acessórios"] }],
+    [/movei/, { itens: ["Sofás", "Mesas", "Camas", "Armários"] }],
+    [/brinquedo/, { itens: ["Bebês", "Educativos", "Bonecas", "Jogos"] }],
+    [/joalh|joia/, { itens: ["Anéis", "Colares", "Brincos", "Alianças"] }],
+    [/floricultura|flores/, { itens: ["Buquê de rosas", "Arranjo de mesa", "Cesta", "Coroa de flores"], campos: ["Data de entrega", "Endereço de entrega"] }],
+    [/chocolat|doceria|bombon/, { itens: ["Ovos e trufas", "Caixas de bombom", "Kits presente", "Doces finos (cento)"] }],
+    [/marcenaria|moveis planejados/, { itens: ["Cozinha planejada", "Quarto", "Banheiro", "Ambiente comercial"] }],
+    [/vidrac/, { itens: ["Box de banheiro", "Janelas", "Espelhos", "Guarda-corpo"], campos: ["Peça", "Medidas aproximadas", "Bairro"] }],
+  ];
+  function slugDe(nome) { return semAcento(nome).replace(/&/g, " e ").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 50) || "previa"; }
+  // Dados da prévia de um lead: só o que é público no Google, mais o seu nome e WhatsApp para o botão "quero essa página".
+  function previaDe(l, perfil = {}) {
+    const nicho = `${l.nicho || ""} ${l.categoria || ""}`, setor = setorDe(l.nicho || l.categoria);
+    const base = PREVIA_SETOR[setor] || PREVIA_SETOR.Outros, aj = (PREVIA_NICHO.find(([rx]) => rx.test(semAcento(nicho))) || [0, {}])[1];
+    const p = { ...base, ...aj }, geo = (l.dados && l.dados.geo) || {};
+    return {
+      v: 1, nome: l.nome, setor, categoria: l.categoria || l.nicho || "", cidade: l.cidade || "", bairro: l.bairro || "",
+      nota: l.nota || null, avaliacoes: l.avaliacoes || null, horario: (geo.txt || []).slice(0, 7), maps: l.maps || "",
+      whatsapp: l.whatsapp || "", tipo: p.tipo, titulo: p.titulo, acao: p.acao, itens: p.itens, campos: p.campos || [], foto: !!p.foto, cor: p.cor,
+      autor: { nome: perfil.nome || "", marca: perfil.marca || "", whatsapp: String(perfil.whatsapp || "5521999670781").replace(/\D/g, "") },
+    };
+  }
+  // Prompt para construir a versão completa em uma IA (Claude, por exemplo), já com os dados do lead e do nicho.
+  function promptCompleto(l, d) {
+    const est = doNicho(l.nicho || l.categoria), aj = porNicho(`${l.nicho || ""} ${l.categoria || ""}`);
+    return [
+      `Crie o site de uma página (landing page) para "${d.nome}", ${d.categoria.toLowerCase()} ${d.bairro ? `no bairro ${d.bairro}, ` : ""}${d.cidade}.`,
+      ``,
+      `Objetivo: ${aj.forma || (CONVERSA[d.setor] || CONVERSA.Outros).forma}.`,
+      `Dor do dono: ${est.dor}`,
+      `O que oferecer: ${est.oferta}. Tom: ${est.tom}`,
+      `Evitar: ${(est.evitar || []).join("; ")}.`,
+      ``,
+      `Dados reais (do Google): ${d.nota ? `nota ${String(d.nota).replace(".", ",")} com ${d.avaliacoes} avaliações; ` : ""}${d.horario.length ? `horário: ${d.horario.join(" | ")}; ` : ""}${d.whatsapp ? `WhatsApp ${d.whatsapp}; ` : ""}${d.maps ? `mapa: ${d.maps}` : ""}`,
+      ``,
+      `Seções: 1) topo com o nome, a frase "${d.titulo}" e o botão "${d.acao}"; 2) serviços: ${d.itens.join(", ")}; ` +
+        `3) ${d.tipo === "agenda" ? "agendamento: escolher serviço, dia e horário" : d.tipo === "catalogo" ? "catálogo com quantidade e carrinho" : d.tipo === "reserva" ? "reserva com datas e hóspedes" : "formulário de orçamento"}` +
+        `${d.campos.length ? ` com os campos ${d.campos.join(", ")}` : ""}, que monta a mensagem e abre o WhatsApp da empresa com tudo preenchido; ` +
+        `4) como funciona em 3 passos; 5) avaliações do Google (só a nota real, sem inventar depoimentos); 6) horário, endereço e mapa; 7) rodapé com WhatsApp.`,
+      ``,
+      `Regras: HTML, CSS e JavaScript em um arquivo só, mobile-first, rápido, acessível, sem bibliotecas pesadas. Cor principal ${d.cor}. ` +
+        `Fotos: deixe espaços marcados para as fotos reais da empresa. Não invente preços, números, prêmios ou depoimentos. Textos em português do Brasil, diretos e humanos.`,
+    ].join("\n");
+  }
+
+  window.Estrategias = { OBS_LEVE, SETORES, RESPOSTAS, CANAIS, rankingCanais, canalDoNicho, canalDoLead, LIGACAO, CONVERSA, ABERTURA, IDEIA, LEMBRETE, doNicho, setorDe, texto, sequencia, diasDaSemana, localDoLead, respostaAoCliente, DICA_GRATIS, varianteAbertura, testeAbertura, responsavelDe, responsavelSugerido, previaDe, promptCompleto, slugDe };
 })();

@@ -385,6 +385,8 @@ nav.abas button { position: relative; }
 .r-tipo { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px; background: var(--pri-suave); margin: 12px 0 0; font-size: 14px; }
 .r-tipo b { font-size: 15px; }
 .r-tipo.auto { background: color-mix(in srgb, var(--amarelo) 18%, transparent); }
+.previa-box .link-previa { display:block; padding:10px 12px; border-radius:10px; background: var(--pri-suave); word-break: break-all; font-size:14px; margin: 0 0 8px; }
+.previa-box .vistas { font-size:13px; color: var(--sub); margin: 0 0 8px; }
 .resp-box { margin: 0 0 12px; padding-bottom: 12px; border-bottom: 1px solid var(--linha, rgba(127,127,127,.2)); }
 .teste-linha { display: grid; gap: 2px; padding: 8px 0; border-top: 1px solid var(--linha, rgba(127,127,127,.2)); font-size: 14px; }
 .teste-linha small { color: var(--sub); }
@@ -761,6 +763,8 @@ nav.abas button { position: relative; }
       <p class="dica">Em branco, usa o texto padrão mostrado no campo.</p>
       <label class="campo" for="a-p-marca">Sua marca ou empresa</label>
       <input id="a-p-marca" type="text" placeholder="ex.: LK Digital">
+      <label class="campo" for="a-p-whatsapp">Seu WhatsApp <span style="font-weight:400">(botão “quero essa página” nas prévias)</span></label>
+      <input id="a-p-whatsapp" type="tel" inputmode="tel" placeholder="ex.: 21 99967-0781">
       <label class="campo" for="a-p-portfolio">Link do portfólio</label>
       <input id="a-p-portfolio" type="text" inputmode="url" placeholder="ex.: lkdigital.com.br/trabalhos">
       <label class="campo" for="a-p-prazo">Prazo padrão de entrega <span style="font-weight:400">(opcional)</span></label>

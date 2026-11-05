@@ -982,6 +982,66 @@ function contextoIa(l, a, etapa) {
   };
 }
 
+// ── Prévia rápida ─────────────────────────────────────────────────────────────────
+// Uma página de demonstração com o nome, o nicho e os dados do Google do lead, num link curto (praca-sites.vercel.app/p/nome).
+// Quem abre vê como o cliente dele pediria pelo WhatsApp. O app conta quantas vezes o link foi aberto.
+const linkPrevia = (slug) => `${Vendas.PREVIA_URL}/p/${slug}`;
+async function criarPrevia(l) {
+  const dados = Estrategias.previaDe(l, perfil());
+  let slug = l.dados?.previa?.slug;
+  if (!slug) {
+    const base = Estrategias.slugDe(l.nome);
+    for (let i = 0; i < 6 && !slug; i++) {
+      const tent = i ? `${base}-${i + 1}` : base;
+      const { data } = await sb.from("previas").select("slug,lead_id").eq("slug", tent).maybeSingle();
+      if (!data || data.lead_id === l.id) slug = tent;
+    }
+    slug ||= `${base}-${Date.now().toString(36).slice(-4)}`;
+  }
+  const { error } = await sb.from("previas").upsert({ slug, lead_id: l.id, dados, atualizado_em: new Date().toISOString() });
+  if (error) { toast("Não consegui criar a prévia. Verifique a internet."); return null; }
+  if (l.dados?.previa?.slug !== slug) await salvarLead(l, { dados: { ...(l.dados || {}), previa: { slug, criado: new Date().toISOString() } } });
+  return slug;
+}
+function htmlPrevia(l) {
+  const pv = l.dados?.previa;
+  return `<div class="cartao previa-box" id="l-previa">
+    <h2>Prévia rápida</h2>
+    ${pv ? `<a class="link-previa" href="${esc(linkPrevia(pv.slug))}?eu" target="_blank" rel="noopener">${esc(linkPrevia(pv.slug).replace(/^https:\/\//, ""))}</a>
+      <p class="vistas" id="l-previa-vistas">Vendo quantas vezes foi aberta…</p>
+      <div class="grade2">
+        <button class="btn" type="button" data-pv="copiar">Copiar link</button>
+        <button class="btn" type="button" data-pv="msg">Pôr na mensagem</button>
+        <button class="btn" type="button" data-pv="prompt">Copiar prompt da versão completa</button>
+        <button class="btn" type="button" data-pv="atualizar">Atualizar dados</button>
+      </div>
+      <p class="dica">Na prévia tem o botão “Salvar em PDF”, se o cliente preferir arquivo.</p>`
+    : `<p class="dica" style="margin-top:0">Uma página de demonstração com o nome e o nicho de ${esc(l.nome)}: o cliente vê como os pedidos chegariam pelo WhatsApp. Fica pronta na hora, num link curto.</p>
+      <button class="btn cheio" type="button" data-pv="criar">Criar prévia</button>`}
+  </div>`;
+}
+async function acaoPrevia(l, acao, dlg) {
+  if (acao === "criar" || acao === "atualizar") {
+    const slug = await criarPrevia(l); if (!slug) return;
+    toast(acao === "criar" ? "Prévia pronta." : "Prévia atualizada.");
+    return abrirLead(l.id, { etapa: acao === "criar" ? "desejo" : $("#l-etapa", dlg)?.value });
+  }
+  const url = linkPrevia(l.dados.previa.slug);
+  if (acao === "copiar") { await copiarTexto(url); toast("Link copiado."); }
+  if (acao === "prompt") { await copiarTexto(Estrategias.promptCompleto(l, Estrategias.previaDe(l, perfil()))); toast("Prompt copiado. Cole no Claude para montar a versão completa."); }
+  if (acao === "msg") {
+    const sel = $("#l-etapa", dlg); if (sel) sel.value = "desejo";
+    $("#l-msg", dlg).value = Vendas.montarMensagem(l, "desejo", analise(l), perfil());
+    $("#l-msg", dlg).scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+}
+async function mostrarVistas(l, dlg) {
+  const el = $("#l-previa-vistas", dlg); if (!el || !l.dados?.previa) return;
+  const { data } = await sb.from("previas").select("visitas,ultima_visita").eq("slug", l.dados.previa.slug).maybeSingle();
+  if (!data) { el.textContent = ""; return; }
+  el.textContent = data.visitas ? `Aberta ${data.visitas} ${data.visitas === 1 ? "vez" : "vezes"} · última em ${new Date(data.ultima_visita).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}` : "Ainda não foi aberta.";
+}
+
 // Quem decide: o nome entra na saudação ("Boa tarde, Ana, tudo bem?"). Sem nome, a mensagem pergunta com quem falar.
 function htmlResponsavel(l) {
   const r = l.dados?.responsavel || null, sug = !r && window.Estrategias?.responsavelSugerido ? Estrategias.responsavelSugerido(l) : null;
@@ -1078,6 +1138,7 @@ function abrirLead(id, opcoes = {}) {
         ${p ? `<p class="dica">A mensagem usa a oportunidade marcada. Os valores são só para você (edite a tabela em Ajustes).</p>` : ""}
       </div>
 
+      ${htmlPrevia(l)}
       ${a.principal ? `<div class="cartao" id="l-valor">${htmlValor(l, a, oport(), conta)}</div>` : ""}
       <div class="cartao" id="l-portfolio">${htmlPortfolio(l, oport())}</div>
 
@@ -1124,6 +1185,8 @@ function abrirLead(id, opcoes = {}) {
     toast(nome ? `A saudação agora usa “${nome}”.` : "Responsável removido.");
     abrirLead(l.id, { etapa: $("#l-etapa", dlg)?.value, oport: oportId });
   };
+  $$("[data-pv]", dlg).forEach((b) => (b.onclick = () => acaoPrevia(l, b.dataset.pv, dlg)));
+  mostrarVistas(l, dlg);
   $("#l-resp-ok", dlg)?.addEventListener("click", () => salvarResp($("#l-resp", dlg).value));
   $("#l-resp-sug", dlg)?.addEventListener("click", (e) => { e.preventDefault(); salvarResp(e.target.dataset.nome); });
   $("#l-status", dlg).onchange = async (e) => {
@@ -1605,7 +1668,7 @@ function renderAjustes() {
     </div>`).join("");
   $("#a-auto").checked = c.auto_contatado !== false;
   const pf = c.perfil || {};
-  for (const k of ["nome", "profissao", "marca", "portfolio", "prazo"]) $(`#a-p-${k}`).value = pf[k] || "";
+  for (const k of ["nome", "profissao", "marca", "whatsapp", "portfolio", "prazo"]) $(`#a-p-${k}`).value = pf[k] || "";
   $("#a-p-profissao").placeholder = Vendas.PROFISSAO_PADRAO;
   $("#a-precos").innerHTML = Object.entries(Vendas.SERVICOS).map(([id]) => {
     const p = Vendas.precoDe(id, pf);
@@ -1680,7 +1743,7 @@ function lerPortfolio() {
 
 function lerPerfil() {
   const pf = { ...(estado.config.perfil || {}) };
-  for (const k of ["nome", "profissao", "marca", "portfolio", "prazo"]) pf[k] = $(`#a-p-${k}`).value.trim();
+  for (const k of ["nome", "profissao", "marca", "whatsapp", "portfolio", "prazo"]) pf[k] = $(`#a-p-${k}`).value.trim();
   pf.precos = {};
   for (const el of $$("#a-precos [data-servico]")) {
     const base = Vendas.SERVICOS[el.dataset.servico], ajuste = {};

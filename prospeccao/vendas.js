@@ -371,6 +371,7 @@ function precoDe(servicoId, perfil = {}) {
 function fmtReais(v) { return "R$ " + Number(v || 0).toLocaleString("pt-BR"); }
 function faixaPreco(p) { return `${fmtReais(p.min)} a ${fmtReais(p.max)}${p.mensal ? "/mês" : ""}${p.obs ? " " + p.obs : ""}`; }
 
+const PREVIA_URL = "https://praca-sites.vercel.app";
 function montarMensagem(l, etapa, analise, perfil = {}, oportunidade = null, conta = {}) {
   const op = oportunidade || analise.principal || OPORTUNIDADES[1];
   const d = l.dados?.diag || {};
@@ -412,7 +413,7 @@ function montarMensagem(l, etapa, analise, perfil = {}, oportunidade = null, con
   // escreveu em Ajustes continua valendo por cima dela; etapas internas ("_...") usam só os blocos.
   const E = typeof window !== "undefined" ? window.Estrategias : null;
   if (E && !String(etapa).startsWith("_") && !(perfil.roteiro && perfil.roteiro[etapa])) {
-    const t = E.texto(l, etapa, { ...vars, op_id: op.id, _modelo: conta.modelo }, perfil, conta.quando || null);
+    const t = E.texto(l, etapa, { ...vars, op_id: op.id, _modelo: conta.modelo, link_previa: l.dados?.previa?.slug ? `${PREVIA_URL}/p/${l.dados.previa.slug}` : "" }, perfil, conta.quando || null);
     if (t) return t;
   }
   const roteiro = { ...ROTEIRO_PADRAO, ...(perfil.roteiro || {}) };
@@ -826,7 +827,7 @@ function traduzirNicho(n, idioma) {
   return (k && NICHO_TRAD[k][idioma]) || NICHO_TRAD[k]?.en || n;
 }
 
-window.Vendas = {
+window.Vendas = { PREVIA_URL,
   PERIODOS, DIAS_CURTO, periodoDe, horaEm, difFuso, notaNichoPeriodo, rankingPeriodos, semanaNichos, catalogoNichos,
   canais, temContato, usuarioInstagram, melhoresLeads, traduzirNicho, TAXA_REF, semAcento,
   FAIXAS, faixaDe, ROTINA_NICHO, rotinaDe, encaixeReferencia, desempenhoNichos, notaNichoFaixa, melhoresNichosAgora,

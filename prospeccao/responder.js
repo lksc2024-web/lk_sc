@@ -72,7 +72,11 @@ function respostaModulada(l, g, texto) {
     txt = txt.replaceAll("{quando}", quando ? quandoTexto(quando) : "em alguns dias")
       .replaceAll("{servico}", p ? p.nome.toLowerCase() : "um projeto assim")
       .replaceAll("{min}", p ? Vendas.fmtReais(p.min) : "").replaceAll("{max}", p ? Vendas.fmtReais(p.max) : "");
-  } else txt = Vendas.montarMensagem(l, g.tipo4 || "atencao", a, perfil());
+  } else {
+    // a resposta de agora ainda não foi registrada: entra na conta para o texto saber que ele disse sim
+    const c = Vendas.ciclo(l), comResp = { ...l, dados: { ...(l.dados || {}), ciclo: { ...c, respostas: [...c.respostas, { t: new Date().toISOString(), tipo: g.tipo4 }] } } };
+    txt = Vendas.montarMensagem(comResp, g.tipo4 || "atencao", a, perfil());
+  }
   return { txt, quando };
 }
 
@@ -107,6 +111,7 @@ function htmlResponder() {
         <span><b>${esc(g.nome)}</b><br><small>${esc(r?.plano ? r.plano.leitura : g.dica)}</small></span></div>` : ""}
       ${r?.plano ? `<div class="r-leitura${r.plano.conferir ? " conferir" : ""}"><b>${r.plano.encerrar ? "Encerrar" : "Como responder"}:</b> ${esc(r.plano.estrategia)}</div>` : ""}
 
+      ${r && l && ["desejo", "aprovacao"].includes(g.tipo4) && !l.dados?.previa ? `<button class="btn cheio" type="button" data-r="previa" style="margin-top:10px">Criar prévia e mandar o link na resposta</button>` : ""}
       ${r ? `<label class="campo" for="r-msg">Resposta sugerida</label>
         <textarea id="r-msg" style="min-height:150px">${esc(r.txt)}</textarea>
         <div class="grade2" style="margin-top:8px">
@@ -179,6 +184,12 @@ $("#folha-responder").addEventListener("click", async (e) => {
     catch { toast("Não deu para colar sozinho. Segure no campo e cole."); $("#r-texto").focus(); }
   }
   if (acao === "copiar") { await copiarTexto($("#r-msg").value); toast("Resposta copiada."); }
+  if (acao === "previa") {
+    const l = estado.leads.find((x) => x.id === resp.leadId); if (!l) return;
+    b.disabled = true; b.textContent = "Criando a prévia…";
+    if (await criarPrevia(l)) { toast("Prévia pronta: o link já está na resposta."); abrirResponder(); }
+    else { b.disabled = false; b.textContent = "Criar prévia e mandar o link na resposta"; }
+  }
   if (acao === "registrar") concluirResposta(false);
   if (acao === "enviar") concluirResposta(true, b.dataset.canal);
 });
