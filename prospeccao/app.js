@@ -1682,7 +1682,7 @@ function renderAjustes() {
   }).join("");
   $("#a-roteiro").innerHTML = Object.keys(Vendas.ROTEIRO_PADRAO).map((e) => `
     <label class="campo" for="a-r-${e}">${Vendas.NOME_ETAPA[e]}</label>
-    <textarea id="a-r-${e}" data-etapa="${e}" style="min-height:120px">${esc((pf.roteiro || {})[e] || Vendas.ROTEIRO_PADRAO[e])}</textarea>`).join("");
+    <textarea id="a-r-${e}" data-etapa="${e}" style="min-height:120px" placeholder="Em branco: usa a mensagem automática de cada nicho (recomendado). Escreva aqui só se quiser trocar por um texto seu.">${esc((pf.roteiro || {})[e] || "")}</textarea>`).join("");
   renderPortfolio(pf.portfolio_itens?.length ? pf.portfolio_itens : Vendas.PORTFOLIO_PADRAO);
   $("#a-ia-chave").value = c.ia_key || "";
   $("#a-ia-status").textContent = c.ia_key ? "IA ligada." : "IA desligada (sem custo).";
