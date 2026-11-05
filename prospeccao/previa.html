@@ -80,6 +80,12 @@
   .marca-visual span { font-family: Fraunces, Georgia, serif; font-size: clamp(64px, 22vw, 120px); color: #fff; letter-spacing: -0.04em; position: relative; }
   .marca-visual small { position: absolute; left: 18px; bottom: 14px; color: #ffffffcc; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; }
   .sobre p { font-size: 17px; margin: 0; }
+  .confianca { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 0 0 22px; font-size: 14px; color: var(--sub); }
+  .confianca span::before { content: ""; display: inline-block; width: 6px; height: 6px; border-radius: 99px; background: var(--cor); margin-right: 7px; vertical-align: middle; }
+  .capa .confianca { color: #ffffffd9; } .capa .confianca span::before { background: #fff; }
+  .mapa { width: 100%; aspect-ratio: 16 / 10; border: 0; border-radius: var(--raio); margin-top: 14px; background: var(--linha); }
+  .fecho { background: var(--cor); color: #fff; border-radius: 22px; padding: 28px 22px; margin: 10px 0 30px; }
+  .fecho h2 { margin: 0 0 8px; } .fecho p { margin: 0 0 18px; color: #ffffffd9; } .fecho .btn { background: #fff; color: var(--cor); }
   /* estilos */
   body.escuro { --fundo: #111214; --cartao: #1a1c20; --tinta: #f4f2ee; --sub: #a9aeb6; --linha: #2b2e34; }
   body.escuro .zap { background: #16261a; } body.escuro .bolha { background: #1f4d2b; color: #f1f7ef; } body.escuro .zap .cab { color: #8fd19e; }
@@ -166,6 +172,7 @@ function horasDo(dow) {
   for (const [ini, fim] of faixas) for (let m = Math.ceil(ini / 30) * 30; m + 30 <= fim; m += passo) out.push(hm(m));
   return out.slice(0, 8);
 }
+function quandoCurto() { const q = quandoAtende(); return q ? q.charAt(0).toUpperCase() + q.slice(1) : (EXP ? "" : ""); }
 // "quintas e sextas à noite e nos fins de semana" a partir do horário
 function quandoAtende() {
   if (!EXP) return "";
@@ -206,6 +213,7 @@ function render(d) {
       <p class="olho">${esc(d.categoria)}${lugar ? ` · ${esc(lugar)}` : ""}</p>
       <h1>${esc(d.titulo)}</h1>
       <p class="sub">${esc(d.sub || SUB[d.tipo] || SUB.orcamento)}</p>
+      <div class="confianca">${[lugar.split(",")[0], /semana|segunda|ter[cç]a|quarta|quinta|sexta|s[aá]bado|domingo/i.test(d.sub || "") ? "" : quandoCurto(), "Resposta pelo WhatsApp"].filter(Boolean).map((x) => `<span>${esc(x)}</span>`).join("")}</div>
       ${d.nota >= 4 && d.avaliacoes >= 3 ? `<div class="nota"><b>★ ${String(d.nota).replace(".", ",")}</b> ${d.avaliacoes} avaliações no Google</div><br>` : ""}
       <a class="btn pri" href="#pedido">${esc(d.acao)}</a>`;
   // "PretaJan Beleza e Estética" -> PJ; "Studio Bella" -> SB; palavras do ramo (beleza, estética, marcenaria...) ficam de fora
@@ -256,8 +264,11 @@ function render(d) {
     ${d.horario?.length || d.maps ? `<section>
       <h2>Onde e quando</h2>
       ${d.horario?.length ? `<ul class="horario">${d.horario.map((h) => { const [dia, ...r] = String(h).split(": "); return `<li><span>${esc(dia)}</span><span>${esc(r.join(": "))}</span></li>`; }).join("")}</ul>` : ""}
+      ${d.bairro || d.cidade ? `<iframe class="mapa" loading="lazy" title="Mapa" referrerpolicy="no-referrer-when-downgrade" src="https://maps.google.com/maps?q=${encodeURIComponent([d.nome, d.bairro, d.cidade].filter(Boolean).join(", "))}&output=embed"></iframe>` : ""}
       ${d.maps ? `<a class="btn sec" style="margin-top:14px" href="${esc(d.maps)}" target="_blank" rel="noopener">Ver no mapa</a>` : ""}
     </section>` : ""}
+    <section class="fecho"><h2>${d.tipo === "agenda" ? "Pronto para marcar o seu horário?" : d.tipo === "catalogo" ? "Pronto para fazer o seu pedido?" : d.tipo === "reserva" ? "Pronto para reservar?" : "Pronto para pedir o seu orçamento?"}</h2>
+      <p>Leva menos de um minuto, e a resposta chega pelo WhatsApp.</p><a class="btn" href="#pedido">${esc(d.acao)}</a></section>
   </main>
   <footer><div class="wrap">Prévia de demonstração${autor ? ` feita por ${esc(autor)}` : ""} para ${esc(d.nome)}, com os dados públicos do Google. Fotos, textos, preços e cores entram com o material de vocês.</div></footer>
   <div class="barra"><div class="wrap">
