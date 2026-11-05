@@ -1131,7 +1131,10 @@ function interpretarComando(texto, ctx) {
     if (intencao(t, ctx, feitos)) ok = true;
     if (!ok) naoEntendi.push(original);
   }
-  return { feitos: [...new Set(feitos)], naoEntendi };
+  // se o mesmo campo mudou mais de uma vez no pedido, mostra só como ficou no fim
+  const chave = (f) => f.split(":")[0].replace(/ (curto|novo)$/, ""), ultimos = new Map();
+  [...new Set(feitos)].forEach((f) => { ultimos.delete(chave(f)); ultimos.set(chave(f), f); });
+  return { feitos: [...ultimos.values()], naoEntendi };
 }
 // Pedidos vagos: "mais bonito", "cara de luxo", "mais moderno", "mais vendedor", "outro título", "troca a capa", "desfaz"...
 const TITULOS = {

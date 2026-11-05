@@ -74,6 +74,12 @@
   .barra .btn.pdf { background: transparent; color: #fff; border: 1px solid #ffffff55; }
   .barra .btn.quero { background: #25d366; color: #0b2e13; }
   .carregando { min-height: 70vh; display: grid; place-items: center; color: var(--sub); text-align: center; padding: 20px; }
+  .marca-visual { margin: 24px 0 8px; border-radius: 22px; aspect-ratio: 16 / 10; position: relative; overflow: hidden;
+    background: radial-gradient(120% 90% at 85% 10%, color-mix(in srgb, var(--cor) 55%, #fff) 0%, transparent 55%), linear-gradient(160deg, color-mix(in srgb, var(--cor) 92%, #000), var(--cor)); display: grid; place-items: center; }
+  .marca-visual::before { content: ""; position: absolute; inset: 0; background: repeating-linear-gradient(115deg, #ffffff10 0 2px, transparent 2px 22px); }
+  .marca-visual span { font-family: Fraunces, Georgia, serif; font-size: clamp(64px, 22vw, 120px); color: #fff; letter-spacing: -0.04em; position: relative; }
+  .marca-visual small { position: absolute; left: 18px; bottom: 14px; color: #ffffffcc; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; }
+  .sobre p { font-size: 17px; margin: 0; }
   /* estilos */
   body.escuro { --fundo: #111214; --cartao: #1a1c20; --tinta: #f4f2ee; --sub: #a9aeb6; --linha: #2b2e34; }
   body.escuro .zap { background: #16261a; } body.escuro .bolha { background: #1f4d2b; color: #f1f7ef; } body.escuro .zap .cab { color: #8fd19e; }
@@ -121,25 +127,62 @@ const PASSOS = {
   reserva: [["Escolhe as datas", "E quantas pessoas vêm."], ["Escolhe a acomodação", "Vendo o que está disponível."], ["A reserva chega no WhatsApp", "Direto com vocês, sem comissão."]],
 };
 const SUB = {
-  agenda: "O cliente escolhe o serviço e o horário sozinho, e o pedido chega organizado no WhatsApp.",
-  orcamento: "O cliente manda tudo o que vocês precisam saber, e o pedido de orçamento chega completo no WhatsApp.",
-  catalogo: "O cliente vê o que vocês têm, monta o pedido e ele chega pronto no WhatsApp.",
-  reserva: "O hóspede escolhe as datas e a reserva chega direto com vocês, no WhatsApp.",
+  agenda: "Escolha o serviço e o horário em poucos toques. A confirmação chega pelo WhatsApp.",
+  orcamento: "Conte o que você precisa em poucos campos e receba a resposta pelo WhatsApp.",
+  catalogo: "Veja o que temos, monte seu pedido e mande pelo WhatsApp.",
+  reserva: "Escolha as datas e reserve direto com a gente, pelo WhatsApp.",
 };
 
+// Dias e horários da agenda: os que a empresa abre de verdade (horário do Google). Sem horário, segunda a sábado em horário comercial.
+const DIAS_NOME = ["domingo", "segunda", "terça", "quarta", "quinta", "sexta", "sábado"];
+function expediente(horario) {
+  const mapa = {};
+  for (const h of horario || []) {
+    const [dia, resto = ""] = String(h).split(/:\s(.+)/);
+    const idx = DIAS_NOME.findIndex((n) => dia.toLowerCase().startsWith(n));
+    if (idx < 0) continue;
+    const faixas = [...resto.matchAll(/(\d{1,2}):(\d{2})\s*[–-]\s*(\d{1,2}):(\d{2})/g)].map((m) => [+m[1] * 60 + +m[2], (+m[3] || 24) * 60 + +m[4]]);
+    if (/24 horas|aberto 24/i.test(resto)) faixas.push([8 * 60, 20 * 60]);
+    mapa[idx] = faixas;
+  }
+  return Object.keys(mapa).length ? mapa : null;
+}
+let EXP = null;
 function dias() {
   const nomes = ["dom", "seg", "ter", "qua", "qui", "sex", "sáb"], out = [];
   const d = new Date(); d.setHours(12, 0, 0, 0);
-  for (let i = 1; out.length < 6 && i < 10; i++) {
+  for (let i = 1; out.length < 6 && i < 15; i++) {
     const x = new Date(d); x.setDate(d.getDate() + i);
-    if (x.getDay() === 0) continue;
-    out.push({ rot: nomes[x.getDay()], dia: `${String(x.getDate()).padStart(2, "0")}/${String(x.getMonth() + 1).padStart(2, "0")}` });
+    const abre = EXP ? (EXP[x.getDay()] || []).length > 0 : x.getDay() !== 0;
+    if (!abre) continue;
+    out.push({ rot: nomes[x.getDay()], dia: `${String(x.getDate()).padStart(2, "0")}/${String(x.getMonth() + 1).padStart(2, "0")}`, dow: x.getDay() });
   }
   return out;
 }
-const HORAS = ["09:00", "10:30", "13:00", "14:30", "16:00", "17:30"];
+const hm = (m) => `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
+function horasDo(dow) {
+  const faixas = EXP ? EXP[dow] || [] : [[9 * 60, 18 * 60]];
+  const total = faixas.reduce((a, [ini, fim]) => a + Math.max(0, fim - ini), 0), passo = total <= 240 ? 30 : 90, out = [];
+  for (const [ini, fim] of faixas) for (let m = Math.ceil(ini / 30) * 30; m + 30 <= fim; m += passo) out.push(hm(m));
+  return out.slice(0, 8);
+}
+// "quintas e sextas à noite e nos fins de semana" a partir do horário
+function quandoAtende() {
+  if (!EXP) return "";
+  const abertos = Object.keys(EXP).map(Number).filter((k) => (EXP[k] || []).length);
+  if (abertos.length >= 6) return "";
+  const plural = ["domingos", "segundas", "terças", "quartas", "quintas", "sextas", "sábados"];
+  const fds = abertos.includes(0) && abertos.includes(6), uteis = abertos.filter((k) => k > 0 && k < 6);
+  const noite = (k) => (EXP[k] || []).every(([ini]) => ini >= 17 * 60);
+  const partes = [];
+  if (uteis.length) partes.push(uteis.map((k) => plural[k]).join(", ").replace(/, ([^,]*)$/, " e $1") + (uteis.every(noite) ? " à noite" : ""));
+  if (fds) partes.push("nos fins de semana"); else for (const k of [6, 0]) if (abertos.includes(k)) partes.push(plural[k] === "sábados" ? "aos sábados" : "aos domingos");
+  return partes.join(" e ");
+}
 
+const chipsHoras = (dow) => horasDo(dow).map((h) => `<button class="chip" type="button" data-hora="${h}" aria-pressed="false">${h}</button>`).join("");
 function render(d) {
+  EXP = expediente(d.horario);
   document.title = `${d.nome} · prévia`;
   document.documentElement.style.setProperty("--cor", d.cor || "#334155");
   document.body.className = ["escuro", "elegante"].includes(d.estilo) ? d.estilo : "";
@@ -156,16 +199,23 @@ function render(d) {
   const campos = (d.campos || []).map((c, i) => `<label class="rotulo" for="c${i}">${esc(c)}</label><input id="c${i}" data-campo="${esc(c)}" ${/data|chegada|sa[ií]da/i.test(c) ? 'type="date"' : /convidados|h[oó]spedes|pessoas|m²/i.test(c) ? 'type="number" inputmode="numeric" min="1"' : 'type="text"'}>`).join("");
   const agenda = d.tipo === "agenda" ? `
       <span class="rotulo">Dia</span><div class="chips" id="dias">${dias().map((x) => `<button class="chip" type="button" data-dia="${x.rot}, ${x.dia}" aria-pressed="false">${x.rot}<small>${x.dia}</small></button>`).join("")}</div>
-      <span class="rotulo">Horário</span><div class="chips" id="horas">${HORAS.map((h) => `<button class="chip" type="button" data-hora="${h}" aria-pressed="false">${h}</button>`).join("")}</div>` : "";
+      <span class="rotulo">Horário</span><div class="chips" id="horas">${chipsHoras(dias()[0]?.dow)}</div>` : "";
   const foto = d.foto ? `<span class="rotulo">Foto ou referência</span><button class="anexo" type="button" id="anexo">＋ Anexar foto do ambiente ou de uma referência</button>` : "";
 
   const heroInner = `
       <p class="olho">${esc(d.categoria)}${lugar ? ` · ${esc(lugar)}` : ""}</p>
       <h1>${esc(d.titulo)}</h1>
       <p class="sub">${esc(d.sub || SUB[d.tipo] || SUB.orcamento)}</p>
-      ${d.nota >= 4 && d.avaliacoes ? `<div class="nota"><b>★ ${String(d.nota).replace(".", ",")}</b> ${d.avaliacoes} avaliações no Google</div><br>` : ""}
+      ${d.nota >= 4 && d.avaliacoes >= 3 ? `<div class="nota"><b>★ ${String(d.nota).replace(".", ",")}</b> ${d.avaliacoes} avaliações no Google</div><br>` : ""}
       <a class="btn pri" href="#pedido">${esc(d.acao)}</a>`;
-  const heroHtml = `<section class="hero">${heroInner}</section>`;
+  // "PretaJan Beleza e Estética" -> PJ; "Studio Bella" -> SB; palavras do ramo (beleza, estética, marcenaria...) ficam de fora
+  const GEN = /^(e|de|da|do|das|dos|beleza|estetica|estética|studio|estudio|estúdio|salao|salão|clinica|clínica|espaco|espaço|centro|marcenaria|buffet|pet|shop|ltda|me|eireli|&)$/i;
+  const palavras = d.nome.split(/[\s-]+/).filter(Boolean), marca = palavras.filter((w) => !GEN.test(w));
+  const camel = (marca[0] || "").match(/[A-ZÀ-Ú]/g) || [];
+  const iniciais = (camel.length >= 2 ? camel.slice(0, 2).join("") : (marca.length >= 2 ? marca.slice(0, 2) : palavras.slice(0, 2)).map((w) => w[0].toUpperCase()).join("")) || d.nome[0];
+  const heroHtml = `<section class="hero">${heroInner}<div class="marca-visual" aria-hidden="true"><span>${esc(iniciais)}</span><small>${esc(d.categoria)}${d.bairro ? " · " + esc(d.bairro) : ""}</small></div></section>`;
+  const quando = quandoAtende();
+  const sobre = `<section class="sobre"><h2>Sobre ${esc(d.nome)}</h2><p>${esc(d.categoria)}${d.bairro ? ` em ${esc(d.bairro)}` : ""}${quando ? `, com atendimento ${esc(quando)}` : ""}. ${d.tipo === "agenda" ? "Atendimento com hora marcada: você escolhe o horário e chega com a vaga garantida." : "Você manda o que precisa e recebe a resposta sem precisar ligar."}</p><p class="dica" style="margin-top:8px">Na versão final, este espaço conta a história de vocês, com as fotos do espaço e do trabalho.</p></section>`;
   const capaHtml = fotos.length ? `<section class="capa">${img(fotos[0], 'fetchpriority="high"')}<div class="wrap">${heroInner}</div>${credito(fotos[0]) ? `<span class="credito">${credito(fotos[0])}</span>` : ""}</section>` : "";
   const galeria = fotos.length > 1 ? `<section><h2>Fotos</h2><p class="dica">${fotos.some((f) => f.fonte === "google") ? "Do perfil de vocês no Google." : "Do site de vocês."} Na versão final, entram as fotos que vocês escolherem.</p>
       <div class="galeria">${fotos.slice(1).map((f) => `<figure>${img(f, 'loading="lazy"')}${credito(f) ? `<figcaption>${credito(f)}</figcaption>` : ""}</figure>`).join("")}</div></section>` : "";
@@ -182,6 +232,7 @@ function render(d) {
     </section>
 
     ${galeria}
+    ${sobre}
 
     <section id="pedido">
       <h2>${esc(d.acao)}</h2>
@@ -226,6 +277,8 @@ function render(d) {
     $$(sel).forEach((x) => x.setAttribute("aria-pressed", "false")); b.setAttribute("aria-pressed", "true"); st[chave] = b.dataset[attr];
   }));
   grupo("[data-dia]", "dia", "dia"); grupo("[data-hora]", "hora", "hora");
+  // ao trocar o dia, os horários passam a ser os daquele dia
+  $$("[data-dia]").forEach((b) => b.addEventListener("click", () => { const dw = dias().find((x) => `${x.rot}, ${x.dia}` === b.dataset.dia)?.dow; $("#horas").innerHTML = chipsHoras(dw); st.hora = null; grupo("[data-hora]", "hora", "hora"); }));
   $("#anexo")?.addEventListener("click", (e) => { st.foto = true; e.currentTarget.textContent = "✓ 1 foto anexada (exemplo)"; });
   $("#pdf").addEventListener("click", () => window.print());
   $("#enviar").addEventListener("click", () => {
@@ -235,7 +288,7 @@ function render(d) {
       const lista = d.itens.map((it, i) => (st.qtd[i] ? `• ${st.qtd[i]}x ${it}` : "")).filter(Boolean);
       linhas.push("Olá! Quero fazer um pedido:", ...(lista.length ? lista : [`• 1x ${d.itens[0]}`]));
     } else if (d.tipo === "agenda") {
-      linhas.push(`Olá! Quero agendar: *${st.item}*`, `Dia: ${st.dia || dias()[0].rot + ", " + dias()[0].dia} às ${st.hora || HORAS[1]}`);
+      linhas.push(`Olá! Quero agendar: *${st.item}*`, `Dia: ${st.dia || dias()[0].rot + ", " + dias()[0].dia} às ${st.hora || horasDo(dias()[0].dow)[0] || "a combinar"}`);
     } else if (d.tipo === "reserva") {
       linhas.push(`Olá! Quero reservar: *${st.item}*`);
     } else {
