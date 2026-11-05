@@ -164,11 +164,14 @@ async function carregarTudo() {
   if (!S.cfg) { var c = await sb.from("central_config").insert({}).select().single(); if (c.error) throw c.error; S.cfg = c.data; }
   S.perfil = (q[1].data && q[1].data.perfil) || {};
   S.projetos = q[2].data || []; S.metricas = q[3].data || []; S.vendas = q[4].data || []; S.clientes = q[5].data || [];
+  Promise.all([carregarVendas(), carregarCalendario()]).catch(function () {});
   S.leads = q[6].data || []; S.links = q[7].data || []; S.cliques = q[8].data || []; S.modelos = modelosComPadrao(q[9].data || []); S.disparos = q[10].data || []; S.agenda = q[11].data || [];
   $("#side-nome").textContent = S.perfil.nome ? "Olá, " + S.perfil.nome : (S.user.email || "");
 }
 // Modelo embutido para quando quem responde é o robô do WhatsApp Business. Some assim que você salvar um seu.
+var MODELO_APP = { id: "padrao-abordagem", nome: "Mensagem do app (por nicho, atualizada)", objetivo: "prospeccao", gatilho: "", canal: "whatsapp", nicho: "", assunto: "", corpo: "{mensagem_app}" };
 function modelosComPadrao(lista) {
+  lista = [MODELO_APP].concat(lista.filter(function (m) { return m.id !== MODELO_APP.id; }));
   if (lista.some(function (m) { return m.objetivo === "resposta" && m.gatilho === "automatica"; })) return lista;
   return lista.concat([{ id: "padrao-automatica", nome: "Depois da mensagem automática", objetivo: "resposta", gatilho: "automatica", canal: "whatsapp", nicho: "", assunto: "",
     corpo: "Oi, tudo bem? Recebi a mensagem automática, sem pressa. Quando o responsável puder ler: dei uma olhada em como vocês aparecem no Google e tenho uma ideia simples para trazer mais clientes. Posso mandar por aqui?" }]);
@@ -754,7 +757,16 @@ function listaLeads(lista) {
     return '<tr class="click" data-lead="' + l.id + '"><td><div class="cell2"><b>' + esc(l.nome) + "</b><small>" + esc([l.bairro, l.cidade].filter(Boolean).join(" · ")) + "</small></div></td><td>" + esc(l.nicho || l.categoria || "—") + '</td><td><span><i class="dot" style="background:var(' + s[2] + ')"></i>' + s[1] + "</span></td><td>" + esc(tagsLead(l).join(", ") || "—") + '</td><td class="r">' + (n(l.nota) ? n(l.nota).toFixed(1) : "—") + "</td><td>" + quando(l.ultimo_contato) + "</td></tr>";
   }).join("") + "</tbody></table></div>";
 }
+function mensagemApp(l) {
+  var V = window.Vendas; if (!V || !window.Estrategias) return "Carregando a mensagem do app… abra de novo em instantes.";
+  try {
+    var prox = V.proximaAcao(l, V.intervalos(S.leads)), etapa = prox && prox.etapa ? prox.etapa : "abordagem";
+    if (prox && prox.acao === "responder") etapa = "retomar";
+    return V.montarMensagem(l, etapa, V.analisar(l, {}), S.perfil || {});
+  } catch (e) { return ""; }
+}
 function preencher(txt, alvo, tipo) {
+  if (txt === "{mensagem_app}") return tipo === "lead" ? mensagemApp(alvo) : "";
   var nome = tipo === "lead" ? alvo.nome : primeiroNome(alvo.nome) || alvo.empresa;
   var prod = ""; if (tipo === "cliente") { var v = S.vendas.find(function (x) { return x.cliente_id === alvo.id && x.status === "aprovada"; }); prod = v ? v.produto_nome : ""; }
   return String(txt || "").replace(/\{nome\}/g, nome || "").replace(/\{empresa\}/g, alvo.empresa || alvo.nome || "").replace(/\{cidade\}/g, alvo.cidade || "").replace(/\{bairro\}/g, alvo.bairro || alvo.cidade || "").replace(/\{categoria\}/g, alvo.categoria || alvo.nicho || "").replace(/\{nicho\}/g, alvo.nicho || alvo.categoria || "").replace(/\{produto\}/g, prod || "produto");
@@ -793,7 +805,7 @@ function blocoMensagem(publico, alvo, objetivosPref, contexto) {
   var num = numeroDe(publico, alvo), fixo = publico === "lead" && !alvo.whatsapp && alvo.tel_tipo === "fixo";
   var reun = contexto === "reuniao" || emReuniao(publico, alvo);
   var pref = reun ? ["retomada"] : objetivosPref;
-  var mods = S.modelos.filter(function (m) { return m.objetivo !== "resposta" && m.objetivo !== "portfolio"; }).sort(function (a, b) { return (pref.indexOf(a.objetivo) < 0) - (pref.indexOf(b.objetivo) < 0); });
+  var mods = S.modelos.filter(function (m) { return m.objetivo !== "resposta" && m.objetivo !== "portfolio" && (publico === "lead" || m.id !== MODELO_APP.id); }).sort(function (a, b) { return (pref.indexOf(a.objetivo) < 0) - (pref.indexOf(b.objetivo) < 0); });
   var canalPref = num || !alvo.email ? "whatsapp" : "email";
   var esc0 = reun ? (mods.find(function (m) { return m.nome.indexOf(NOME_RETOMAR) === 0 && m.canal === canalPref; }) || mods.find(function (m) { return m.nome.indexOf(NOME_RETOMAR) === 0; })) : null;
   var selId = esc0 ? esc0.id : (mods[0] ? mods[0].id : "");
@@ -927,7 +939,7 @@ function vMensagens(box) {
   if (S.msgTab === "modelos") tabModelos($("#msg-c")); else tabCampanha($("#msg-c"));
 }
 function tabModelos(el) {
-  var grupos = {}; S.modelos.forEach(function (m) { (grupos[m.objetivo] = grupos[m.objetivo] || []).push(m); });
+  var grupos = {}; S.modelos.forEach(function (m) { if (m.id === MODELO_APP.id) return; (grupos[m.objetivo] = grupos[m.objetivo] || []).push(m); });
   el.innerHTML = Object.keys(OBJETIVOS).filter(function (o) { return grupos[o]; }).map(function (o) {
     return '<div class="card" style="margin-bottom:14px"><div class="card-h"><div><h2>' + OBJETIVOS[o] + '</h2><p>' + grupos[o].length + ' modelos</p></div></div><div class="stat-list">' + grupos[o].map(function (m) { return '<div><span style="color:var(--ink)">' + esc(m.nome) + (m.gatilho ? ' <span class="sub">· ' + esc((GATILHOS.find(function (g) { return g.id === m.gatilho; }) || {}).nome || m.gatilho) + "</span>" : "") + (m.nicho ? ' <span class="sub">· ' + esc(m.nicho) + "</span>" : "") + ' <span class="sub">· ' + (m.canal === "email" ? "e-mail" : "WhatsApp") + '</span></span><b><button class="btn sm" type="button" data-ed="' + m.id + '">Editar</button></b></div>'; }).join("") + "</div></div>";
   }).join("") || '<div class="card vazio"><b>Nenhum modelo.</b></div>';
@@ -963,7 +975,7 @@ function tabCampanha(el) {
   var nichos = {}; base.forEach(function (x) { var nn = x.nicho || x.categoria || ""; if (nn) nichos[nn] = (nichos[nn] || 0) + 1; });
   var alvo = base.filter(function (x) { return c.st.indexOf(x.status) >= 0 && (!c.nicho || (x.nicho || x.categoria) === c.nicho); });
   var comCanal = alvo.filter(function (x) { return ehLead ? (x.whatsapp || x.tel_digitos || x.email) : (telWa(x.telefone) || x.email); });
-  var mods = S.modelos.filter(function (m) { return m.objetivo !== "resposta" && m.objetivo !== "portfolio" && (!m.nicho || !c.nicho || m.nicho === c.nicho); });
+  var mods = S.modelos.filter(function (m) { return m.objetivo !== "resposta" && m.objetivo !== "portfolio" && (!m.nicho || !c.nicho || m.nicho === c.nicho) && (ehLead || m.id !== MODELO_APP.id); });
   if (!c.modeloManual) { var querRetomar = (ehLead && c.st.indexOf("reuniao") >= 0) || (!ehLead && c.st.indexOf("retomar") >= 0); var mr = querRetomar && mods.find(function (m) { return m.nome.indexOf(NOME_RETOMAR) === 0 && m.canal === "whatsapp"; }); if (mr) c.modelo = mr.id; }
   if (!mods.some(function (m) { return m.id === c.modelo; })) c.modelo = mods[0] ? mods[0].id : "";
   var mod = S.modelos.find(function (m) { return m.id === c.modelo; });
