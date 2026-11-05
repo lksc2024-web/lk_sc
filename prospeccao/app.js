@@ -609,6 +609,7 @@ async function enriquecer(ids) {
         await Promise.all(lote.map((l) => {
           const r = resultados[l.id] || {}, m = { enriquecido: true };
           if (r.diag) m.dados = { ...(l.dados || {}), diag: r.diag };
+          if (r.responsavel && !l.dados?.responsavel?.confirmado) m.dados = { ...(m.dados || l.dados || {}), responsavel: { nome: r.responsavel, fonte: "site" } };
           if (r.email && !l.email) m.email = r.email;
           for (const k of ["instagram", "facebook", "linkedin"]) if (r[k] && !l[k]) m[k] = r[k];
           if (r.whatsapp && (!l.whatsapp || l.whatsapp_origem === "telefone")) { m.whatsapp = r.whatsapp; m.whatsapp_origem = "site"; }
@@ -981,6 +982,24 @@ function contextoIa(l, a, etapa) {
   };
 }
 
+// Quem decide: o nome entra na saudação ("Boa tarde, Ana, tudo bem?"). Sem nome, a mensagem pergunta com quem falar.
+function htmlResponsavel(l) {
+  const r = l.dados?.responsavel || null, sug = !r && window.Estrategias?.responsavelSugerido ? Estrategias.responsavelSugerido(l) : null;
+  const usado = window.Estrategias?.responsavelDe ? Estrategias.responsavelDe(l) : "";
+  const origem = { site: "achado no site", titulo: "pelo nome da empresa", nome_empresa: "pelo nome da empresa", manual: "você confirmou" };
+  return `<div class="resp-box">
+    <label class="campo" for="l-resp" style="margin-top:0">Responsável (nome para a saudação)</label>
+    <div class="linha-flex" style="gap:8px">
+      <input id="l-resp" type="text" autocomplete="off" placeholder="Ex.: Ana" value="${esc(r?.nome || "")}" style="flex:1">
+      <button class="btn peq" type="button" id="l-resp-ok">Salvar</button>
+    </div>
+    ${usado ? `<p class="dica" style="margin:6px 0 0">Na mensagem: “${esc(usado)}” (${origem[r?.confirmado ? "manual" : r?.fonte] || ""}).</p>`
+      : r?.nome ? `<p class="dica" style="margin:6px 0 0">Provável: ${esc(r.nome)} (${origem[r.fonte] || "sugestão"}). Toque em Salvar para usar.</p>`
+      : sug ? `<p class="dica" style="margin:6px 0 0">Provável: <b>${esc(sug.nome)}</b> (${origem[sug.fonte]}). <a href="#" id="l-resp-sug" data-nome="${esc(sug.nome)}">Usar</a></p>`
+      : `<p class="dica" style="margin:6px 0 0">Sem nome: a mensagem pergunta com quem falar. Se souber pelo Instagram ou por uma ligação, escreva aqui.</p>`}
+  </div>`;
+}
+
 function abrirLead(id, opcoes = {}) {
   const l = estado.leads.find((x) => x.id === id);
   if (!l) return;
@@ -1018,6 +1037,7 @@ function abrirLead(id, opcoes = {}) {
 
       <div class="cartao">
         <h2>Mensagem</h2>
+        ${htmlResponsavel(l)}
         ${typeof htmlEstrategiaLead === "function" ? htmlEstrategiaLead(l) : ""}
         ${Vendas.temContato(l) ? `
           <label class="campo" for="l-etapa" style="margin-top:0">Etapa do ciclo</label>
@@ -1096,6 +1116,16 @@ function abrirLead(id, opcoes = {}) {
     </div>`;
 
   const reabrir = (extra = {}) => abrirLead(l.id, { etapa, oport: oportId, ...extra });
+  const salvarResp = async (nome) => {
+    nome = String(nome || "").trim().replace(/\s+/g, " ");
+    const dados = { ...(l.dados || {}) };
+    if (nome) dados.responsavel = { nome, fonte: "manual", confirmado: true }; else delete dados.responsavel;
+    await salvarLead(l, { dados });
+    toast(nome ? `A saudação agora usa “${nome}”.` : "Responsável removido.");
+    abrirLead(l.id, { etapa: $("#l-etapa", dlg)?.value, oport: oportId });
+  };
+  $("#l-resp-ok", dlg)?.addEventListener("click", () => salvarResp($("#l-resp", dlg).value));
+  $("#l-resp-sug", dlg)?.addEventListener("click", (e) => { e.preventDefault(); salvarResp(e.target.dataset.nome); });
   $("#l-status", dlg).onchange = async (e) => {
     const s = e.target.value;
     await registrar(l, "status", `Etapa: ${NOME_STATUS[s]}`, { status: s });

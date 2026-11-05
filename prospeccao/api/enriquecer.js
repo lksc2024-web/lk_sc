@@ -5,6 +5,21 @@ import { acharRedes, autenticar, baixarHtml, baixarPagina, diagnosticar, extrair
 
 const SO_REDE = ["instagram.com", "facebook.com", "wa.me", "whatsapp.com", "linktr.ee"];
 
+// Nome de quem responde pela empresa, quando o próprio site diz: "Dra. Ana Souza", "Arq. Paula", "Fundadora: Carla Lima",
+// "Ana Souza | CRO-RJ 12345". Só nomes próprios com título ou cargo; nada de chute.
+export function responsavelNoSite(html) {
+  const txt = String(html || "").replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>/gi, " ").replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/g, " ").replace(/\s+/g, " ").slice(0, 200000);
+  const N = "([A-ZÀ-Ú][a-zà-ú]{2,}(?: (?:d[aeo]s? )?[A-ZÀ-Ú][a-zà-ú]{2,}){0,2})";
+  const regras = [
+    [new RegExp("\\b(Dra?|Arq|Prof)\\.\\s+" + N), (m) => `${m[1]}. ${m[2].split(" ")[0]}`],
+    [new RegExp("\\b(?:[Ff]undador(?:a)?|[Pp]ropriet[aá]ri[oa]|[Ss][oó]ci[oa][- ]fundador(?:a)?|[Rr]espons[aá]vel t[eé]cnic[oa])\\s*[:\\-–]?\\s+" + N), (m) => m[1].split(" ")[0]],
+    [new RegExp(N + "\\s*[|,\\-–]?\\s*(?:CRO|CRM|CREFITO|CRN|CRP|CAU|OAB|CREA)[\\s\\-/]"), (m) => m[1].split(" ")[0]],
+  ];
+  for (const [rx, nome] of regras) { const m = txt.match(rx); if (m) return nome(m); }
+  return "";
+}
+
 export async function enriquecerSite(site) {
   const out = { email: "", whatsapp: "", instagram: "", facebook: "", linkedin: "", diag: null };
   if (SO_REDE.some((h) => site.includes(h))) {
@@ -19,6 +34,7 @@ export async function enriquecerSite(site) {
   const home = pagina.html;
   if (!home) return out;
   Object.assign(out, acharRedes(home));
+  out.responsavel = responsavelNoSite(home);
   out.whatsapp = whatsappEm(home);
   let emails = extrairEmails(home, site);
   if (!emails.length || !out.whatsapp) {
