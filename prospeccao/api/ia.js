@@ -31,6 +31,10 @@ Tarefas:
 mensagem para responder.
 - "pergunta": o texto é uma pergunta do vendedor (estratégia, objeções, preço, abordagem). Responda em "mensagem" de \
 forma prática e direta. tipo_resposta = "nenhum".
+- "previa": o contexto traz a prévia de site de uma empresa (titulo, sub, acao, itens, campos, cor, estilo) e o texto é o \
+pedido de mudança do vendedor. Devolva em "mensagem" um JSON (só o JSON, sem texto em volta) com os campos que mudam: \
+titulo, sub, acao, itens (lista), campos (lista), cor (hex #rrggbb) e estilo (claro, escuro ou elegante). Textos curtos, \
+humanos, sem inventar preços, prêmios ou números. tipo_resposta = "nenhum".
 Em "explicacao", uma frase curta dizendo o porquê da sua escolha.`;
 
 const FORMATO = {
@@ -65,7 +69,7 @@ export default async function handler(req, res) {
   if (!chave) return responder(res, 400, { erro: "A IA está desligada. Cadastre a chave da Anthropic em Ajustes para usar." });
 
   const { tarefa = "pergunta", contexto = {}, texto = "" } = await lerCorpo(req);
-  if (!["mensagem", "classificar", "pergunta"].includes(tarefa)) return responder(res, 400, { erro: "Tarefa inválida." });
+  if (!["mensagem", "classificar", "pergunta", "previa"].includes(tarefa)) return responder(res, 400, { erro: "Tarefa inválida." });
   const pedido = `Tarefa: ${tarefa}\n\nContexto (JSON):\n${JSON.stringify(contexto).slice(0, 12000)}\n\n` +
     (texto ? `Texto:\n${String(texto).slice(0, 4000)}` : "");
 

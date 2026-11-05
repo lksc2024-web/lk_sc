@@ -986,8 +986,24 @@ function contextoIa(l, a, etapa) {
 // Uma página de demonstração com o nome, o nicho e os dados do Google do lead, num link curto (praca-sites.vercel.app/p/nome).
 // Quem abre vê como o cliente dele pediria pelo WhatsApp. O app conta quantas vezes o link foi aberto.
 const linkPrevia = (slug) => `${Vendas.PREVIA_URL}/p/${slug}`;
-async function criarPrevia(l) {
-  const dados = Estrategias.previaDe(l, perfil());
+const CORES_PREVIA = ["#5b4636", "#1f5f5b", "#8a3b4f", "#1e3a5f", "#2f6b3a", "#6d28d9", "#9a3412", "#27272a", "#0f5e74", "#b45309"];
+// Junta os dados do nicho com as fotos e com o que você ajustou no editor (o editor sempre vence).
+function dadosPrevia(l) {
+  const base = Estrategias.previaDe(l, perfil()), pv = l.dados?.previa || {}, aj = pv.ajustes || {};
+  const fotos = [...(pv.fotos || []), ...(aj.extras || []).map((url) => ({ url, fonte: "sua", autor: "" }))].filter((f) => !(aj.ocultas || []).includes(f.url));
+  if (aj.capa) fotos.sort((a, b) => (b.url === aj.capa) - (a.url === aj.capa));
+  return { ...base, ...Object.fromEntries(["titulo", "sub", "acao", "itens", "campos", "cor", "estilo"].filter((k) => aj[k] != null && aj[k] !== "").map((k) => [k, aj[k]])), fotos: fotos.slice(0, 8) };
+}
+async function buscarFotos(l) {
+  try { const { fotos } = await api("/api/fotos", { place_id: l.place_id || "", site: l.site && !Vendas.soRede(l.site) ? l.site : "" }); return fotos || []; }
+  catch { return []; }
+}
+async function criarPrevia(l, { novasFotos = false } = {}) {
+  if (novasFotos || !l.dados?.previa?.fotos) {
+    const fotos = await buscarFotos(l);
+    await salvarLead(l, { dados: { ...(l.dados || {}), previa: { ...(l.dados?.previa || {}), fotos } } });
+  }
+  const dados = dadosPrevia(l);
   let slug = l.dados?.previa?.slug;
   if (!slug) {
     const base = Estrategias.slugDe(l.nome);
@@ -1000,7 +1016,7 @@ async function criarPrevia(l) {
   }
   const { error } = await sb.from("previas").upsert({ slug, lead_id: l.id, dados, atualizado_em: new Date().toISOString() });
   if (error) { toast("Não consegui criar a prévia. Verifique a internet."); return null; }
-  if (l.dados?.previa?.slug !== slug) await salvarLead(l, { dados: { ...(l.dados || {}), previa: { slug, criado: new Date().toISOString() } } });
+  if (l.dados?.previa?.slug !== slug) await salvarLead(l, { dados: { ...(l.dados || {}), previa: { ...(l.dados?.previa || {}), slug, criado: new Date().toISOString() } } });
   return slug;
 }
 function htmlPrevia(l) {
@@ -1013,16 +1029,22 @@ function htmlPrevia(l) {
         <button class="btn" type="button" data-pv="copiar">Copiar link</button>
         <button class="btn" type="button" data-pv="msg">Pôr na mensagem</button>
         <button class="btn" type="button" data-pv="prompt">Copiar prompt da versão completa</button>
-        <button class="btn" type="button" data-pv="atualizar">Atualizar dados</button>
+        <button class="btn" type="button" data-pv="atualizar">Buscar fotos de novo</button>
       </div>
+      <button class="btn cheio" type="button" data-pv="editar" style="margin-top:8px">Editar prévia (fotos, textos, cor)</button>
       <p class="dica">Na prévia tem o botão “Salvar em PDF”, se o cliente preferir arquivo.</p>`
     : `<p class="dica" style="margin-top:0">Uma página de demonstração com o nome e o nicho de ${esc(l.nome)}: o cliente vê como os pedidos chegariam pelo WhatsApp. Fica pronta na hora, num link curto.</p>
       <button class="btn cheio" type="button" data-pv="criar">Criar prévia</button>`}
   </div>`;
 }
 async function acaoPrevia(l, acao, dlg) {
+  if (acao === "editar") {
+    if (!l.dados?.previa?.fotos) { toast("Buscando as fotos da empresa…"); await criarPrevia(l, { novasFotos: true }); }
+    return abrirEditorPrevia(l);
+  }
   if (acao === "criar" || acao === "atualizar") {
-    const slug = await criarPrevia(l); if (!slug) return;
+    toast(acao === "criar" ? "Montando a prévia com as fotos da empresa…" : "Buscando as fotos de novo…");
+    const slug = await criarPrevia(l, { novasFotos: acao === "atualizar" }); if (!slug) return;
     toast(acao === "criar" ? "Prévia pronta." : "Prévia atualizada.");
     return abrirLead(l.id, { etapa: acao === "criar" ? "desejo" : $("#l-etapa", dlg)?.value });
   }
@@ -1034,6 +1056,95 @@ async function acaoPrevia(l, acao, dlg) {
     $("#l-msg", dlg).value = Vendas.montarMensagem(l, "desejo", analise(l), perfil());
     $("#l-msg", dlg).scrollIntoView({ behavior: "smooth", block: "center" });
   }
+}
+// Editor da prévia: escolher as fotos e a capa, mudar textos, serviços, cor e estilo, ou pedir a mudança em palavras (com IA ligada).
+function abrirEditorPrevia(l) {
+  const dlg = $("#folha-previa"), pv = l.dados?.previa || {}, aj = { ...(pv.ajustes || {}) }, d = dadosPrevia(l);
+  const todas = [...(pv.fotos || []), ...(aj.extras || []).map((url) => ({ url, fonte: "sua" }))];
+  const ocultas = new Set(aj.ocultas || []);
+  let capa = aj.capa || (todas.find((f) => !ocultas.has(f.url)) || {}).url || "";
+  let cor = d.cor, estilo = d.estilo || "claro";
+  const desenhar = () => {
+    const v = { titulo: aj.titulo || d.titulo, sub: aj.sub || "", acao: aj.acao || d.acao, itens: aj.itens || d.itens, campos: aj.campos || d.campos || [] };
+    dlg.innerHTML = `<div class="barra"><h2>Editar prévia<br><small style="font-weight:400;color:var(--sub);font-size:14px">${esc(l.nome)}</small></h2>
+      <button class="fechar" data-pe="fechar" aria-label="Fechar">×</button></div>
+    <div class="corpo">
+      <div class="cartao">
+        <h2>Fotos</h2>
+        ${todas.length ? `<p class="dica" style="margin-top:0">Toque em “Capa” para a foto do topo e em “Tirar” para esconder. Fotos do Google aparecem com o crédito de quem tirou.</p>
+          <div class="pv-fotos">${todas.map((f, i) => `<div class="pv-foto ${ocultas.has(f.url) ? "off" : ""} ${f.url === capa ? "capa" : ""}">
+            <img src="${esc(f.url)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.closest('.pv-foto').style.display='none'">
+            <div class="pv-acoes"><button type="button" data-capa="${i}">${f.url === capa ? "★ Capa" : "Capa"}</button><button type="button" data-tirar="${i}">${ocultas.has(f.url) ? "Usar" : "Tirar"}</button></div></div>`).join("")}</div>`
+          : `<p class="dica" style="margin-top:0">Nenhuma foto encontrada no Google nem no site. Cole abaixo o link de uma foto (do Instagram da empresa, por exemplo) ou use a prévia sem foto.</p>`}
+        <label class="campo" for="pe-url">Adicionar foto por link</label>
+        <div class="linha-flex" style="gap:8px"><input id="pe-url" type="url" inputmode="url" placeholder="https://…" style="flex:1"><button class="btn peq" type="button" data-pe="addfoto">Adicionar</button></div>
+      </div>
+      <div class="cartao">
+        <h2>Textos</h2>
+        <label class="campo" for="pe-titulo" style="margin-top:0">Título</label><input id="pe-titulo" type="text" value="${esc(v.titulo)}">
+        <label class="campo" for="pe-sub">Frase de apoio <span style="font-weight:400">(em branco = automática)</span></label><textarea id="pe-sub" style="min-height:64px">${esc(v.sub)}</textarea>
+        <label class="campo" for="pe-acao">Texto do botão</label><input id="pe-acao" type="text" value="${esc(v.acao)}">
+        <label class="campo" for="pe-itens">Serviços ou produtos <span style="font-weight:400">(um por linha)</span></label><textarea id="pe-itens" style="min-height:96px">${esc(v.itens.join("\n"))}</textarea>
+        <label class="campo" for="pe-campos">Perguntas do pedido <span style="font-weight:400">(uma por linha)</span></label><textarea id="pe-campos" style="min-height:72px">${esc(v.campos.join("\n"))}</textarea>
+      </div>
+      <div class="cartao">
+        <h2>Cor e estilo</h2>
+        <div class="pv-cores">${CORES_PREVIA.map((c) => `<button type="button" class="pv-cor" data-cor="${c}" style="background:${c}" aria-pressed="${c === cor}" aria-label="Cor ${c}"></button>`).join("")}
+          <input type="color" id="pe-cor" value="${esc(cor)}" aria-label="Outra cor" style="width:44px;height:34px;padding:0;border:0;background:none"></div>
+        <label class="campo">Estilo</label>
+        <div class="pv-estilos">${[["claro", "Claro"], ["escuro", "Escuro"], ["elegante", "Elegante"]].map(([k, n]) => `<button type="button" class="btn peq" data-estilo="${k}" aria-pressed="${k === estilo}">${n}</button>`).join("")}</div>
+      </div>
+      ${estado.config.ia_key ? `<div class="cartao"><h2>Pedir uma mudança</h2>
+        <textarea id="pe-pedido" placeholder="Ex.: deixa mais sofisticado, troca os serviços para móveis planejados de alto padrão e muda a cor para verde-escuro"></textarea>
+        <button class="btn" type="button" data-pe="ia" style="margin-top:8px">✨ Aplicar com IA</button><p class="dica" id="pe-ia-status"></p></div>`
+        : `<p class="dica">Dica: com a IA ligada em Ajustes, dá para pedir mudanças em palavras (“mais sofisticado”, “troca a cor para verde”).</p>`}
+      <div class="grade2" style="margin:14px 0">
+        <button class="btn cheio" type="button" data-pe="salvar">Salvar e atualizar o link</button>
+        <a class="btn" href="${esc(linkPrevia(pv.slug))}?eu" target="_blank" rel="noopener">Ver prévia</a>
+      </div>
+    </div>`;
+  };
+  const coletar = () => {
+    const linhas = (id) => $(id, dlg).value.split("\n").map((x) => x.trim()).filter(Boolean);
+    return { ...aj, titulo: $("#pe-titulo", dlg).value.trim(), sub: $("#pe-sub", dlg).value.trim(), acao: $("#pe-acao", dlg).value.trim(),
+      itens: linhas("#pe-itens"), campos: linhas("#pe-campos"), cor, estilo, capa, ocultas: [...ocultas] };
+  };
+  desenhar();
+  if (!dlg.open) dlg.showModal();
+  dlg.onclick = async (e) => {
+    const b = e.target.closest("button"); if (!b) return;
+    if (b.dataset.capa != null) { Object.assign(aj, coletar()); capa = todas[+b.dataset.capa].url; ocultas.delete(capa); return desenhar(); }
+    if (b.dataset.tirar != null) { Object.assign(aj, coletar()); const u = todas[+b.dataset.tirar].url; ocultas.has(u) ? ocultas.delete(u) : ocultas.add(u); if (u === capa && ocultas.has(u)) capa = ""; return desenhar(); }
+    if (b.dataset.cor) { Object.assign(aj, coletar()); cor = b.dataset.cor; return desenhar(); }
+    if (b.dataset.estilo) { Object.assign(aj, coletar()); estilo = b.dataset.estilo; return desenhar(); }
+    const acao = b.dataset.pe;
+    if (acao === "fechar") return dlg.close();
+    if (acao === "addfoto") {
+      const u = $("#pe-url", dlg).value.trim(); if (!/^https:\/\//.test(u)) return toast("Cole um link que comece com https://");
+      Object.assign(aj, coletar()); aj.extras = [...(aj.extras || []), u]; todas.push({ url: u, fonte: "sua" }); if (!capa) capa = u; return desenhar();
+    }
+    if (acao === "ia") {
+      const pedido = $("#pe-pedido", dlg).value.trim(); if (!pedido) return;
+      $("#pe-ia-status", dlg).textContent = "Aplicando…";
+      try {
+        const atual = coletar();
+        const r = await api("/api/ia", { tarefa: "previa", contexto: { nicho: l.nicho || l.categoria, empresa: l.nome, previa: { titulo: atual.titulo, sub: atual.sub, acao: atual.acao, itens: atual.itens, campos: atual.campos, cor, estilo } }, texto: pedido });
+        const novo = JSON.parse(r.mensagem || "{}");
+        Object.assign(aj, atual, Object.fromEntries(Object.entries(novo).filter(([k, v]) => ["titulo", "sub", "acao", "itens", "campos"].includes(k) && v && (!Array.isArray(v) || v.length))));
+        if (/^#[0-9a-f]{6}$/i.test(novo.cor || "")) cor = novo.cor;
+        if (["claro", "escuro", "elegante"].includes(novo.estilo)) estilo = novo.estilo;
+        desenhar(); $("#pe-ia-status", dlg).textContent = "Pronto. Confira e salve.";
+      } catch (err) { $("#pe-ia-status", dlg).textContent = err.message; }
+    }
+    if (acao === "salvar") {
+      b.disabled = true; b.textContent = "Salvando…";
+      await salvarLead(l, { dados: { ...(l.dados || {}), previa: { ...(l.dados?.previa || {}), ajustes: coletar() } } });
+      const slug = await criarPrevia(l);
+      if (slug) { toast("Prévia atualizada. O link continua o mesmo."); dlg.close(); abrirLead(l.id); }
+      else { b.disabled = false; b.textContent = "Salvar e atualizar o link"; }
+    }
+  };
+  dlg.onchange = (e) => { if (e.target.id === "pe-cor") { Object.assign(aj, coletar()); cor = e.target.value; desenhar(); } };
 }
 async function mostrarVistas(l, dlg) {
   const el = $("#l-previa-vistas", dlg); if (!el || !l.dados?.previa) return;
